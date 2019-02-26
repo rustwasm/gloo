@@ -19,9 +19,7 @@ yourself.
     - [Wasm Tests](#wasm-tests)
     - [Non-Wasm Tests](#non-wasm-tests)
   - [Formatting](#formatting)
-- [Pull Requests](#pull-requests)
 - [Gloo Crate Guidelines](#gloo-crate-guidelines)
-- [Team](#team)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -93,11 +91,6 @@ To (re)format the Gloo source code, run:
 $ cargo fmt --all
 ```
 
-## Pull Requests
-
-All pull requests must be reviewed and approved of by at least one [team](#team)
-member before merging.
-
 ## Gloo Crate Guidelines
 
 These are the guidelines for Gloo crates:
@@ -127,9 +120,3 @@ These are the guidelines for Gloo crates:
 
 [unwrap-throw]: https://docs.rs/wasm-bindgen/0.2.37/wasm_bindgen/trait.UnwrapThrowExt.html
 [api-guidelines]: https://rust-lang-nursery.github.io/api-guidelines/
-
-## Team
-
-| [<img alt="fitzgen" src="https://avatars2.githubusercontent.com/u/74571?s=117&v=4" width="117">](https://github.com/fitzgen) | | | |
-|:---:|:---:|:---:|:---:|
-| [`fitzgen`](https://github.com/fitzgen) | | | |
