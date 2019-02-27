@@ -61,12 +61,12 @@ cargo build -p my-particular-crate
 
 ### Testing
 
-#### Wasm Tests
+#### Wasm Headless Browser Tests
 
-To run headless browser and/or Node.js tests for a particular crate:
+To run headless browser tests for a particular crate:
 
-```
-wasm-pack test crates/my-particular-crate
+```shell
+wasm-pack test crates/my-particular-crate --headless --firefox # or --safari or --chrome
 ```
 
 #### Non-Wasm Tests
@@ -94,6 +94,13 @@ $ cargo fmt --all
 ## Gloo Crate Guidelines
 
 These are the guidelines for Gloo crates:
+
+* [ ] The crate should be named `gloo-foobar`, located at `crates/foobar`, and
+      re-exported from the umbrella crate like:
+
+      ```rust
+      pub use gloo_foobar as foobar;
+      ```
 
 * [ ] Crate's public interface follows the [Rust API Guidelines][api-guidelines].
 
