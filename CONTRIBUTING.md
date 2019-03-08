@@ -16,10 +16,11 @@ yourself.
   - [Prerequisites](#prerequisites)
   - [Building](#building)
   - [Testing](#testing)
-    - [Wasm Tests](#wasm-tests)
+    - [Wasm Headless Browser Tests](#wasm-headless-browser-tests)
     - [Non-Wasm Tests](#non-wasm-tests)
   - [Formatting](#formatting)
-- [Gloo Crate Guidelines](#gloo-crate-guidelines)
+- [Gloo Crate Checklist](#gloo-crate-checklist)
+- [Designing APIs](#designing-apis)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -91,9 +92,9 @@ To (re)format the Gloo source code, run:
 $ cargo fmt --all
 ```
 
-## Gloo Crate Guidelines
+## Gloo Crate Checklist
 
-These are the guidelines for Gloo crates:
+Here is a checklist that all Gloo utility crates should fulfill:
 
 * [ ] The crate should be named `gloo-foobar`, located at `crates/foobar`, and
       re-exported from the umbrella crate like:
@@ -127,3 +128,16 @@ These are the guidelines for Gloo crates:
 
 [unwrap-throw]: https://docs.rs/wasm-bindgen/0.2.37/wasm_bindgen/trait.UnwrapThrowExt.html
 [api-guidelines]: https://rust-lang-nursery.github.io/api-guidelines/
+
+## Designing APIs
+
+Designing APIs for Gloo, its utility crates, and interfaces between them takes a
+lot of care. The design space is large, and there is a lot of prior art to
+consider. When coming to consensus on a design, we use a simplified, informal
+version of [our RFC process][rfcs], where we have design discussions inside the
+Gloo issues tracker.
+
+[Here is an issue template you can use for proposing
+designs.](https://github.com/fitzgen/gloo/issues/new?assignees=&labels=&template=propose_design.md&title=)
+
+[rfcs]: https://github.com/rustwasm/rfcs
