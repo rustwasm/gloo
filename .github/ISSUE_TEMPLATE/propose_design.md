@@ -25,7 +25,8 @@ Does this design have drawbacks? Are there alternative approaches? Why is this
 design the best of all designs available?
 
 What prior art exists? There are many good sources of inspiration: Ember, React,
-Angular, Vue, Knockout, jQuery, Closure, Elm, Emscripten, ClojureScript, etc..
+Angular, Vue, Knockout, jQuery, Closure, Elm, Emscripten, ClojureScript,
+Polymer, etc..
 
 ## Unresolved Questions
 
