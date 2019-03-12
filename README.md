@@ -51,15 +51,6 @@ deliberately cultivate our library ecosystem by building a modular toolkit:
 > running. Carefully crafting a tiny Wasm module and integrating it back into an
 > existing JavaScript project? Grab that one targeted library you need out from
 > the toolkit and use it by itself.
->
-> * **Modular:** Take or leave any individual component. Prefer interfaces over
->   implementations.
->
-> * **Cultivate collaboration:** We've already seen an ecosystem sprouting up in
->   the Rust and WebAssembly domain, and lots of great experiments, but we haven't
->   seen a lot of collaboration between projects. By deliberately creating a space
->   for collaboration, we can reduce effort duplication, multiply impact, and help
->   the ecosystem stay healthy.
 
 Gloo is this modular toolkit.
 
@@ -70,7 +61,7 @@ Gloo is this modular toolkit.
 
 * **Support both whole Web applications and small, targeted libraries:** Gloo,
   and the collection of utility crates that make up its toolkit, should help you
-  be productive if you are writing a green-field web application with rust and
+  be productive if you are writing a green-field web application with Rust and
   Wasm. And it should also help you be productive if you are writing a small,
   targeted Wasm library that will be integrated into an existing JavaScript
   application.
