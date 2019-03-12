@@ -138,6 +138,6 @@ version of [our RFC process][rfcs], where we have design discussions inside the
 Gloo issues tracker.
 
 [Here is an issue template you can use for proposing
-designs.](https://github.com/fitzgen/gloo/issues/new?assignees=&labels=&template=propose_design.md&title=)
+designs.](https://github.com/rustwasm/gloo/issues/new?assignees=&labels=&template=propose_design.md&title=)
 
 [rfcs]: https://github.com/rustwasm/rfcs
