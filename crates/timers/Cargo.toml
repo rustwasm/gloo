@@ -14,6 +14,7 @@ futures = "0.1.25"
 version = "0.3.14"
 features = [
     "Window",
+    "Document",
 ]
 
 [dev-dependencies]
