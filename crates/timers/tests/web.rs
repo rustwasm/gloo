@@ -105,15 +105,16 @@ fn interval_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
     });
     i.cancel();
 
-    let (sender, receiver) = futures::sync::oneshot::channel();
-
+    let (mut sender, receiver) = futures::sync::mpsc::channel(1);
     Interval::new(2, move || {
-        sender.send(()).unwrap();
+        sender.try_send(()).unwrap();
         assert_eq!(cell.get(), false);
     })
     .forget();
 
-    receiver.map_err(|e| e.to_string().into())
+    receiver
+        .map_err(|_| "impossible".into())
+        .for_each(|_| Ok(()))
 }
 
 #[wasm_bindgen_test(async)]

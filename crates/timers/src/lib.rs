@@ -322,19 +322,17 @@ impl Interval {
     /// ```no_run
     /// use gloo_timers::Interval;
     ///
-    /// let timeout = Interval::new(1_000, move || {
+    /// let interval = Interval::new(1_000, move || {
     ///     // Do something...
     /// });
     /// ```
     pub fn new<F>(millis: u32, callback: F) -> Interval
     where
-        F: 'static + FnOnce(),
+        F: 'static + FnMut(),
     {
-        // TODO: Use `FnOnce` here after this merges:
-        // https://github.com/rustwasm/wasm-bindgen/pull/1281
         let mut callback = Some(callback);
         let closure = Closure::wrap(Box::new(move || {
-            let callback = callback.take().unwrap_throw();
+            let mut callback = callback.take().unwrap_throw();
             callback();
         }) as Box<FnMut()>);
 
