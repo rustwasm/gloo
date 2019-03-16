@@ -1,3 +1,8 @@
+// todo: If you know how to make it compile with these flags, please do.
+// #![deny(missing_docs, missing_debug_implementations)]
+
+
+use wasm_bindgen::UnwrapThrowExt;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 
@@ -20,9 +25,13 @@ mod util {
 /// https://github.com/reasonml/reason-react/blob/master/docs/router.md
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Url {
+    /// Path
     pub path: Vec<String>,
+    /// Hash
     pub hash: Option<String>,
+    ///Search
     pub search: Option<String>,
+    /// (Unimplemented in browsers)
     pub title: Option<String>,
 }
 
@@ -53,6 +62,7 @@ impl Url {
         self
     }
 
+    /// Set the title (unimplemented in browsers)
     pub fn title(mut self, title: &str) -> Self {
         self.title = Some(title.into());
         self
@@ -136,7 +146,7 @@ fn clean_url(mut url: Url) -> Url {
     for part in &url.path {
         if let Some(first) = part.chars().next() {
             if first == '/' {
-                cleaned_path.push(remove_first(part).unwrap().to_string());
+                cleaned_path.push(remove_first(part).unwrap_throw().to_string());
             } else {
                 cleaned_path.push(part.to_string());
             }
