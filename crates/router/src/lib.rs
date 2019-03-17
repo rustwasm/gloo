@@ -1,5 +1,5 @@
-// todo: If you know how to make it compile with these flags, please do.
-// #![deny(missing_docs, missing_debug_implementations)]
+//! A router inspired by ReasonML's
+#![deny(missing_docs, missing_debug_implementations)]
 
 
 use wasm_bindgen::UnwrapThrowExt;
