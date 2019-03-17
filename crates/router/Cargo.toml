@@ -1,0 +1,28 @@
+[package]
+name = "gloo-router"
+version = "0.1.0"
+authors = ["David O'Connor <david.alan.oconnor@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+# NOTE: keep in sync with wasm-bindgen-test version
+wasm-bindgen = {version = "^0.2.38", features = ["serde-serialize"]}
+js-sys = "0.3.6"
+serde = { version = "^1.0.85", features = ['derive'] }
+serde_json = "^1.0.36"
+
+[dependencies.web-sys]
+version = "0.3.14"
+features = [
+    "Element",
+    "Event",
+    "EventTarget",
+    "Document",
+    "History",
+    "Location",
+    "PopStateEvent",
+    "Window",
+]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.2.38"
