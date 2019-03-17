@@ -1,0 +1,20 @@
+[package]
+name = "gloo-console"
+version = "0.1.0"
+authors = ["Christian Brevik <christian.brevik@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+wasm-bindgen-futures = "0.3.14"
+wasm-bindgen = "0.2.37"
+js-sys = "0.3.14"
+futures = "0.1.25"
+
+[dependencies.web-sys]
+version = "0.3.14"
+features = [
+    "console",
+]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.2.37"
