@@ -9,6 +9,7 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 
 /// Ideally, this will be moved into a separate crate along with other utility functions.
 mod util {
+    use wasm_bindgen::UnwrapThrowExt;
     /// Convenience function to avoid repeating expect logic.
     pub fn window() -> web_sys::Window {
         web_sys::window().expect_throw("Can't find the global Window")
@@ -16,7 +17,7 @@ mod util {
 
     /// Convenience function to access the web_sys DOM document.
     pub fn document() -> web_sys::Document {
-        window().document().expect("Can't find document")
+        window().document().expect_throw("Can't find document")
     }
 }
 
@@ -88,12 +89,12 @@ fn get_path() -> String {
     let path = util::window()
         .location()
         .pathname()
-        .expect("Can't find pathname");
+        .expect_throw("Can't find pathname");
     path[1..path.len()].to_string() // Remove leading /
 }
 
 fn get_hash() -> String {
-    let hash = util::window().location().hash().expect("Can't find hash");
+    let hash = util::window().location().hash().expect_throw("Can't find hash");
     hash.to_string().replace("#", "")
 }
 
@@ -101,7 +102,7 @@ fn get_search() -> String {
     let search = util::window()
         .location()
         .search()
-        .expect("Can't find search");
+        .expect_throw("Can't find search");
     search.to_string().replace("?", "")
 }
 
@@ -165,8 +166,8 @@ pub fn push_route(mut url: Url) {
 
     // We use data to evaluate the path instead of the path displayed in the url.
     let data =
-        JsValue::from_serde(&serde_json::to_string(&url).expect("Problem serializing route data"))
-            .expect("Problem converting route data to JsValue");
+        JsValue::from_serde(&serde_json::to_string(&url).expect_throw("Problem serializing route data"))
+            .expect_throw("Problem converting route data to JsValue");
 
     // title is currently unused by Firefox.
     let title = match url.title {
@@ -180,21 +181,21 @@ pub fn push_route(mut url: Url) {
 
     util::window()
         .history()
-        .expect("Can't find history")
+        .expect_throw("Can't find history")
         .push_state_with_url(&data, &title, Some(&path))
-        .expect("Problem pushing state");
+        .expect_throw("Problem pushing state");
 
     // Must set hash and search after push_state, or the url will be overwritten.
     let location = util::window().location();
 
     if let Some(hash) = url.hash {
-        location.set_hash(&hash).expect("Problem setting hash");
+        location.set_hash(&hash).expect_throw("Problem setting hash");
     }
 
     if let Some(search) = url.search {
         location
             .set_search(&search)
-            .expect("Problem setting search");
+            .expect_throw("Problem setting search");
     }
 }
 
@@ -214,11 +215,11 @@ pub fn setup_popstate_listener<Ms>(
     let closure = Closure::wrap(Box::new(move |ev: web_sys::Event| {
         let ev = ev
             .dyn_ref::<web_sys::PopStateEvent>()
-            .expect("Problem casting as Popstate event");
+            .expect_throw("Problem casting as Popstate event");
 
         let url: Url = match ev.state().as_string() {
             Some(state_str) => {
-                serde_json::from_str(&state_str).expect("Problem deserializing popstate state")
+                serde_json::from_str(&state_str).expect_throw("Problem deserializing popstate state")
             }
             // This might happen if we go back to a page before we started routing. (?)
             None => {
@@ -232,7 +233,7 @@ pub fn setup_popstate_listener<Ms>(
 
     (util::window().as_ref() as &web_sys::EventTarget)
         .add_event_listener_with_callback("popstate", closure.as_ref().unchecked_ref())
-        .expect("Problem adding popstate listener");
+        .expect_throw("Problem adding popstate listener");
 
     update_ps_listener(closure);
 }
@@ -275,7 +276,7 @@ pub fn setup_link_listener<Ms>(
 
     (util::document().as_ref() as &web_sys::EventTarget)
         .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())
-        .expect("Problem setting up link interceptor");
+        .expect_throw("Problem setting up link interceptor");
 
     closure.forget(); // todo: Can we store the closure somewhere to avoid using forget?
 }
