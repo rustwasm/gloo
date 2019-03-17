@@ -11,7 +11,7 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 mod util {
     /// Convenience function to avoid repeating expect logic.
     pub fn window() -> web_sys::Window {
-        web_sys::window().expect("Can't find the global Window")
+        web_sys::window().expect_throw("Can't find the global Window")
     }
 
     /// Convenience function to access the web_sys DOM document.
