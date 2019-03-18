@@ -9,6 +9,5 @@ version = "0.1.0"
 
 [dependencies]
 gloo-timers = { version = "0.1.0", path = "crates/timers" }
-gloo-router = { version = "0.1.0", path = "crates/router" }
 
 [workspace]
