@@ -10,23 +10,23 @@ Add examples and docs
 
 use web_sys::console;
 
-/// A console time measurement
+/// A console time measurement.
 ///
-/// See `ConsoleTimer::new` for starting a labeled time measurement.
-///
-/// Measurement ends when the constructed `ConsoleTimer` object is dropped.
+/// See `ConsoleTimer::scope` for starting a labeled time measurement
+/// of code wrapped in a closure.
 #[derive(Debug)]
 pub struct ConsoleTimer<'a> {
     label: &'a str,
 }
 
 impl<'a> ConsoleTimer<'a> {
-    /// Starts a console time measruement.
+    /// Starts a console time measurement. The measurement
+    /// ends when the constructed `ConsoleTimer` object is dropped.
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use gloo_console::ConsoleTimer;
+    /// use gloo_console_timer::ConsoleTimer;
     ///
     /// let _timer = ConsoleTimer::new("foo");
     /// ```
@@ -40,10 +40,10 @@ impl<'a> ConsoleTimer<'a> {
     /// # Example
     ///
     /// ```no_run
-    /// use gloo_console::ConsoleTimer;
+    /// use gloo_console_timer::ConsoleTimer;
     ///
     /// let value = ConsoleTimer::scope("foo", || {
-    ///     // ...
+    ///     // Code to measure here
     /// });
     /// ```
     pub fn scope<F, T>(label: &str, f: F) -> T
