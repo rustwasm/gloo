@@ -1,5 +1,5 @@
 [package]
-name = "gloo-console"
+name = "gloo-console-timer"
 version = "0.1.0"
 authors = ["Christian Brevik <christian.brevik@gmail.com>"]
 edition = "2018"
