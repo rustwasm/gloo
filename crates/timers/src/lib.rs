@@ -58,6 +58,7 @@ TODO
 #![deny(missing_docs, missing_debug_implementations)]
 
 use futures::prelude::*;
+use futures::sync::mpsc;
 use std::fmt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -284,5 +285,201 @@ impl Future for TimeoutFuture {
             // We only ever `resolve` the promise, never reject it.
             Err(_) => wasm_bindgen::throw_str("unreachable"),
         }
+    }
+}
+
+/// A scheduled interval.
+///
+/// See `Interval::new` for scheduling new intervals.
+///
+/// Once scheduled, you can either `cancel` so that it ceases to fire or `forget`
+/// it so that it is un-cancel-able.
+#[must_use = "intervals cancel on drop; either call `forget` or `drop` explicitly"]
+pub struct Interval {
+    id: Option<i32>,
+    closure: Option<Closure<FnMut()>>,
+}
+
+impl Drop for Interval {
+    fn drop(&mut self) {
+        if let Some(id) = self.id {
+            window().clear_interval_with_handle(id);
+        }
+    }
+}
+
+impl fmt::Debug for Interval {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Interval").field("id", &self.id).finish()
+    }
+}
+
+impl Interval {
+    /// Schedule an interval to invoke `callback` every `millis` milliseconds.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use gloo_timers::Interval;
+    ///
+    /// let interval = Interval::new(1_000, move || {
+    ///     // Do something...
+    /// });
+    /// ```
+    pub fn new<F>(millis: u32, callback: F) -> Interval
+    where
+        F: 'static + FnMut(),
+    {
+        let mut callback = Some(callback);
+        let closure = Closure::wrap(Box::new(move || {
+            let mut callback = callback.take().unwrap_throw();
+            callback();
+        }) as Box<FnMut()>);
+
+        let id = window()
+            .set_interval_with_callback_and_timeout_and_arguments_0(
+                closure.as_ref().unchecked_ref::<js_sys::Function>(),
+                millis as i32,
+            )
+            .unwrap_throw();
+
+        Interval {
+            id: Some(id),
+            closure: Some(closure),
+        }
+    }
+
+    /// Make this interval uncancel-able.
+    ///
+    /// Returns the identifier returned by the original `setInterval` call, and
+    /// therefore you can still cancel the interval by calling `clearInterval`
+    /// directly (perhaps via `web_sys::clear_interval_with_handle`).
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use gloo_timers::Interval;
+    ///
+    /// // We want to do stuff every second, indefinitely.
+    /// Interval::new(1_000, || {
+    ///     // Do stuff...
+    /// }).forget();
+    /// ```
+    pub fn forget(mut self) -> i32 {
+        let id = self.id.take().unwrap_throw();
+        self.closure.take().unwrap_throw().forget();
+        id
+    }
+
+    /// Cancel this interval so that the callback is no longer periodically
+    /// invoked.
+    ///
+    /// The scheduled callback is returned.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use gloo_timers::Interval;
+    ///
+    /// let interval = Interval::new(1_000, || {
+    ///     // Do stuff...
+    /// });
+    ///
+    /// // If we don't want this interval to run anymore, then cancel it.
+    /// if nevermind() {
+    ///     interval.cancel();
+    /// }
+    /// # fn nevermind() -> bool { true }
+    /// ```
+    pub fn cancel(mut self) -> Closure<FnMut()> {
+        self.closure.take().unwrap_throw()
+    }
+}
+
+/// A scheduled interval as a `Stream`.
+///
+/// See `IntervalStream::new` for scheduling new intervals.
+///
+/// Once scheduled, if you want to stop the interval from continuing to fire,
+/// you can `drop` the stream.
+///
+/// An interval stream will never resolve to `Err`.
+#[must_use = "streams do nothing unless polled or spawned"]
+pub struct IntervalStream {
+    millis: u32,
+    id: Option<i32>,
+    closure: Closure<FnMut()>,
+    inner: mpsc::UnboundedReceiver<()>,
+}
+
+impl IntervalStream {
+    /// Create a new interval stream.
+    ///
+    /// Remember that streams do nothing unless polled or spawned, so either
+    /// spawn this stream via `wasm_bindgen_futures::spawn_local` or use it inside
+    /// another stream or future.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use futures::prelude::*;
+    /// use gloo_timers::IntervalStream;
+    ///
+    /// wasm_bindgen_futures::spawn_local(
+    ///     IntervalStream::new(1_000)
+    ///         .for_each(|_| {
+    ///             // Do stuff every one second...
+    ///             Ok(())
+    ///         })
+    /// );
+    /// ```
+    pub fn new(millis: u32) -> IntervalStream {
+        let (sender, receiver) = mpsc::unbounded();
+        let closure = Closure::wrap(Box::new(move || {
+            sender.unbounded_send(()).unwrap();
+        }) as Box<FnMut()>);
+
+        IntervalStream {
+            millis,
+            id: None,
+            closure,
+            inner: receiver,
+        }
+    }
+}
+
+impl Drop for IntervalStream {
+    fn drop(&mut self) {
+        if let Some(id) = self.id {
+            window().clear_interval_with_handle(id);
+        }
+    }
+}
+
+impl fmt::Debug for IntervalStream {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("IntervalStream")
+            .field("id", &self.id)
+            .finish()
+    }
+}
+
+impl Stream for IntervalStream {
+    type Item = ();
+    type Error = ();
+
+    fn poll(&mut self) -> Poll<Option<()>, ()> {
+        if self.id.is_none() {
+            self.id = Some(
+                window()
+                    .set_interval_with_callback_and_timeout_and_arguments_0(
+                        self.closure.as_ref().unchecked_ref::<js_sys::Function>(),
+                        self.millis as i32,
+                    )
+                    .unwrap_throw(),
+            );
+        }
+
+        self.inner.poll()
     }
 }
