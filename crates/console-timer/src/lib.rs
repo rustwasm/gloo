@@ -1,8 +1,21 @@
 /*!
 
-TODO
+Measuring invocation time on the Web can be done with `console.time`
+and `console.timeEnd`.
 
-Add examples and docs
+This API wraps both the `time` and `timeEnd` calls into a single type
+named `ConsoleTimer`, ensuring both are called.
+
+## Scoped measurement
+
+```no_run
+use gloo_console_timer::ConsoleTimer;
+
+let value = ConsoleTimer::scope("foo", || {
+    // Place code to be measured here
+    // Optionally return a value.
+});
+```
 
  */
 
