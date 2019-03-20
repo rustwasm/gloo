@@ -11,6 +11,7 @@ version = "0.1.0"
 gloo-timers = { version = "0.1.0", path = "crates/timers" }
 gloo-console-timer = { version = "0.1.0", path = "crates/console-timer" }
 gloo-events = { version = "0.1.0", path = "crates/events" }
+gloo-xhr = { version = "0.1.0", path = "crates/xhr" }
 
 [features]
 default = []
