@@ -126,6 +126,10 @@ Here is a checklist that all Gloo utility crates should fulfill:
       escape hatch for dropping down to raw `web_sys` bindings when an API isn't
       fully supported by the crate yet.
 
+* [ ] There is a loose hierarchy with "mid-level" APIs (which are essentially thin wrappers over the low-level APIs), and "high-level" APIs (which make more substantial changes).
+
+     As a general rule, the high-level APIs should be built on top of the mid-level APIs, which in turn should be built on top of the low-level APIs (e.g. `web_sys`)
+
 * [ ] Headless browser and/or Node.js tests via `wasm-pack test`.
 
 * [ ] Uses `#![deny(missing_docs, missing_debug_implementations)]`.
