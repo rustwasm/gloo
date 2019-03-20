@@ -129,6 +129,8 @@ Here is a checklist that all Gloo utility crates should fulfill:
 * [ ] There is a loose hierarchy with "mid-level" APIs (which are essentially thin wrappers over the low-level APIs), and "high-level" APIs (which make more substantial changes).
 
      As a general rule, the high-level APIs should be built on top of the mid-level APIs, which in turn should be built on top of the low-level APIs (e.g. `web_sys`)
+     
+     There are exceptions to this, but they have to be carefully decided on a case-by-case basis.
 
 * [ ] Headless browser and/or Node.js tests via `wasm-pack test`.
 
