@@ -112,6 +112,12 @@ Here is a checklist that all Gloo utility crates should fulfill:
       `FnOnce`) instead of taking `wasm_bindgen::Closure`s or
       `js_sys::Function`s directly.
 
+* [ ] If the API can be implemented as a Future / Stream, then it should first be implemented as a callback, with the callback API put into the `callback` submodule.
+
+     Then the Future / Stream should be implemented using the callback API, and should be put into the `future` or `stream` submodule.
+
+     Make sure that the callback and Future / Stream APIs properly support cancellation (if it is possible to do so).
+
 * [ ] Uses nice Rust-y types and interfaces instead of passing around untyped
       `JsValue`s.
 
