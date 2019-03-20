@@ -1,7 +1,7 @@
 [package]
 name = "gloo-console-timer"
 version = "0.1.0"
-authors = ["Christian Brevik <christian.brevik@gmail.com>"]
+authors = ["Rust and WebAssembly Working Group"]
 edition = "2018"
 
 [dependencies.web-sys]
