@@ -1,7 +1,7 @@
 [package]
 name = "gloo-timers"
 version = "0.1.0"
-authors = ["Nick Fitzgerald <fitzgen@gmail.com>"]
+authors = ["Rust and WebAssembly Working Group"]
 edition = "2018"
 
 [dependencies]
