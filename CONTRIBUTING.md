@@ -115,6 +115,12 @@ Here is a checklist that all Gloo utility crates should fulfill:
       `FnOnce`) instead of taking `wasm_bindgen::Closure`s or
       `js_sys::Function`s directly.
 
+* [ ] If the API can be implemented as a Future / Stream, then it should first be implemented as a callback, with the callback API put into the `callback` submodule.
+
+     Then the Future / Stream should be implemented using the callback API, and should be put into the `future` or `stream` submodule.
+
+     Make sure that the callback and Future / Stream APIs properly support cancellation (if it is possible to do so).
+
 * [ ] Uses nice Rust-y types and interfaces instead of passing around untyped
       `JsValue`s.
 
@@ -122,6 +128,12 @@ Here is a checklist that all Gloo utility crates should fulfill:
       underlying raw `web_sys`, `js_sys`, or `JsValue` type. This provides an
       escape hatch for dropping down to raw `web_sys` bindings when an API isn't
       fully supported by the crate yet.
+
+* [ ] There is a loose hierarchy with "mid-level" APIs (which are essentially thin wrappers over the low-level APIs), and "high-level" APIs (which make more substantial changes).
+
+     As a general rule, the high-level APIs should be built on top of the mid-level APIs, which in turn should be built on top of the low-level APIs (e.g. `web_sys`)
+     
+     There are exceptions to this, but they have to be carefully decided on a case-by-case basis.
 
 * [ ] Headless browser and/or Node.js tests via `wasm-pack test`.
 
