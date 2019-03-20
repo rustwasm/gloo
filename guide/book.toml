@@ -1,0 +1,5 @@
+[book]
+authors = ["David O'Connor"]
+multilingual = false
+src = "src"
+title = "Gloo Guide"
