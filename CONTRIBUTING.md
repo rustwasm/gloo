@@ -103,6 +103,9 @@ Here is a checklist that all Gloo utility crates should fulfill:
       pub use gloo_foobar as foobar;
       ```
 
+* [ ] The `authors` entry in `Cargo.toml` is "The Rust and WebAssembly Working
+      Group".
+
 * [ ] Crate's public interface follows the [Rust API Guidelines][api-guidelines].
 
 * [ ] Uses [`unwrap_throw` and `expect_throw`][unwrap-throw] instead of normal `unwrap` and
