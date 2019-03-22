@@ -10,4 +10,8 @@ version = "0.1.0"
 [dependencies]
 gloo-timers = { version = "0.1.0", path = "crates/timers" }
 
+[features]
+default = []
+futures = ["gloo-timers/use_futures"]
+
 [workspace]
