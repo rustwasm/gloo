@@ -36,12 +36,14 @@ The measurement ends when the timer object goes out of scope / is dropped.
 use gloo_console_timer::ConsoleTimer;
 use gloo_timers::Timeout;
 
+// Start timing a new operation.
+let timer = ConsoleTimer::new("foo");
+
+// And then asynchronously finish timing.
 let timeout = Timeout::new(1_000, move || {
-    let _timer = ConsoleTimer::new("foo");
-    // Do some work which will be measured
+    drop(timer);
 });
 ```
-
  */
 
 #![deny(missing_docs, missing_debug_implementations)]
