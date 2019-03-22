@@ -14,7 +14,7 @@ Timeouts fire once after a period of time (measured in milliseconds).
 ### Timeouts with a Callback Function
 
 ```no_run
-use gloo_timers::Timeout;
+use gloo_timers::callback::Timeout;
 
 let timeout = Timeout::new(1_000, move || {
     // Do something after the one second timeout is up!
@@ -25,10 +25,12 @@ timeout.forget();
 ```
 
 ### Timeouts as `Future`s
-
-```no_run
+*/
+#![cfg_attr(feature = "use_futures", doc = "```no_run")]
+#![cfg_attr(not(feature = "use_futures"), doc = "```ignore")]
+/*!
 use futures::prelude::*;
-use gloo_timers::TimeoutFuture;
+use gloo_timers::future::TimeoutFuture;
 use wasm_bindgen_futures::spawn_local;
 
 let timeout = TimeoutFuture::new(1_000).and_then(|_| {
@@ -102,7 +104,7 @@ pub mod callback {
         /// # Example
         ///
         /// ```no_run
-        /// use gloo_timers::Timeout;
+        /// use gloo_timers::callback::Timeout;
         ///
         /// let timeout = Timeout::new(1_000, move || {
         ///     // Do something...
@@ -142,7 +144,7 @@ pub mod callback {
         /// # Example
         ///
         /// ```no_run
-        /// use gloo_timers::Timeout;
+        /// use gloo_timers::callback::Timeout;
         ///
         /// // We definitely want to do stuff, and aren't going to ever cancel this
         /// // timeout.
@@ -164,7 +166,7 @@ pub mod callback {
         /// # Example
         ///
         /// ```no_run
-        /// use gloo_timers::Timeout;
+        /// use gloo_timers::callback::Timeout;
         ///
         /// let timeout = Timeout::new(1_000, || {
         ///     // Do stuff...
@@ -212,7 +214,7 @@ pub mod callback {
         /// # Example
         ///
         /// ```no_run
-        /// use gloo_timers::Interval;
+        /// use gloo_timers::callback::Interval;
         ///
         /// let interval = Interval::new(1_000, move || {
         ///     // Do something...
@@ -250,7 +252,7 @@ pub mod callback {
         /// # Example
         ///
         /// ```no_run
-        /// use gloo_timers::Interval;
+        /// use gloo_timers::callback::Interval;
         ///
         /// // We want to do stuff every second, indefinitely.
         /// Interval::new(1_000, || {
@@ -271,7 +273,7 @@ pub mod callback {
         /// # Example
         ///
         /// ```no_run
-        /// use gloo_timers::Interval;
+        /// use gloo_timers::callback::Interval;
         ///
         /// let interval = Interval::new(1_000, || {
         ///     // Do stuff...
@@ -313,7 +315,7 @@ pub mod future {
     ///
     /// ```no_run
     /// use futures::prelude::*;
-    /// use gloo_timers::TimeoutFuture;
+    /// use gloo_timers::future::TimeoutFuture;
     ///
     /// let timeout_a = TimeoutFuture::new(1_000).map(|_| "a");
     /// let timeout_b = TimeoutFuture::new(2_000).map(|_| "b");
@@ -362,7 +364,7 @@ pub mod future {
         ///
         /// ```no_run
         /// use futures::prelude::*;
-        /// use gloo_timers::TimeoutFuture;
+        /// use gloo_timers::future::TimeoutFuture;
         ///
         /// wasm_bindgen_futures::spawn_local(
         ///     TimeoutFuture::new(1_000).map(|_| {
@@ -436,7 +438,7 @@ pub mod future {
         ///
         /// ```no_run
         /// use futures::prelude::*;
-        /// use gloo_timers::IntervalStream;
+        /// use gloo_timers::future::IntervalStream;
         ///
         /// wasm_bindgen_futures::spawn_local(
         ///     IntervalStream::new(1_000)

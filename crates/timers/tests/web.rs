@@ -1,9 +1,11 @@
 //! Test suite for the Web and headless browsers.
 
-#![cfg(target_arch = "wasm32")]
-
+#![cfg(all(target_arch = "wasm32", feature = "use_futures"))]
 use futures::prelude::*;
-use gloo_timers::{Interval, IntervalStream, Timeout, TimeoutFuture};
+use gloo_timers::{
+    callback::{Interval, Timeout},
+    future::{IntervalStream, TimeoutFuture},
+};
 use std::cell::Cell;
 use std::rc::Rc;
 use wasm_bindgen_test::*;
