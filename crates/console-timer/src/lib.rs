@@ -32,7 +32,7 @@ For scenarios where `ConsoleTimer::scope` can't be used, like with
 asynchronous operations, you can use `ConsoleTimer::new` to create a timer.
 The measurement ends when the timer object goes out of scope / is dropped.
 
-```ignore
+```no_run
 use gloo_console_timer::ConsoleTimer;
 use gloo_timers::Timeout;
 

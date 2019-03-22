@@ -12,3 +12,4 @@ features = [
 
 [dev-dependencies]
 wasm-bindgen-test = "0.2.37"
+gloo-timers = { version = "0.1.0", path = "../timers" }
