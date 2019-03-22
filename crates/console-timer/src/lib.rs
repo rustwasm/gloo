@@ -13,7 +13,7 @@ Additionally, these measurements will show up in your browser's profiler's
 This API wraps both the `time` and `timeEnd` calls into a single type
 named `ConsoleTimer`, ensuring both are called.
 
-## Scoped measurement
+## Scoped Measurement
 
 Wrap code to be measured in a closure with `ConsoleTimer::scope`.
 
@@ -26,7 +26,7 @@ let value = ConsoleTimer::scope("foo", || {
 });
 ```
 
-## RAII-style measurement
+## RAII-Style Measurement
 
 For scenarios where `ConsoleTimer::scope` can't be used, like with
 asynchronous operations, you can use `ConsoleTimer::new` to create a timer.
@@ -36,12 +36,14 @@ The measurement ends when the timer object goes out of scope / is dropped.
 use gloo_console_timer::ConsoleTimer;
 use gloo_timers::Timeout;
 
+// Start timing a new operation.
+let timer = ConsoleTimer::new("foo");
+
+// And then asynchronously finish timing.
 let timeout = Timeout::new(1_000, move || {
-    let _timer = ConsoleTimer::new("foo");
-    // Do some work which will be measured
+    drop(timer);
 });
 ```
-
  */
 
 #![deny(missing_docs, missing_debug_implementations)]
