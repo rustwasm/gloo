@@ -26,9 +26,10 @@ timeout.forget();
 
 ### Timeouts as `Future`s
 */
-#![cfg_attr(feature = "use_futures", doc = "```no_run")]
-#![cfg_attr(not(feature = "use_futures"), doc = "```ignore")]
+#![cfg_attr(feature = "futures", doc = "```no_run")]
+#![cfg_attr(not(feature = "futures"), doc = "```ignore")]
 /*!
+# extern crate futures_rs as futures;
 use futures::prelude::*;
 use gloo_timers::future::TimeoutFuture;
 use wasm_bindgen_futures::spawn_local;
@@ -58,6 +59,9 @@ TODO
  */
 
 #![deny(missing_docs, missing_debug_implementations)]
+
+#[cfg(feature = "futures")]
+extern crate futures_rs as futures;
 
 use wasm_bindgen::prelude::*;
 
@@ -292,7 +296,7 @@ pub mod callback {
 }
 
 /// Future/stream-backed APIs.
-#[cfg(feature = "use_futures")]
+#[cfg(feature = "futures")]
 pub mod future {
     use super::window;
     use futures::prelude::*;
@@ -314,6 +318,7 @@ pub mod future {
     /// # Example
     ///
     /// ```no_run
+    /// # extern crate futures_rs as futures;
     /// use futures::prelude::*;
     /// use gloo_timers::future::TimeoutFuture;
     ///
@@ -363,6 +368,7 @@ pub mod future {
         /// # Example
         ///
         /// ```no_run
+        /// # extern crate futures_rs as futures;
         /// use futures::prelude::*;
         /// use gloo_timers::future::TimeoutFuture;
         ///
@@ -437,6 +443,7 @@ pub mod future {
         /// # Example
         ///
         /// ```no_run
+        /// # extern crate futures_rs as futures;
         /// use futures::prelude::*;
         /// use gloo_timers::future::IntervalStream;
         ///

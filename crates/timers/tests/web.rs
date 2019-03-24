@@ -1,7 +1,7 @@
 //! Test suite for the Web and headless browsers.
 
-#![cfg(all(target_arch = "wasm32", feature = "use_futures"))]
-use futures::prelude::*;
+#![cfg(all(target_arch = "wasm32", feature = "futures"))]
+use futures_rs::prelude::*;
 use gloo_timers::{
     callback::{Interval, Timeout},
     future::{IntervalStream, TimeoutFuture},
