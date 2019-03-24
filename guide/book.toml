@@ -1,5 +1,5 @@
 [book]
-authors = ["David O'Connor"]
+authors = ["rustwasm"]
 multilingual = false
 src = "src"
 title = "Gloo Guide"
