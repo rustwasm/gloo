@@ -20,7 +20,9 @@ pub mod raw {
     impl XmlHttpRequest {
         /// Initialize an XmlHttpRequest.
         pub fn new() -> Self {
-            let xhr = web_sys::XmlHttpRequest::new().expect_throw("XMLHttpRequest constructor");
+            // we assume this is safe because all browsers that support webassembly
+            // implement XmlHttpRequest.
+            let xhr = web_sys::XmlHttpRequest::new().unwrap_throw();
             XmlHttpRequest { xhr }
         }
 
@@ -50,9 +52,19 @@ pub mod raw {
             self.xhr.abort().expect_throw("aborting XHR")
         }
 
+        /// Send without a body.
+        ///
+        /// Should probably be renamed.
+        pub fn send_no_body(&self) {
+            self.xhr
+                .send()
+                .expect_throw("Error sending request. Did you forget to call `open`?")
+        }
+
         /// Send!
         pub fn send<B: XhrBody>(&self, body: B) {
-            body.send(&self.xhr).expect_throw("sending XHR")
+            body.send(&self.xhr)
+                .expect_throw("Error sending request. Did you forget to call `open`?")
         }
 
         /// Set a header on the request.
@@ -88,7 +100,20 @@ pub mod raw {
                 .collect()
         }
 
+        /// The error callback can fire in cases such as CORS errors.
+        pub fn set_onerror<C>(&self, callback: C)
+        where
+            C: FnMut(web_sys::ProgressEvent) + 'static,
+        {
+            let closure = Closure::wrap(Box::new(callback) as Box<FnMut(web_sys::ProgressEvent)>);
+            self.xhr.set_onerror(Some(closure.as_ref().unchecked_ref()));
+            closure.forget();
+        }
+
         /// see mdn
+        ///
+        /// This takes an FnMut because the callback can be called more than once (if
+        /// `send` is called more than once)
         pub fn set_onload<C>(&self, callback: C)
         where
             C: FnMut(web_sys::ProgressEvent) + 'static,
@@ -152,7 +177,7 @@ pub mod raw {
         /// https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
         pub fn ready_state(&self) -> ReadyState {
             ReadyState::from_u16(self.xhr.ready_state())
-                .expect_throw("XMLHttpRequest ReadyState must be 0 < n < 4")
+                .expect_throw("XMLHttpRequest ReadyState must be 0 ≤ n ≤ 4")
         }
     }
 
