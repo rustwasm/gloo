@@ -122,13 +122,7 @@ pub mod callback {
         where
             F: 'static + FnOnce(),
         {
-            // TODO: Use `FnOnce` here after this merges:
-            // https://github.com/rustwasm/wasm-bindgen/pull/1281
-            let mut callback = Some(callback);
-            let closure = Closure::wrap(Box::new(move || {
-                let callback = callback.take().unwrap_throw();
-                callback();
-            }) as Box<FnMut()>);
+            let closure = Closure::once(callback);
 
             let id = window()
                 .set_timeout_with_callback_and_timeout_and_arguments_0(
