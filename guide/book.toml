@@ -1,5 +1,5 @@
 [book]
-authors = ["rustwasm"]
+authors = ["The Rust and WebAssembly Working Group"]
 multilingual = false
 src = "src"
 title = "Gloo Guide"
