@@ -34,7 +34,7 @@ The measurement ends when the timer object goes out of scope / is dropped.
 
 ```no_run
 use gloo_console_timer::ConsoleTimer;
-use gloo_timers::Timeout;
+use gloo_timers::callback::Timeout;
 
 // Start timing a new operation.
 let timer = ConsoleTimer::new("foo");
