@@ -141,6 +141,8 @@ Here is a checklist that all Gloo utility crates should fulfill:
 
 * [ ] Crate's root module documentation has at least one realistic example.
 
+* [ ] Crate has at least a brief description of how to use it in the Gloo guide.
+
 [unwrap-throw]: https://docs.rs/wasm-bindgen/0.2.37/wasm_bindgen/trait.UnwrapThrowExt.html
 [api-guidelines]: https://rust-lang-nursery.github.io/api-guidelines/
 
