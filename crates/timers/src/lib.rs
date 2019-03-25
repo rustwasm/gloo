@@ -25,6 +25,10 @@ timeout.forget();
 ```
 
 ### Timeouts as `Future`s
+
+With the `futures` feature enabled, a `future` module containing futures-based
+timers is exposed.
+
 */
 #![cfg_attr(feature = "futures", doc = "```no_run")]
 #![cfg_attr(not(feature = "futures"), doc = "```ignore")]
