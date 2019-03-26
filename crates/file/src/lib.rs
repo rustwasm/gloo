@@ -79,11 +79,19 @@ pub trait Blob {
 }
 
 pub trait RawBlob {
-  fn raw(&self) -> web_sys::Blob;
+  fn raw(&self) -> &web_sys::Blob;
 }
 
-struct DataBlob {
+pub struct DataBlob {
   inner: web_sys::Blob,
+}
+
+impl DataBlob {
+  pub fn new(content: &str) -> DataBlob {
+    let parts = js_sys::Array::of1(&wasm_bindgen::JsValue::from_str(content));
+    let inner = web_sys::Blob::new_with_str_sequence(&parts).unwrap();
+    DataBlob { inner }
+  }
 }
 
 impl Blob for DataBlob {
@@ -96,6 +104,12 @@ impl Blob for DataBlob {
       "application/json" => MimeType::ApplicationJson,
       _ => MimeType::Unknown,
     }
+  }
+}
+
+impl RawBlob for DataBlob {
+  fn raw(&self) -> &web_sys::Blob {
+    &self.inner
   }
 }
 
@@ -125,7 +139,7 @@ impl FileReader {
 
   pub fn read_as_string(
     self,
-    blob: impl Blob + RawBlob,
+    blob: &(impl Blob + RawBlob),
   ) -> impl futures::Future<Item = String, Error = ()> {
     let (tx, rx) = futures::sync::oneshot::channel();
     let reader = Rc::new(self.inner);
@@ -136,7 +150,8 @@ impl FileReader {
       })
     });
     let reader = reader.clone();
-    reader.set_onload(Some(cb.as_ref().unchecked_ref()));
+    let function = cb.as_ref().dyn_ref().unwrap();
+    reader.set_onload(Some(function));
     reader.read_as_text(&blob.raw()).unwrap();
     rx.map_err(|_| ())
   }
