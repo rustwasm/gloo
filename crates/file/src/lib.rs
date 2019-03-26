@@ -1,6 +1,6 @@
-use futures::Future;
-use std::cell::RefCell;
 use std::rc::Rc;
+
+use futures::Future;
 use wasm_bindgen::JsCast;
 
 pub struct FileList {
@@ -9,7 +9,11 @@ pub struct FileList {
 }
 
 impl FileList {
-  pub fn from_raw(internal: web_sys::FileList) -> FileList {
+  pub fn new(input: &web_sys::HtmlInputElement) -> Option<Self> {
+    input.files().map(Self::from_raw)
+  }
+
+  pub fn from_raw(internal: web_sys::FileList) -> Self {
     let length = internal.length() as usize;
     FileList { internal, length }
   }
@@ -124,17 +128,16 @@ impl FileReader {
     blob: impl Blob + RawBlob,
   ) -> impl futures::Future<Item = String, Error = ()> {
     let (tx, rx) = futures::sync::oneshot::channel();
-    let reader = Rc::new(RefCell::new(self.internal));
-    let clone = reader.clone();
+    let reader = Rc::new(self.internal);
+    let cloned_reader = reader.clone();
     let cb = wasm_bindgen::closure::Closure::once(move || {
-      tx.send(clone.borrow().result().unwrap().as_string().unwrap())
-        .unwrap();
+      cloned_reader.result().map(|r| {
+        let _ = tx.send(r.as_string().unwrap());
+      })
     });
-    reader
-      .clone()
-      .borrow()
-      .set_onload(Some(cb.as_ref().unchecked_ref()));
-    reader.clone().borrow().read_as_text(&blob.raw()).unwrap();
+    let reader = reader.clone();
+    reader.set_onload(Some(cb.as_ref().unchecked_ref()));
+    reader.read_as_text(&blob.raw()).unwrap();
     rx.map_err(|_| ())
   }
 }
