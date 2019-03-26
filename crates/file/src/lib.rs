@@ -1,12 +1,15 @@
-use web_sys::{File as InternalFile, FileList as InternalFileList};
+use futures::Future;
+use std::cell::RefCell;
+use std::rc::Rc;
+use wasm_bindgen::JsCast;
 
 pub struct FileList {
-  internal: InternalFileList,
+  internal: web_sys::FileList,
   length: usize,
 }
 
 impl FileList {
-  pub fn from_raw(internal: InternalFileList) -> FileList {
+  pub fn from_raw(internal: web_sys::FileList) -> FileList {
     let length = internal.length() as usize;
     FileList { internal, length }
   }
@@ -53,11 +56,85 @@ impl<'a> Iterator for FileListIter<'a> {
 }
 
 pub struct File {
-  internal: InternalFile,
+  internal: web_sys::File,
 }
 
 impl File {
-  fn from_raw(internal: InternalFile) -> File {
+  fn from_raw(internal: web_sys::File) -> File {
     File { internal }
+  }
+}
+
+pub enum MimeType {
+  Unknown,
+  ApplicationJson,
+}
+pub trait Blob {
+  fn size(&self) -> usize;
+  fn mime_type(&self) -> MimeType;
+}
+
+pub trait RawBlob {
+  fn raw(&self) -> web_sys::Blob;
+}
+
+struct DataBlob {
+  internal: web_sys::Blob,
+}
+
+impl Blob for DataBlob {
+  fn size(&self) -> usize {
+    self.internal.size() as usize
+  }
+
+  fn mime_type(&self) -> MimeType {
+    match self.internal.type_().as_ref() {
+      "application/json" => MimeType::ApplicationJson,
+      _ => MimeType::Unknown,
+    }
+  }
+}
+
+impl Blob for File {
+  fn size(&self) -> usize {
+    self.internal.size() as usize
+  }
+
+  fn mime_type(&self) -> MimeType {
+    match self.internal.type_().as_ref() {
+      "application/json" => MimeType::ApplicationJson,
+      _ => MimeType::Unknown,
+    }
+  }
+}
+
+pub struct FileReader {
+  internal: web_sys::FileReader,
+}
+
+impl FileReader {
+  pub fn new() -> FileReader {
+    FileReader {
+      internal: web_sys::FileReader::new().unwrap(),
+    }
+  }
+
+  pub fn read_as_string(
+    self,
+    blob: impl Blob + RawBlob,
+  ) -> impl futures::Future<Item = String, Error = ()> {
+    let (tx, rx) = futures::sync::oneshot::channel();
+    let reader = Rc::new(RefCell::new(self.internal));
+    let clone = reader.clone();
+    let cb = wasm_bindgen::closure::Closure::once(move || {
+      tx.send(clone.borrow().result().unwrap().as_string().unwrap())
+        .unwrap();
+    });
+    reader
+      .clone()
+      .borrow()
+      .set_onload(Some(cb.as_ref().unchecked_ref()));
+    reader.clone().borrow().read_as_text(&blob.raw()).unwrap();
+    rx.map_err(|_| ())
   }
 }
