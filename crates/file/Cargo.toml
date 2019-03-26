@@ -1,0 +1,14 @@
+[package]
+name = "gloo-file"
+version = "0.1.0"
+authors = ["Rust and WebAssembly Working Group"]
+edition = "2018"
+
+[dependencies]
+
+[dependencies.web-sys]
+version = "0.3.14"
+features = ["File", "FileList"]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.2.37"
