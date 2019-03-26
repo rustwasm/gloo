@@ -144,14 +144,14 @@ impl FileReader {
     let (tx, rx) = futures::sync::oneshot::channel();
     let reader = Rc::new(self.inner);
     let cloned_reader = reader.clone();
-    let cb = wasm_bindgen::closure::Closure::once(move || {
-      cloned_reader.result().map(|r| {
+    let cb = wasm_bindgen::closure::Closure::once_into_js(move || {
+      let _ = cloned_reader.result().map(|r| {
         let _ = tx.send(r.as_string().unwrap());
-      })
+      });
     });
     let reader = reader.clone();
-    let function = cb.as_ref().dyn_ref().unwrap();
-    reader.set_onload(Some(function));
+    let function = cb.dyn_into().unwrap();
+    reader.set_onload(Some(&function));
     reader.read_as_text(&blob.raw()).unwrap();
     rx.map_err(|_| ())
   }
