@@ -4,7 +4,7 @@ use futures::Future;
 use wasm_bindgen::JsCast;
 
 pub struct FileList {
-  internal: web_sys::FileList,
+  inner: web_sys::FileList,
   length: usize,
 }
 
@@ -13,13 +13,13 @@ impl FileList {
     input.files().map(Self::from_raw)
   }
 
-  pub fn from_raw(internal: web_sys::FileList) -> Self {
-    let length = internal.length() as usize;
-    FileList { internal, length }
+  pub fn from_raw(inner: web_sys::FileList) -> Self {
+    let length = inner.length() as usize;
+    FileList { inner, length }
   }
 
   pub fn get(&self, index: usize) -> Option<File> {
-    self.internal.get(index as u32).map(File::from_raw)
+    self.inner.get(index as u32).map(File::from_raw)
   }
 
   pub fn len(&self) -> usize {
@@ -60,12 +60,12 @@ impl<'a> Iterator for FileListIter<'a> {
 }
 
 pub struct File {
-  internal: web_sys::File,
+  inner: web_sys::File,
 }
 
 impl File {
-  fn from_raw(internal: web_sys::File) -> File {
-    File { internal }
+  fn from_raw(inner: web_sys::File) -> File {
+    File { inner }
   }
 }
 
@@ -83,16 +83,16 @@ pub trait RawBlob {
 }
 
 struct DataBlob {
-  internal: web_sys::Blob,
+  inner: web_sys::Blob,
 }
 
 impl Blob for DataBlob {
   fn size(&self) -> usize {
-    self.internal.size() as usize
+    self.inner.size() as usize
   }
 
   fn mime_type(&self) -> MimeType {
-    match self.internal.type_().as_ref() {
+    match self.inner.type_().as_ref() {
       "application/json" => MimeType::ApplicationJson,
       _ => MimeType::Unknown,
     }
@@ -101,11 +101,11 @@ impl Blob for DataBlob {
 
 impl Blob for File {
   fn size(&self) -> usize {
-    self.internal.size() as usize
+    self.inner.size() as usize
   }
 
   fn mime_type(&self) -> MimeType {
-    match self.internal.type_().as_ref() {
+    match self.inner.type_().as_ref() {
       "application/json" => MimeType::ApplicationJson,
       _ => MimeType::Unknown,
     }
@@ -113,13 +113,13 @@ impl Blob for File {
 }
 
 pub struct FileReader {
-  internal: web_sys::FileReader,
+  inner: web_sys::FileReader,
 }
 
 impl FileReader {
   pub fn new() -> FileReader {
     FileReader {
-      internal: web_sys::FileReader::new().unwrap(),
+      inner: web_sys::FileReader::new().unwrap(),
     }
   }
 
@@ -128,7 +128,7 @@ impl FileReader {
     blob: impl Blob + RawBlob,
   ) -> impl futures::Future<Item = String, Error = ()> {
     let (tx, rx) = futures::sync::oneshot::channel();
-    let reader = Rc::new(self.internal);
+    let reader = Rc::new(self.inner);
     let cloned_reader = reader.clone();
     let cb = wasm_bindgen::closure::Closure::once(move || {
       cloned_reader.result().map(|r| {
