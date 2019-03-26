@@ -69,17 +69,32 @@ impl File {
   }
 }
 
-pub enum MimeType {
-  Unknown,
-  ApplicationJson,
-}
-pub trait Blob {
-  fn size(&self) -> usize;
-  fn mime_type(&self) -> MimeType;
+mod private {
+  pub trait RawBlob {
+    fn raw(&self) -> &web_sys::Blob;
+  }
+
+  impl RawBlob for super::File {
+    fn raw(&self) -> &web_sys::Blob {
+      &self.inner
+    }
+  }
+
+  impl RawBlob for super::DataBlob {
+    fn raw(&self) -> &web_sys::Blob {
+      &self.inner
+    }
+  }
 }
 
-pub trait RawBlob {
-  fn raw(&self) -> &web_sys::Blob;
+pub trait Blob: private::RawBlob {
+  fn size(&self) -> usize {
+    self.raw().size() as usize
+  }
+
+  fn mime_type(&self) -> Option<mime::Mime> {
+    Some(self.raw().type_().parse().ok()?)
+  }
 }
 
 pub struct DataBlob {
@@ -94,37 +109,8 @@ impl DataBlob {
   }
 }
 
-impl Blob for DataBlob {
-  fn size(&self) -> usize {
-    self.inner.size() as usize
-  }
-
-  fn mime_type(&self) -> MimeType {
-    match self.inner.type_().as_ref() {
-      "application/json" => MimeType::ApplicationJson,
-      _ => MimeType::Unknown,
-    }
-  }
-}
-
-impl RawBlob for DataBlob {
-  fn raw(&self) -> &web_sys::Blob {
-    &self.inner
-  }
-}
-
-impl Blob for File {
-  fn size(&self) -> usize {
-    self.inner.size() as usize
-  }
-
-  fn mime_type(&self) -> MimeType {
-    match self.inner.type_().as_ref() {
-      "application/json" => MimeType::ApplicationJson,
-      _ => MimeType::Unknown,
-    }
-  }
-}
+impl Blob for DataBlob {}
+impl Blob for File {}
 
 pub struct FileReader {
   inner: web_sys::FileReader,
@@ -137,10 +123,7 @@ impl FileReader {
     }
   }
 
-  pub fn read_as_string(
-    self,
-    blob: &(impl Blob + RawBlob),
-  ) -> impl futures::Future<Item = String, Error = ()> {
+  pub fn read_as_string(self, blob: &impl Blob) -> impl futures::Future<Item = String, Error = ()> {
     let (tx, rx) = futures::sync::oneshot::channel();
     let reader = Rc::new(self.inner);
     let cloned_reader = reader.clone();
