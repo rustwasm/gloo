@@ -1,7 +1,8 @@
 pr: ["master"]
 
 jobs:
-  - job:
+  - job: test_all_native
+    displayName: "Native Tests"
     pool:
       vmImage: 'ubuntu-16.04'
     steps:
@@ -10,6 +11,27 @@ jobs:
           rust_version: stable
       - bash: |
           export RUST_BACKTRACE=1
-          cargo check --all || exit
           cargo test --all || exit
-        displayName: Run cargo check and test 
+        displayName: Run cargo check and test
+  - job: test_headless_firefox
+    displayName: "Headless Browser Tests (Firefox)"
+    steps:
+      - template: .ci/install-rust.yml
+      - template: .ci/install-wasm-pack.yml
+      - displayName: "Run `wasm-pack test`"
+        script: |
+          for x in $(ls crates); do
+            wasm-pack test --headless --firefox crates/$x -- --all-features || exit 1
+            wasm-pack test --headless --firefox crates/$x -- --no-default-features || exit 1
+          done
+  - job: test_headless_chrome
+    displayName: "Headless Browser Tests (Chrome)"
+    steps:
+      - template: .ci/install-rust.yml
+      - template: .ci/install-wasm-pack.yml
+      - displayName: "Run `wasm-pack test`"
+        script: |
+          for x in $(ls crates); do
+            wasm-pack test --headless --chrome crates/$x -- --all-features || exit 1
+            wasm-pack test --headless --chrome crates/$x -- --no-default-features || exit 1
+          done
