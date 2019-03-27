@@ -5,11 +5,11 @@ authors = ["Rust and WebAssembly Working Group"]
 edition = "2018"
 
 [dependencies.web-sys]
-version = "0.3.14"
+version = "0.3.17"
 features = [
     "console",
 ]
 
 [dev-dependencies]
-wasm-bindgen-test = "0.2.37"
+wasm-bindgen-test = "0.2.40"
 gloo-timers = { version = "0.1.0", path = "../timers" }

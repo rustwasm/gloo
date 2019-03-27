@@ -1,7 +1,11 @@
 //! Test suite for the Web and headless browsers.
 
 #![cfg(all(target_arch = "wasm32", feature = "futures"))]
-use futures_rs::prelude::*;
+
+use futures_rs::{
+    prelude::*,
+    sync::{mpsc, oneshot},
+};
 use gloo_timers::{
     callback::{Interval, Timeout},
     future::{IntervalStream, TimeoutFuture},
@@ -14,7 +18,7 @@ wasm_bindgen_test_configure!(run_in_browser);
 
 #[wasm_bindgen_test(async)]
 fn timeout() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
-    let (sender, receiver) = futures::sync::oneshot::channel();
+    let (sender, receiver) = oneshot::channel();
     Timeout::new(1, || sender.send(()).unwrap()).forget();
     receiver.map_err(|e| e.to_string().into())
 }
@@ -32,7 +36,7 @@ fn timeout_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
     });
     t.cancel();
 
-    let (sender, receiver) = futures::sync::oneshot::channel();
+    let (sender, receiver) = oneshot::channel();
 
     Timeout::new(2, move || {
         sender.send(()).unwrap();
@@ -86,7 +90,7 @@ fn timeout_future_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsVal
 
 #[wasm_bindgen_test(async)]
 fn interval() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
-    let (mut sender, receiver) = futures::sync::mpsc::channel(1);
+    let (mut sender, receiver) = mpsc::channel(1);
     Interval::new(1, move || sender.try_send(()).unwrap()).forget();
     receiver
         .take(5)
@@ -107,7 +111,7 @@ fn interval_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
     });
     i.cancel();
 
-    let (mut sender, receiver) = futures::sync::mpsc::channel(1);
+    let (mut sender, receiver) = mpsc::channel(1);
     Interval::new(2, move || {
         sender.try_send(()).unwrap();
         assert_eq!(cell.get(), false);
