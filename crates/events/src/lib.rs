@@ -85,14 +85,14 @@ impl EventListener {
 
     ///
     #[inline]
-    pub fn new_with_options<A, F>(
+    pub fn new_with_options<S, F>(
         target: &EventTarget,
-        event_type: A,
+        event_type: S,
         options: &EventListenerOptions,
         callback: F,
     ) -> Self
     where
-        A: Into<Cow<'static, str>>,
+        S: Into<Cow<'static, str>>,
         F: FnMut(Event) + 'static,
     {
         let callback = Closure::wrap(Box::new(callback) as Box<FnMut(Event)>);
@@ -108,9 +108,9 @@ impl EventListener {
 
     ///
     #[inline]
-    pub fn new<A, F>(target: &EventTarget, event_type: A, callback: F) -> Self
+    pub fn new<S, F>(target: &EventTarget, event_type: S, callback: F) -> Self
     where
-        A: Into<Cow<'static, str>>,
+        S: Into<Cow<'static, str>>,
         F: FnMut(Event) + 'static,
     {
         let callback = Closure::wrap(Box::new(callback) as Box<FnMut(Event)>);
@@ -121,9 +121,9 @@ impl EventListener {
 
     ///
     #[inline]
-    pub fn once<A, F>(target: &EventTarget, event_type: A, callback: F) -> Self
+    pub fn once<S, F>(target: &EventTarget, event_type: S, callback: F) -> Self
     where
-        A: Into<Cow<'static, str>>,
+        S: Into<Cow<'static, str>>,
         F: FnOnce(Event) + 'static,
     {
         let callback = Closure::once(callback);
