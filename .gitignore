@@ -2,4 +2,7 @@
 **/*.rs.bk
 Cargo.lock
 
+node_modules
+pkg
+
 guide/book

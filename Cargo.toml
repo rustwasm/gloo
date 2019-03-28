@@ -20,4 +20,5 @@ members = [
     "crates/console-timer",
     "crates/timers",
     "crates/webextensions",
+    "examples/webextension",
 ]

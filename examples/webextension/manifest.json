@@ -1,0 +1,16 @@
+{
+  "manifest_version": 2,
+  "name": "gloo-webextension-demo",
+  "version": "1.0",
+  "description": "A demo of gloo-webextensions",
+  "homepage_url": "https://github.com/rustwasm/gloo/tree/master/examples/webextension",
+  "permissions": [
+    "alarms",
+    "tabs"
+  ],
+  "browser_action": {
+    "default_title": "Gloo Webextensions",
+    "default_popup": "index.html"
+  },
+  "content_security_policy": "default-src 'self' 'unsafe-eval'"
+}

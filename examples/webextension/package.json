@@ -1,0 +1,14 @@
+{
+  "author": "Rust and WebAssembly Working Group",
+  "name": "webextension-example",
+  "version": "0.0.1",
+  "repository": "https://github.com/rustwasm/gloo",
+  "license": "Apache-2.0/MIT",
+  "scripts": {
+    "start": "npm run build && npx web-ext run",
+    "build": "wasm-pack build --target web"
+  },
+  "devDependencies": {
+    "web-ext": "^3.0.0"
+  }
+}
