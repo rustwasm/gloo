@@ -91,53 +91,57 @@ fn timeout_future_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsVal
 #[wasm_bindgen_test(async)]
 fn interval() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
     let (mut sender, receiver) = mpsc::channel(1);
-    Interval::new(1, move || sender.try_send(()).unwrap()).forget();
+    let i = Interval::new(1, move || {
+        if !sender.is_closed() {
+            sender.try_send(()).unwrap()
+        }
+    });
+
     receiver
         .take(5)
         .map_err(|_| "impossible".into())
-        .for_each(|_| Ok(()))
+        .collect()
+        .and_then(|results| {
+            drop(i);
+            assert_eq!(results.len(), 5);
+            Ok(())
+        })
 }
 
 #[wasm_bindgen_test(async)]
 fn interval_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
-    let cell = Rc::new(Cell::new(false));
+    let (mut i_sender, i_receiver) = mpsc::channel(1);
 
-    let i = Interval::new(1, {
-        let cell = cell.clone();
-        move || {
-            cell.set(true);
-            panic!("should have been cancelled");
-        }
-    });
+    let i = Interval::new(1, move || i_sender.try_send(()).unwrap());
     i.cancel();
 
+    // This keeps us live for long enough that if any erroneous Interval callbacks fired, we'll have seen them.
     let (mut sender, receiver) = mpsc::channel(1);
-    Interval::new(2, move || {
+    Timeout::new(50, move || {
         sender.try_send(()).unwrap();
-        assert_eq!(cell.get(), false);
     })
     .forget();
 
     receiver
+        .merge(i_receiver)
+        .take(2)
         .map_err(|_| "impossible".into())
-        .for_each(|_| Ok(()))
+        .collect()
+        .and_then(|results| {
+            // Should only be 1 item - and that's from the timeout. Anything more means interval spuriously fired.
+            assert_eq!(results.len(), 1);
+            Ok(())
+        })
 }
 
 #[wasm_bindgen_test(async)]
 fn interval_stream() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
-    let cell = Rc::new(Cell::new(0));
     IntervalStream::new(1)
         .take(5)
         .map_err(|_| "impossible".into())
-        .for_each({
-            let cell = cell.clone();
-            move |_| {
-                cell.set(cell.get() + 1);
-                Ok(())
-            }
-        })
-        .and_then(move |_| {
-            assert_eq!(cell.get(), 5);
+        .collect()
+        .and_then(|results| {
+            assert_eq!(results.len(), 5);
             Ok(())
         })
 }
