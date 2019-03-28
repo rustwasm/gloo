@@ -19,7 +19,7 @@ pub struct ReadAsString {
 impl FileReader {
     pub fn new() -> FileReader {
         FileReader {
-            inner: web_sys::FileReader::new().unwrap(),
+            inner: web_sys::FileReader::new().unwrap_throw(),
         }
     }
 

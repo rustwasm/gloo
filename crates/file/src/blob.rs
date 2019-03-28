@@ -1,5 +1,7 @@
 pub use crate::file::File;
 
+use wasm_bindgen::UnwrapThrowExt;
+
 pub trait Blob: raw::Blob {
     fn size(&self) -> usize {
         self.raw().size() as usize
@@ -17,7 +19,7 @@ pub struct DataBlob {
 impl DataBlob {
     pub fn new(content: &str) -> DataBlob {
         let parts = js_sys::Array::of1(&wasm_bindgen::JsValue::from_str(content));
-        let inner = web_sys::Blob::new_with_str_sequence(&parts).unwrap();
+        let inner = web_sys::Blob::new_with_str_sequence(&parts).unwrap_throw();
         DataBlob { inner }
     }
 }
