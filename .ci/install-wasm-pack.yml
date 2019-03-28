@@ -1,4 +1,4 @@
-- steps:
+steps:
   - script: "curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh -s -- -f"
     displayName: "Install `wasm-pack`"
   - script: "wasm-pack --version"
