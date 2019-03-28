@@ -16,3 +16,8 @@ default = []
 futures = ["gloo-timers/futures"]
 
 [workspace]
+members = [
+    "crates/console-timer",
+    "crates/timers",
+    "crates/webextensions",
+]

@@ -1,0 +1,9 @@
+[package]
+name = "gloo-webextensions"
+version = "0.1.0"
+authors = ["Rust and WebAssembly Working Group"]
+edition = "2018"
+
+[dependencies]
+wasm-bindgen = "0.2.37"
+js-sys = "0.3.14"
