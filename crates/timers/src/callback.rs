@@ -154,7 +154,7 @@ impl Interval {
     {
         let mut callback = Some(callback);
         let closure = Closure::wrap(Box::new(move || {
-            let mut callback = callback.take().unwrap_throw();
+            let callback = callback.as_mut().take().unwrap_throw();
             callback();
         }) as Box<FnMut()>);
 
