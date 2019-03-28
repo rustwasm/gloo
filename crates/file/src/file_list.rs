@@ -30,7 +30,7 @@ impl FileList {
         }
     }
 
-    pub fn into_vec(self) -> Vec<File> {
+    pub fn to_vec(&self) -> Vec<File> {
         self.iter().collect()
     }
 }
@@ -53,5 +53,50 @@ impl<'a> Iterator for FileListIter<'a> {
         assert!(file.is_some());
 
         file
+    }
+}
+
+pub struct FileListIntoIter {
+    file_list: FileList,
+    current: usize,
+}
+
+impl Iterator for FileListIntoIter {
+    type Item = File;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current >= self.file_list.len() {
+            return None;
+        }
+        let file = self.file_list.get(self.current);
+        self.current += 1;
+
+        assert!(file.is_some());
+
+        file
+    }
+}
+
+impl IntoIterator for FileList {
+    type Item = File;
+    type IntoIter = FileListIntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        FileListIntoIter {
+            file_list: self,
+            current: 0,
+        }
+    }
+}
+
+impl<'a> IntoIterator for &'a FileList {
+    type Item = File;
+    type IntoIter = FileListIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        FileListIter {
+            file_list: self,
+            current: 0,
+        }
     }
 }
