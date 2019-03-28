@@ -18,20 +18,20 @@ jobs:
     steps:
       - template: .ci/install-rust.yml
       - template: .ci/install-wasm-pack.yml
-      - displayName: "Run `wasm-pack test`"
-        script: |
+      - script: |
           for x in $(ls crates); do
             wasm-pack test --headless --firefox crates/$x -- --all-features || exit 1
             wasm-pack test --headless --firefox crates/$x -- --no-default-features || exit 1
           done
+        displayName: "Run `wasm-pack test`"
   - job: test_headless_chrome
     displayName: "Headless Browser Tests (Chrome)"
     steps:
       - template: .ci/install-rust.yml
       - template: .ci/install-wasm-pack.yml
-      - displayName: "Run `wasm-pack test`"
-        script: |
+      - script: |
           for x in $(ls crates); do
             wasm-pack test --headless --chrome crates/$x -- --all-features || exit 1
             wasm-pack test --headless --chrome crates/$x -- --no-default-features || exit 1
           done
+        displayName: "Run `wasm-pack test`"
