@@ -4,14 +4,14 @@
 use futures::Future;
 use wasm_bindgen_test::*;
 
-use gloo_file::{DataBlob, FileReader};
+use gloo_file::{Blob, FileReader};
 
 wasm_bindgen_test_configure!(run_in_browser);
 
 #[wasm_bindgen_test(async)]
 fn reading_a_blob() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
     let reader = FileReader::new();
-    let blob = DataBlob::new("hello");
+    let blob = Blob::new("hello");
 
     reader
         .read_as_string(&blob)
