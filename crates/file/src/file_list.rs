@@ -1,4 +1,4 @@
-use crate::file::File;
+use crate::blob::File;
 
 pub struct FileList {
     inner: web_sys::FileList,

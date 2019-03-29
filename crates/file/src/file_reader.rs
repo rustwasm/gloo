@@ -4,7 +4,7 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::blob::Blob;
+use crate::blob::BlobLike;
 
 #[derive(Debug)]
 pub struct FileReader {
@@ -23,7 +23,7 @@ impl FileReader {
         }
     }
 
-    pub fn read_as_string(self, blob: &impl Blob) -> ReadAsString {
+    pub fn read_as_string(self, blob: &impl BlobLike) -> ReadAsString {
         let (tx, rx) = futures::sync::oneshot::channel();
         let reader = self.inner.clone();
         let closure = Closure::once(move || {
@@ -33,7 +33,7 @@ impl FileReader {
         });
         let function = closure.as_ref().dyn_ref().unwrap_throw();
         self.inner.clone().set_onload(Some(&function));
-        self.inner.read_as_text(&blob.raw()).unwrap_throw();
+        self.inner.read_as_text(&blob.as_raw()).unwrap_throw();
         ReadAsString {
             receiver: rx,
             _closure: closure,
