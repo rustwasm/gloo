@@ -67,13 +67,9 @@ TODO
 #[cfg(feature = "futures")]
 extern crate futures_rs as futures;
 
-use wasm_bindgen::prelude::*;
-
-fn window() -> web_sys::Window {
-    web_sys::window().unwrap_throw()
-}
-
 pub mod callback;
 
 #[cfg(feature = "futures")]
 pub mod future;
+
+mod sys;

@@ -1,6 +1,6 @@
 //! Callback-style timer APIs.
 
-use super::window;
+use super::sys::*;
 use std::fmt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -20,7 +20,7 @@ pub struct Timeout {
 impl Drop for Timeout {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            window().clear_timeout_with_handle(id);
+            clear_timeout(id);
         }
     }
 }
@@ -50,12 +50,10 @@ impl Timeout {
     {
         let closure = Closure::once(callback);
 
-        let id = window()
-            .set_timeout_with_callback_and_timeout_and_arguments_0(
-                closure.as_ref().unchecked_ref::<js_sys::Function>(),
-                millis as i32,
-            )
-            .unwrap_throw();
+        let id = set_timeout(
+            closure.as_ref().unchecked_ref::<js_sys::Function>(),
+            millis as i32,
+        );
 
         Timeout {
             id: Some(id),
@@ -125,7 +123,7 @@ pub struct Interval {
 impl Drop for Interval {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            window().clear_interval_with_handle(id);
+            clear_interval(id);
         }
     }
 }
@@ -158,12 +156,10 @@ impl Interval {
             callback();
         }) as Box<FnMut()>);
 
-        let id = window()
-            .set_interval_with_callback_and_timeout_and_arguments_0(
-                closure.as_ref().unchecked_ref::<js_sys::Function>(),
-                millis as i32,
-            )
-            .unwrap_throw();
+        let id = set_interval(
+            closure.as_ref().unchecked_ref::<js_sys::Function>(),
+            millis as i32,
+        );
 
         Interval {
             id: Some(id),
