@@ -5,8 +5,14 @@ pub trait BlobLike {
         self.as_raw().size() as usize
     }
 
+    #[cfg(feature = "mime")]
     fn mime_type(&self) -> Option<mime::Mime> {
         Some(self.as_raw().type_().parse().ok()?)
+    }
+
+    #[cfg(not(feature = "mime"))]
+    fn mime_type(&self) -> Option<String> {
+        Some(self.as_raw().type_())
     }
 
     fn as_raw(&self) -> &web_sys::Blob;
