@@ -150,11 +150,7 @@ impl Interval {
     where
         F: 'static + FnMut(),
     {
-        let mut callback = Some(callback);
-        let closure = Closure::wrap(Box::new(move || {
-            let mut callback = callback.take().unwrap_throw();
-            callback();
-        }) as Box<FnMut()>);
+        let closure = Closure::wrap(Box::new(callback) as Box<FnMut()>);
 
         let id = set_interval(
             closure.as_ref().unchecked_ref::<js_sys::Function>(),
