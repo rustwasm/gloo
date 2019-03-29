@@ -1,6 +1,6 @@
 //! Callback-style timer APIs.
 
-use super::{clear_interval, clear_timeout, set_interval, set_timeout};
+use super::sys::*;
 use std::fmt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;

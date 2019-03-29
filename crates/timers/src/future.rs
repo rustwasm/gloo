@@ -1,6 +1,6 @@
 //! `Future`- and `Stream`-backed timers APIs.
 
-use super::{clear_interval, clear_timeout, set_interval, set_timeout};
+use super::sys::*;
 use futures::prelude::*;
 use futures::sync::mpsc;
 use std::fmt;

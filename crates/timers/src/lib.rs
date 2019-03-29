@@ -67,25 +67,9 @@ TODO
 #[cfg(feature = "futures")]
 extern crate futures_rs as futures;
 
-use js_sys::Function;
-use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_name = "setTimeout")]
-    pub fn set_timeout(handler: &Function, timeout: i32) -> i32;
-
-    #[wasm_bindgen(js_name = "clearTimeout")]
-    pub fn clear_timeout(token: i32);
-
-    #[wasm_bindgen(js_name = "setInterval")]
-    pub fn set_interval(handler: &Function, timeout: i32) -> i32;
-
-    #[wasm_bindgen(js_name = "clearInterval")]
-    pub fn clear_interval(token: i32);
-}
-
 pub mod callback;
 
 #[cfg(feature = "futures")]
 pub mod future;
+
+mod sys;
