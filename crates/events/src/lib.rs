@@ -21,9 +21,8 @@ pub struct EventListenerOptions {
 }
 
 impl EventListenerOptions {
-    ///
     #[inline]
-    pub fn to_js(&self) -> AddEventListenerOptions {
+    fn to_js(&self) -> AddEventListenerOptions {
         let mut options = AddEventListenerOptions::new();
 
         options.capture(self.capture);
@@ -60,7 +59,7 @@ pub struct EventListener {
 
 impl EventListener {
     #[inline]
-    fn new_(
+    fn raw_new(
         target: &EventTarget,
         event_type: Cow<'static, str>,
         callback: Closure<FnMut(Event)>,
@@ -97,7 +96,7 @@ impl EventListener {
     {
         let callback = Closure::wrap(Box::new(callback) as Box<FnMut(Event)>);
 
-        Self::new_(
+        Self::raw_new(
             target,
             event_type.into(),
             callback,
@@ -116,7 +115,7 @@ impl EventListener {
         let callback = Closure::wrap(Box::new(callback) as Box<FnMut(Event)>);
 
         NEW_OPTIONS
-            .with(move |options| Self::new_(target, event_type.into(), callback, options, false))
+            .with(move |options| Self::raw_new(target, event_type.into(), callback, options, false))
     }
 
     ///
@@ -129,7 +128,7 @@ impl EventListener {
         let callback = Closure::once(callback);
 
         ONCE_OPTIONS
-            .with(move |options| Self::new_(target, event_type.into(), callback, options, false))
+            .with(move |options| Self::raw_new(target, event_type.into(), callback, options, false))
     }
 
     ///

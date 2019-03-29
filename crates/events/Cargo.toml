@@ -16,4 +16,14 @@ features = [
 ]
 
 [dev-dependencies]
+js-sys = "0.3.14"
+futures = "0.1.25"
 wasm-bindgen-test = "0.2.37"
+
+[dev-dependencies.web-sys]
+features = [
+	"HtmlElement",
+	"Window",
+	"Document",
+	"MouseEvent",
+]
