@@ -56,4 +56,16 @@ impl File {
     pub fn as_raw(&self) -> &web_sys::File {
         &self.inner
     }
+
+    pub fn name(&self) -> String {
+        self.inner.name()
+    }
+
+    pub fn last_modified_date(&self) -> u64 {
+        self.inner.last_modified() as u64
+    }
+
+    pub fn size(&self) -> u64 {
+        self.inner.size() as u64
+    }
 }
