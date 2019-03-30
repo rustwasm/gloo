@@ -11,11 +11,6 @@ pub struct FileReader {
     inner: web_sys::FileReader,
 }
 
-pub struct ReadAsString {
-    receiver: oneshot::Receiver<String>,
-    _closure: Closure<FnMut()>,
-}
-
 impl FileReader {
     pub fn new() -> FileReader {
         FileReader {
@@ -23,7 +18,7 @@ impl FileReader {
         }
     }
 
-    pub fn read_as_string(self, blob: &impl BlobLike) -> ReadAsString {
+    pub fn read_as_string(self, blob: &impl BlobLike) -> ReadAs<String> {
         let (tx, rx) = futures::sync::oneshot::channel();
         let reader = self.inner.clone();
         let closure = Closure::once(move || {
@@ -34,15 +29,60 @@ impl FileReader {
         let function = closure.as_ref().dyn_ref().unwrap_throw();
         self.inner.clone().set_onload(Some(&function));
         self.inner.read_as_text(&blob.as_raw()).unwrap_throw();
-        ReadAsString {
+        ReadAs {
+            inner: self.inner,
+            receiver: rx,
+            _closure: closure,
+        }
+    }
+
+    pub fn read_as_data_url(self, blob: &impl BlobLike) -> ReadAs<String> {
+        let (tx, rx) = futures::sync::oneshot::channel();
+        let reader = self.inner.clone();
+        let closure = Closure::once(move || {
+            let _ = reader.result().map(|js_string| {
+                let _ = tx.send(js_string.as_string().unwrap_throw());
+            });
+        });
+        let function = closure.as_ref().dyn_ref().unwrap_throw();
+        self.inner.clone().set_onload(Some(&function));
+        self.inner.read_as_data_url(&blob.as_raw()).unwrap_throw();
+        ReadAs {
+            inner: self.inner,
+            receiver: rx,
+            _closure: closure,
+        }
+    }
+
+    pub fn read_as_array_buffer(self, blob: &impl BlobLike) -> ReadAs<js_sys::ArrayBuffer> {
+        let (tx, rx) = futures::sync::oneshot::channel();
+        let reader = self.inner.clone();
+        let closure = Closure::once(move || {
+            let _ = reader.result().map(|array_buffer| {
+                let _ = tx.send(array_buffer.into());
+            });
+        });
+        let function = closure.as_ref().dyn_ref().unwrap_throw();
+        self.inner.clone().set_onload(Some(&function));
+        self.inner
+            .read_as_array_buffer(&blob.as_raw())
+            .unwrap_throw();
+        ReadAs {
+            inner: self.inner,
             receiver: rx,
             _closure: closure,
         }
     }
 }
 
-impl Future for ReadAsString {
-    type Item = String;
+pub struct ReadAs<T> {
+    receiver: oneshot::Receiver<T>,
+    _closure: Closure<FnMut()>,
+    inner: web_sys::FileReader,
+}
+
+impl<T> Future for ReadAs<T> {
+    type Item = T;
     type Error = ();
 
     fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
@@ -55,11 +95,19 @@ impl Future for ReadAsString {
 }
 
 // TODO: remove when wasm-bindgen#1387 is fixed
-impl std::fmt::Debug for ReadAsString {
+impl<T: std::fmt::Debug> std::fmt::Debug for ReadAs<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("EventListener")
             .field("receiver", &self.receiver)
             .field("callback", &"Closure { ... }")
             .finish()
+    }
+}
+
+impl<T> std::ops::Drop for ReadAs<T> {
+    fn drop(&mut self) {
+        if self.inner.ready_state() < 2 {
+            self.inner.abort();
+        }
     }
 }
