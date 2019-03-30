@@ -26,4 +26,5 @@ features = [
 	"Window",
 	"Document",
 	"MouseEvent",
+	"ProgressEvent",
 ]
