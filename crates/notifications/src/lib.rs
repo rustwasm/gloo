@@ -1,14 +1,74 @@
 //! Displaying notifications on the web.
 //!
-//! This API comes in two flavors:
-//!
-//! 1. a callback style (that more directly mimics the JavaScript APIs), and
-//! 2. a `Future`s API.
+//! This API comes in two flavors: A callback style and `Future`s API.
 //!
 //! Before a notification can be displayed, the user of the browser has to give his permission.
 //!
-//! Because the permission can also be withdrawn, permission *must* be checked
-//! every time a notification is displayed.
+//! ## 1. Callback style
+//!
+//! ```rust
+//! use gloo_notifications::Notification;
+//!
+//! Notification::request_permission_map(|mut builder| {
+//!     builder.title("Notification title").show();
+//! });
+//!
+//! Notification::request_permission_map_or(|mut builder| {
+//!     builder.title("Notification title")
+//!         .body("Notification body")
+//!         .show();
+//! }, |_| {
+//!     // in case the permission is denied
+//! });
+//!
+//! // short form, if you only need a title
+//! Notification::request_permission_with_title("Notification title");
+//! ```
+//!
+//! ## 2. `Future` API:
+//!
+//! ```rust
+//! use gloo_notifications::Notification;
+//!
+//! Notification::request_permission()
+//!     .map(|mut builder| {
+//!         builder.title("Notification title").show();
+//!     })
+//!     .map_err(|_| {
+//!         // in case the permission is denied
+//!     })
+//! ```
+//!
+//! ## Adding event listeners
+//!
+//! This part of the API is **unstable**!
+//!
+//! ```rust
+//! use gloo_notifications::Notification;
+//!
+//! Notification::request_permission_map(|mut builder| {
+//!     let notification = builder
+//!         .title("Notification title")
+//!         .show();
+//!
+//!     notification.onclick(|_| { ... });
+//! })
+//! ```
+//!
+//! ## Macro
+//!
+//! ```rust
+//! use gloo_notifications::{Notification, notification};
+//!
+//! // requests permission, then displays the notification
+//! // and adds a "click" event listener
+//! notification! {
+//!     title: "Hello World",
+//!     body: "Foo",
+//!     icon: "/assets/notification.png";
+//!     onclick: |_| {}
+//! }
+//! ```
 
 #![cfg_attr(feature = "futures", doc = "```no_run")]
 #![cfg_attr(not(feature = "futures"), doc = "```ignore")]
@@ -26,68 +86,56 @@ pub mod future;
 mod builder;
 pub use builder::NotificationBuilder;
 
-/// A notification. This struct can not be created directly,
-/// because you might not have permission to show a notification.
+/// A notification.
 ///
-/// ## 1. Callback API
-///
-/// ```rust
-/// use gloo_notifications::Notification;
-///
-/// Notification::request_permission_map(|mut builder| {
-///     let _notification = builder
-///         .title("Notification title")
-///         .show();
-/// });
-///
-/// // or
-///
-/// Notification::request_permission_map_or(|mut builder| {
-///     let _notification = builder
-///         .title("Notification title")
-///         .show();
-/// }, |_| {
-///     // in case the permission is denied
-/// });
-/// ```
-///
-/// ## 2. `Future` API:
-///
-/// ```rust
-/// use gloo_notifications::Notification;
-///
-/// Notification::request_permission()
-///     .map(|mut builder| {
-///         let _notification = builder
-///             .title("Notification title")
-///             .show();
-///     })
-///     .map_err(|_| {
-///         // in case the permission is denied
-///     })
-/// ```
-///
-/// ## Adding event listeners
-///
-/// ```rust
-/// use gloo_notifications::Notification;
-///
-/// Notification::request_permission()
-///     .map(|mut builder| {
-///         let notification = builder
-///             .title("Notification title")
-///             .show();
-///
-///         on(&notification, |e: ClickEvent| {});
-///         on(&notification, |e: ShowEvent | {});
-///         on(&notification, |e: ErrorEvent| {});
-///         on(&notification, |e: CloseEvent| {});
-///     })
-/// ```
+/// This struct can not be created directly, you have to request permission first.
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct Notification {
     sys_notification: web_sys::Notification,
+}
+
+/// Requests permission, then displays the notification if the permission was granted.
+///
+/// ### Example
+///
+/// ```rust
+/// notification! {
+///     title: "Hello World",
+///     body: "Foo",
+/// }
+/// ```
+///
+/// The identifiers are the same as the setter methods of `NotificationBuilder`.
+///
+/// The macro can also add a "click" event listener. Simply add a semicolon `;` after the
+/// properties and add a `onclick` property:
+///
+///
+/// ```rust
+/// notification! {
+///     title: "Hello World",
+///     body: "Foo" ;
+///     onclick: |_| { ... }
+/// }
+/// ```
+#[macro_export]
+macro_rules! notification {
+    ( $($k:ident : $v:expr),* $(,)? ) => (
+        Notification::request_permission_map(|mut builder| {
+            builder
+            $( .$k($v) )*
+            .show();
+        });
+    );
+    ( $($k:ident : $v:expr),* ; onclick: $e:expr $(,)? ) => (
+        Notification::request_permission_map(|mut builder| {
+            let o = builder
+            $( .$k($v) )*
+            .show();
+            o.onclick(Some($e));
+        });
+    );
 }
 
 impl Notification {
@@ -163,24 +211,6 @@ impl Notification {
         web_sys::Notification::request_permission()
             .unwrap_throw()
             .then(&resolve);
-    }
-
-    /// Requests permission to display notifications,
-    /// and displays a notification with a title, if the permission is granted.
-    ///
-    /// If the permission is denied, `f()` is called.
-    pub fn request_permission_with_title_or<Err>(title: &'static str, f: Err)
-    where
-        Err: FnMut(JsValue) + 'static
-    {
-        let resolve = Closure::once(move |_| {
-            Notification::with_title(title);
-        });
-        let reject = Closure::once(f);
-
-        web_sys::Notification::request_permission()
-            .unwrap_throw()
-            .then2(&resolve, &reject);
     }
 
 
