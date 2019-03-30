@@ -1,0 +1,32 @@
+[package]
+name = "gloo-storage"
+version = "0.1.0"
+authors = ["Rust and WebAssembly Working Group"]
+edition = "2018"
+
+[dependencies]
+futures = "0.1.25"
+js-sys = "0.3.17"
+serde_json = { optional = true, version = "1.0" }
+wasm-bindgen = "0.2.40"
+wasm-bindgen-futures = "0.3.17"
+web-sys = "0.3.17"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.2.37"
+
+[features]
+default = ["indexed-db"]
+indexed-db = [
+    "web-sys/IdbDatabase",
+    "web-sys/IdbFactory",
+    "web-sys/IdbIndex",
+    "web-sys/IdbIndexParameters",
+    "web-sys/IdbObjectStore",
+    "web-sys/IdbOpenDbOptions",
+    "web-sys/IdbOpenDbRequest",
+    "web-sys/IdbRequest",
+    "web-sys/IdbTransaction",
+    "web-sys/Window"
+]
+json-storage = ["serde_json", "web-sys/Storage", "web-sys/Window"]

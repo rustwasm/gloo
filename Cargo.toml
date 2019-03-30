@@ -8,8 +8,9 @@ readme = "README.md"
 version = "0.1.0"
 
 [dependencies]
-gloo-timers = { version = "0.1.0", path = "crates/timers" }
 gloo-console-timer = { version = "0.1.0", path = "crates/console-timer" }
+gloo-storage = { version = "0.1.0", path = "crates/storage" }
+gloo-timers = { version = "0.1.0", path = "crates/timers" }
 
 [features]
 default = []
