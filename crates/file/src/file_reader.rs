@@ -1,8 +1,5 @@
-use futures::sync::oneshot;
-use futures::{Async, Future};
-use wasm_bindgen::closure::Closure;
-use wasm_bindgen::JsCast;
-use wasm_bindgen::UnwrapThrowExt;
+use futures::{sync::oneshot, Async, Future};
+use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
 
 use crate::blob::BlobLike;
 
@@ -19,54 +16,45 @@ impl FileReader {
     }
 
     pub fn read_as_string(self, blob: &impl BlobLike) -> ReadAs<String> {
-        let (tx, rx) = futures::sync::oneshot::channel();
-        let reader = self.inner.clone();
-        let closure = Closure::once(move || {
-            let _ = reader.result().map(|js_string| {
-                let _ = tx.send(js_string.as_string().unwrap_throw());
-            });
-        });
-        let function = closure.as_ref().dyn_ref().unwrap_throw();
-        self.inner.clone().set_onload(Some(&function));
-        self.inner.read_as_text(&blob.as_raw()).unwrap_throw();
-        ReadAs {
-            inner: self.inner,
-            receiver: rx,
-            _closure: closure,
-        }
+        self.read_as(
+            blob,
+            |js| js.as_string().unwrap_throw(),
+            web_sys::FileReader::read_as_text,
+        )
     }
 
     pub fn read_as_data_url(self, blob: &impl BlobLike) -> ReadAs<String> {
-        let (tx, rx) = futures::sync::oneshot::channel();
-        let reader = self.inner.clone();
-        let closure = Closure::once(move || {
-            let _ = reader.result().map(|js_string| {
-                let _ = tx.send(js_string.as_string().unwrap_throw());
-            });
-        });
-        let function = closure.as_ref().dyn_ref().unwrap_throw();
-        self.inner.clone().set_onload(Some(&function));
-        self.inner.read_as_data_url(&blob.as_raw()).unwrap_throw();
-        ReadAs {
-            inner: self.inner,
-            receiver: rx,
-            _closure: closure,
-        }
+        self.read_as(
+            blob,
+            |js| js.as_string().unwrap_throw(),
+            web_sys::FileReader::read_as_data_url,
+        )
     }
 
     pub fn read_as_array_buffer(self, blob: &impl BlobLike) -> ReadAs<js_sys::ArrayBuffer> {
+        self.read_as(
+            blob,
+            std::convert::Into::into,
+            web_sys::FileReader::read_as_array_buffer,
+        )
+    }
+
+    fn read_as<T, F, G>(self, blob: &impl BlobLike, convert: F, start_read: G) -> ReadAs<T>
+    where
+        T: 'static,
+        F: Fn(wasm_bindgen::JsValue) -> T + 'static,
+        G: Fn(&web_sys::FileReader, &web_sys::Blob) -> Result<(), wasm_bindgen::JsValue>,
+    {
         let (tx, rx) = futures::sync::oneshot::channel();
         let reader = self.inner.clone();
         let closure = Closure::once(move || {
-            let _ = reader.result().map(|array_buffer| {
-                let _ = tx.send(array_buffer.into());
+            let _ = reader.result().map(|js_value| {
+                let _ = tx.send(convert(js_value));
             });
         });
         let function = closure.as_ref().dyn_ref().unwrap_throw();
         self.inner.clone().set_onload(Some(&function));
-        self.inner
-            .read_as_array_buffer(&blob.as_raw())
-            .unwrap_throw();
+        start_read(&self.inner, blob.as_raw()).unwrap_throw();
         ReadAs {
             inner: self.inner,
             receiver: rx,
