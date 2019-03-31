@@ -1,9 +1,8 @@
-use gloo_webextensions::callbacks::{alarms, Alarm};
-use js_sys::{Object, Reflect};
+use gloo_webextensions::callbacks::{alarms, Alarm, AlarmInfo};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-const DELAY: f64 = 0.1;
+const DELAY_IN_MINUTES: f64 = 0.1; // 6 seconds
 
 #[wasm_bindgen(start)]
 pub fn start() {
@@ -26,9 +25,13 @@ pub fn start() {
             .dyn_into()
             .unwrap();
 
-        let info = Object::new();
-        Reflect::set(&info, &"delayInMinutes".into(), &DELAY.into()).unwrap();
-        alarms().create_with_name_and_info(&alarm_name_input.value().into(), &info);
+        Alarm::create_with_name_and_info(
+            &alarm_name_input.value(),
+            &AlarmInfo {
+                delay_in_minutes: Some(DELAY_IN_MINUTES),
+                ..Default::default()
+            },
+        );
 
         let listener = Closure::wrap(Box::new(on_alarm) as Box<FnMut(Alarm)>);
         alarms().on_alarm().add_listener(&listener);

@@ -5,6 +5,7 @@
 use std::marker::PhantomData;
 
 use js_sys::{Function, JsString, Object, Promise};
+use serde::Serialize;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -41,6 +42,29 @@ pub fn alarms() -> Alarms {
     browser.alarms()
 }
 
+/// You can use this to specify when the alarm will initially fire, either as
+/// an absolute value (`when`), or as a delay from the time the alarm is set
+/// (`delay_in_minutes`). To make the alarm recur, specify `period_in_minutes`.
+#[derive(Serialize, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct AlarmInfo {
+    /// The time the alarm will fire first, given as milliseconds since the epoch.
+    /// If you specify `when`, don't specify `delay_in_minutes`.
+    pub when: Option<u64>,
+
+    /// The time the alarm will fire first, given as minutes from the time the
+    /// alarm is set.
+    /// If you specify `delay_in_minutes`, don't specify `when`.
+    pub delay_in_minutes: Option<f64>,
+
+    /// If this is specified, the alarm will fire again every `period_in_minutes`
+    /// after its initial firing. If you specify this value you may omit both
+    /// when and `delay_in_minutes`, and the alarm will then fire initially after
+    /// periodInMinutes. If `period_in_minutes` is not specified, the alarm will
+    /// only fire once.
+    pub period_in_minutes: Option<f64>,
+}
+
 #[wasm_bindgen]
 extern "C" {
     pub type Alarms;
@@ -71,7 +95,7 @@ extern "C" {
     ///
     /// [MDN Documentation](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/alarms/create)
     #[wasm_bindgen(method, js_name = create)]
-    pub fn create_with_name_and_info(this: &Alarms, name: &JsString, alarm_info: &Object);
+    pub fn create_with_name_and_info(this: &Alarms, name: &str, alarm_info: &Object);
 
     #[wasm_bindgen(method, getter, js_name = onAlarm)]
     fn raw_on_alarm(this: &Alarms) -> RawEvents;
@@ -107,6 +131,18 @@ extern "C" {
     /// its period in minutes.
     #[wasm_bindgen(method, getter, js_name = periodInMinutes)]
     pub fn period_in_minutes(this: &Alarm) -> Option<u64>;
+}
+
+impl Alarm {
+    /// Creates a new alarm for the current browser session. An alarm may fire
+    /// once or multiple times. An alarm is cleared after it fires for the last
+    /// time.
+    ///
+    /// [MDN Documentation](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/alarms/create)
+    pub fn create_with_name_and_info(name: &str, info: &AlarmInfo) {
+        alarms()
+            .create_with_name_and_info(name, &JsValue::from_serde(info).unwrap().unchecked_ref());
+    }
 }
 
 #[wasm_bindgen]
