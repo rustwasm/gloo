@@ -2,8 +2,11 @@
 //!
 //! [MDN Documentation](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions)
 
-use js_sys::{JsString, Object, Promise};
+use std::marker::PhantomData;
+
+use js_sys::{Function, JsString, Object, Promise};
 use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
 
 #[wasm_bindgen]
 extern "C" {
@@ -70,11 +73,17 @@ extern "C" {
     #[wasm_bindgen(method, js_name = create)]
     pub fn create_with_name_and_info(this: &Alarms, name: &JsString, alarm_info: &Object);
 
+    #[wasm_bindgen(method, getter, js_name = onAlarm)]
+    fn raw_on_alarm(this: &Alarms) -> RawEvents;
+}
+
+impl Alarms {
     /// Fired when any alarm set by the extension goes off.
     ///
     /// [MDN Documentation](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/alarms/onAlarm)
-    #[wasm_bindgen(method, getter, js_name = onAlarm)]
-    pub fn on_alarm(this: &Alarms) -> OnAlarm;
+    pub fn on_alarm(&self) -> Events<Alarm> {
+        Events::new(self.raw_on_alarm())
+    }
 }
 
 #[wasm_bindgen]
@@ -102,11 +111,48 @@ extern "C" {
 
 #[wasm_bindgen]
 extern "C" {
-    pub type OnAlarm;
+    type RawEvents;
+
+    #[wasm_bindgen(method, js_name = addListener)]
+    fn add_listener(this: &RawEvents, listener: &Function);
+
+    #[wasm_bindgen(method, js_name = removeListener)]
+    fn remove_listener(this: &RawEvents, listener: &Function);
+
+    #[wasm_bindgen(method, js_name = hasListener)]
+    fn has_listener(this: &RawEvents, listener: &Function);
+}
+
+///
+#[allow(missing_debug_implementations)]
+pub struct Events<T> {
+    inner: RawEvents,
+    _marker: PhantomData<T>,
+}
+
+impl<T> Events<T> {
+    fn new(inner: RawEvents) -> Self {
+        Self {
+            inner,
+            _marker: PhantomData,
+        }
+    }
 
     /// Adds a listener to this event.
-    #[wasm_bindgen(method, js_name = addListener)]
-    pub fn add_listener(this: &OnAlarm, listener: &Closure<FnMut(Alarm)>);
+    pub fn add_listener(&self, listener: &Closure<dyn FnMut(T)>) {
+        self.inner.add_listener(listener.as_ref().unchecked_ref())
+    }
+
+    /// Stop listening to this event.
+    pub fn remove_listener(&self, listener: &Closure<dyn FnMut(T)>) {
+        self.inner
+            .remove_listener(listener.as_ref().unchecked_ref())
+    }
+
+    /// Check whether listener is registered for this event.
+    pub fn has_listener(&self, listener: &Closure<dyn FnMut(T)>) {
+        self.inner.has_listener(listener.as_ref().unchecked_ref())
+    }
 }
 
 /// Getter for the `Tabs` object.
