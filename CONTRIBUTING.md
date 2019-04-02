@@ -190,7 +190,9 @@ If there are no new concerns uncovered, then the implementation just needs to be
 checked over by at least one team member. They provide code review and feedback
 on the implementation, then the feedback is addressed and pull request updated.
 Once the pull request is in a good place and CI is passing, a team member may
-approve the pull request and merge it into Gloo.
+approve the pull request and merge it into Gloo. If any team member raises
+concerns with the implementation, they must be resolved before the pull request
+is merged.
 
 #### Implementation Checklist
 
