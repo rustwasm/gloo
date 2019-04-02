@@ -1,5 +1,6 @@
 /*!
- */
+
+*/
 #![deny(missing_docs, missing_debug_implementations)]
 
 use std::borrow::Cow;
@@ -347,8 +348,15 @@ impl EventListener {
     {
         let callback = Closure::wrap(Box::new(callback) as Box<FnMut(Event)>);
 
-        NEW_OPTIONS
-            .with(move |options| Self::raw_new(target, event_type.into(), callback, options, EventListenerPhase::Bubble))
+        NEW_OPTIONS.with(move |options| {
+            Self::raw_new(
+                target,
+                event_type.into(),
+                callback,
+                options,
+                EventListenerPhase::Bubble,
+            )
+        })
     }
 
     /// This is exactly the same as [`EventListener::new`](#method.new), except the event will only fire once,
@@ -378,8 +386,15 @@ impl EventListener {
     {
         let callback = Closure::once(callback);
 
-        ONCE_OPTIONS
-            .with(move |options| Self::raw_new(target, event_type.into(), callback, options, EventListenerPhase::Bubble))
+        ONCE_OPTIONS.with(move |options| {
+            Self::raw_new(
+                target,
+                event_type.into(),
+                callback,
+                options,
+                EventListenerPhase::Bubble,
+            )
+        })
     }
 
     /// Registers an event listener on an [`EventTarget`](https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.EventTarget.html).
@@ -498,13 +513,16 @@ impl EventListener {
 impl Drop for EventListener {
     #[inline]
     fn drop(&mut self) {
-        self.target
-            .remove_event_listener_with_callback_and_bool(
-                self.event_type(),
-                self.callback().as_ref().unchecked_ref(),
-                self.phase.is_capture(),
-            )
-            .unwrap_throw();
+        // This will only be None if forget() was called
+        if let Some(callback) = &self.callback {
+            self.target
+                .remove_event_listener_with_callback_and_bool(
+                    self.event_type(),
+                    callback.as_ref().unchecked_ref(),
+                    self.phase.is_capture(),
+                )
+                .unwrap_throw();
+        }
     }
 }
 

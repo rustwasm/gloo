@@ -25,6 +25,7 @@ features = [
 	"HtmlElement",
 	"Window",
 	"Document",
+	"Element",
 	"MouseEvent",
 	"ProgressEvent",
 ]

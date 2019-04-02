@@ -4,7 +4,7 @@
 
 use futures::prelude::*;
 use futures::sync::mpsc;
-use gloo_events::{EventListener, EventListenerOptions};
+use gloo_events::{EventListener, EventListenerOptions, EventListenerPhase};
 use js_sys::Error;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 use wasm_bindgen_test::*;
@@ -78,9 +78,9 @@ fn new_with_options() -> impl Future<Item = (), Error = JsValue> {
             &body,
             "click",
             &EventListenerOptions {
-                passive: false,
+                phase: EventListenerPhase::Capture,
                 once: false,
-                capture: true,
+                passive: false,
             },
             move |e| {
                 sender.send(|| {
@@ -109,9 +109,9 @@ fn new_with_options_once() -> impl Future<Item = (), Error = JsValue> {
             &body,
             "click",
             &EventListenerOptions {
-                passive: false,
+                phase: EventListenerPhase::Capture,
                 once: true,
-                capture: true,
+                passive: false,
             },
             move |e| {
                 sender.send(|| {
@@ -173,4 +173,19 @@ fn once() -> impl Future<Item = (), Error = JsValue> {
         is(results.len(), 1)?;
         Ok(())
     })
+}
+
+// TODO is it possible to somehow cleanup the closure after a timeout?
+#[wasm_bindgen_test]
+fn forget() {
+    let target = window()
+        .unwrap_throw()
+        .document()
+        .unwrap_throw()
+        .create_element("div")
+        .unwrap_throw();
+
+    let handler = EventListener::new(&target, "click", move |_| {});
+
+    handler.forget();
 }
