@@ -160,8 +160,8 @@ should follow:
       escape hatch for dropping down to raw `web_sys` bindings when an API isn't
       fully supported by the crate yet.
 
-      Similar for `from_fraw` constructors and `into_raw` conversion methods
-      when applicable.
+      Similar for `from_raw` constructors and `into_raw` conversion methods when
+      applicable.
 
 * [ ] There is a loose hierarchy with "mid-level" APIs (which are essentially
       thin wrappers over the low-level APIs), and "high-level" APIs (which make
