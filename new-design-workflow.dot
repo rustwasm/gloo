@@ -1,3 +1,7 @@
+// Re-render the PNG image with:
+//
+//     dot -Tpng new-design-workflow.dot -o new-design-workflow.png
+
 digraph {
   nodesep = 1.5;
 
