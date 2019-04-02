@@ -1,5 +1,7 @@
 /*!
+Using event listeners with [`web-sys`](https://crates.io/crates/web-sys) is hard! This crate provides an [`EventListener`](struct.EventListener.html) type which makes it easy!
 
+See the documentation for [`EventListener`](struct.EventListener.html) for more information.
 */
 #![deny(missing_docs, missing_debug_implementations)]
 
