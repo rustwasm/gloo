@@ -6,4 +6,3 @@
 // Re-exports of toolkit crates.
 pub use gloo_console_timer as console_timer;
 pub use gloo_timers as timers;
-pub use gloo_ani_frames as ani_frames;
