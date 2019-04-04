@@ -36,6 +36,7 @@ where
     }
 }
 
+#[derive(Clone)]
 struct Sender<A> {
     sender: mpsc::UnboundedSender<Result<A, JsValue>>,
 }
@@ -93,12 +94,7 @@ fn new_with_options() -> impl Future<Item = (), Error = JsValue> {
         body.click();
         body.click();
     })
-    .and_then(|results| {
-        is(results, vec![
-            (),
-            (),
-        ])
-    })
+    .and_then(|results| is(results, vec![(), ()]))
 }
 
 #[wasm_bindgen_test(async)]
@@ -125,11 +121,7 @@ fn once_with_options() -> impl Future<Item = (), Error = JsValue> {
         body.click();
         body.click();
     })
-    .and_then(|results| {
-        is(results, vec![
-            (),
-        ])
-    })
+    .and_then(|results| is(results, vec![()]))
 }
 
 #[wasm_bindgen_test(async)]
@@ -148,12 +140,7 @@ fn new() -> impl Future<Item = (), Error = JsValue> {
         body.click();
         body.click();
     })
-    .and_then(|results| {
-        is(results, vec![
-            (),
-            (),
-        ])
-    })
+    .and_then(|results| is(results, vec![(), ()]))
 }
 
 #[wasm_bindgen_test(async)]
@@ -172,11 +159,7 @@ fn once() -> impl Future<Item = (), Error = JsValue> {
         body.click();
         body.click();
     })
-    .and_then(|results| {
-        is(results, vec![
-            (),
-        ])
-    })
+    .and_then(|results| is(results, vec![()]))
 }
 
 // TODO is it possible to somehow cleanup the closure after a timeout?
@@ -192,4 +175,43 @@ fn forget() {
     let handler = EventListener::new(&target, "click", move |_| {});
 
     handler.forget();
+}
+
+#[wasm_bindgen_test(async)]
+fn dynamic_registration() -> impl Future<Item = (), Error = JsValue> {
+    mpsc(|sender| {
+        let body = body();
+
+        let handler1 = EventListener::new(&body, "click", {
+            let sender = sender.clone();
+            move |_| sender.send(|| Ok(1))
+        });
+
+        let handler2 = EventListener::new(&body, "click", {
+            let sender = sender.clone();
+            move |_| sender.send(|| Ok(2))
+        });
+
+        body.click();
+
+        drop(handler1);
+
+        body.click();
+
+        let handler3 = EventListener::new(&body, "click", {
+            let sender = sender.clone();
+            move |_| sender.send(|| Ok(3))
+        });
+
+        body.click();
+
+        drop(handler2);
+
+        body.click();
+
+        drop(handler3);
+
+        body.click();
+    })
+    .and_then(|results| is(results, vec![1, 2, 2, 2, 3, 3]))
 }
