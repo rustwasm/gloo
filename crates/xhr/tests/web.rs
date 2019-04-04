@@ -3,7 +3,8 @@
 #![cfg(target_arch = "wasm32")]
 
 use futures::prelude::*;
-use gloo_xhr::raw::XmlHttpRequest;
+use gloo_events::EventListener;
+use gloo_xhr::callback::XmlHttpRequest;
 use wasm_bindgen::*;
 use wasm_bindgen_test::*;
 
@@ -23,11 +24,14 @@ fn minimal_request_empty_body() -> impl Future<Item = (), Error = wasm_bindgen::
 
     let request = XmlHttpRequest::new();
 
-    request.set_onload(move |_event| {
+    let load_listener = EventListener::new(request.as_ref(), "load", move |_event| {
         sender.take().map(|sender| sender.send(()).unwrap());
     });
 
+    load_listener.forget();
+
     request.open(&http::Method::GET, "/");
+
     request.send_no_body();
 
     receiver.map_err(|_| JsValue::from_str("onload channel was canceled"))
@@ -42,9 +46,11 @@ fn on_error_callback() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> 
 
     let request = XmlHttpRequest::new();
 
-    request.set_onerror(move |_event| {
+    let error_listener = EventListener::new(request.as_ref(), "error", move |_event| {
         sender.take().map(|sender| sender.send(()).unwrap());
     });
+
+    error_listener.forget();
 
     // this will trigger a CORS error.
     request.open(&http::Method::GET, "https://example.com/");

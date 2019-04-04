@@ -4,21 +4,86 @@
   XmlHttpRequest.
 */
 
-/// The raw XmlHttpRequest API, wrapped with convenient Rust types.
+/// The raw XmlHttpRequest (XHR) API, wrapped with convenient Rust types.
 ///
-/// Synchronous requests are not supported (because deprecated).
-pub mod raw {
-    use wasm_bindgen::{closure::Closure, prelude::*, JsCast};
+/// ### Example:
+///
+/// ```
+/// use gloo_xhr::callback::XmlHttpRequest;
+/// use futures::sync::mpsc;
+/// use gloo_events::EventListener;
+///
+/// let (sender, receiver) = mpsc::unbounded::<()>();
+/// let request = XmlHttpRequest::new();
+///
+/// let load_listener = EventListener::new(request.as_ref(), "load", move |_event| {
+///     sender.unbounded_send(()).unwrap();
+/// });
+///
+/// load_listener.forget();
+///
+/// request.open(&http::Method::GET, "/");
+///
+/// request.send_no_body();
+/// ```
+///
+/// ### Events
+///
+/// The [`XmlHttpRequest`](crate::callback::XmlHttpRequest) object is an event target. The most frequently used are:
+///
+/// - `load`: when the response is received
+/// - `error`: when a network error occurred
+/// - `progress`: when progress is made on the **response download**. For progress on the request
+/// upload, see "Upload progress" below.
+///
+/// You can conveniently attach event listeners with [gloo-events][gloo-events].
+///
+/// ```
+/// use gloo_xhr::callback::XmlHttpRequest;
+///
+/// let request = XmlHttpRequest::new();
+///
+/// gloo_events::EventListener::new(request.as_ref(), "load", move |_event| {
+///     // do something with the event
+/// });
+/// ```
+///
+/// ### Upload progress
+///
+/// XHR supports progress events on uploads. You can access these events by attaching an event
+/// listener to the [`XmlHttpRequestUpload`](crate::callback::XmlHttpRequestUpload) object (returned by the `upload` method).
+///
+/// For further documentation on the browser API, see the [MDN guide][MDN using XHR].
+///
+/// ### Unsupported features
+///
+/// Synchronous requests are not supported because they are considered deprecated by most browsers.
+///
+/// You can access the underlying [`web_sys::XmlHttpRequest`](web_sys::XmlHttpRequest) through the [`as_raw`](crate::callback::XmlHttpRequest::as_raw) method.
+///
+/// [MDN using XHR]: https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest
+/// [gloo-events]: https://github.com/rustwasm/gloo
+pub mod callback {
+    use wasm_bindgen::{prelude::*, JsCast};
     use web_sys;
 
-    /// See MDN docs.
+    /// The main interface to the XmlHttpRequest API. See [module docs](crate::callback) for more extensive
+    /// documentation.
     #[derive(Debug, Clone)]
     pub struct XmlHttpRequest {
         xhr: web_sys::XmlHttpRequest,
     }
 
+    // This is so it can be used as an event target by gloo-events.
+    impl AsRef<web_sys::EventTarget> for XmlHttpRequest {
+        fn as_ref(&self) -> &web_sys::EventTarget {
+            self.xhr.as_ref()
+        }
+    }
+
     impl XmlHttpRequest {
-        /// Initialize an XmlHttpRequest.
+        /// Initialize an XmlHttpRequest. To actually perform the request, you will need to
+        /// call at least `open()` and `send()`.
         pub fn new() -> Self {
             // we assume this is safe because all browsers that support webassembly
             // implement XmlHttpRequest.
@@ -31,37 +96,39 @@ pub mod raw {
             &self.xhr
         }
 
-        /// See MDN docs.
+        /// Returns an event target for upload events.
         ///
-        /// Upload events are fired there.
+        /// See the [module docs](crate::callback) and `XmlHttpRequestUpload` for more information.
         pub fn upload(&self) -> XmlHttpRequestUpload {
             XmlHttpRequestUpload {
                 upload: self.xhr.upload().unwrap_throw(),
             }
         }
 
-        /// Open?
+        /// The `XMLHttpRequest` method `open()` initializes a newly-created request, or
+        /// re-initializes an existing one.
+        ///
+        /// [MDN docs](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/open)
         pub fn open(&self, method: &http::Method, url: &str) {
-            self.xhr
-                .open(&method.to_string(), url)
-                .expect_throw("opening XHR")
+            self.xhr.open(&method.to_string(), url).unwrap_throw()
         }
 
         /// Abort the request.
+        ///
+        /// This will fire an `abort` event on the `XmlHttpRequest`.
         pub fn abort(&self) {
-            self.xhr.abort().expect_throw("aborting XHR")
+            self.xhr.abort().unwrap_throw()
         }
 
-        /// Send without a body.
-        ///
-        /// Should probably be renamed.
+        /// `send()` without a body.
         pub fn send_no_body(&self) {
             self.xhr
                 .send()
                 .expect_throw("Error sending request. Did you forget to call `open`?")
         }
 
-        /// Send!
+        /// Actually send the request. In order to know the outcome, you have to attach
+        /// `load`, `abort` and `error` event listeners.
         pub fn send<B: XhrBody>(&self, body: B) {
             body.send(&self.xhr)
                 .expect_throw("Error sending request. Did you forget to call `open`?")
@@ -98,40 +165,6 @@ pub mod raw {
                     )
                 })
                 .collect()
-        }
-
-        /// The error callback can fire in cases such as CORS errors.
-        pub fn set_onerror<C>(&self, callback: C)
-        where
-            C: FnMut(web_sys::ProgressEvent) + 'static,
-        {
-            let closure = Closure::wrap(Box::new(callback) as Box<FnMut(web_sys::ProgressEvent)>);
-            self.xhr.set_onerror(Some(closure.as_ref().unchecked_ref()));
-            closure.forget();
-        }
-
-        /// see mdn
-        ///
-        /// This takes an FnMut because the callback can be called more than once (if
-        /// `send` is called more than once)
-        pub fn set_onload<C>(&self, callback: C)
-        where
-            C: FnMut(web_sys::ProgressEvent) + 'static,
-        {
-            let closure = Closure::wrap(Box::new(callback) as Box<FnMut(web_sys::ProgressEvent)>);
-            self.xhr.set_onload(Some(closure.as_ref().unchecked_ref()));
-            closure.forget();
-        }
-
-        /// see mdn
-        pub fn set_onprogress<C>(&self, callback: C)
-        where
-            C: FnMut(web_sys::ProgressEvent) + 'static,
-        {
-            let closure = Closure::wrap(Box::new(callback) as Box<FnMut(web_sys::ProgressEvent)>);
-            self.xhr
-                .set_onprogress(Some(closure.as_ref().unchecked_ref()));
-            closure.forget();
         }
 
         /// Get the response body, assuming `responseType` was set to text (the default).
@@ -250,7 +283,7 @@ pub mod raw {
         Text,
     }
 
-    /// https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState
+    /// [MDN docs](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState)
     #[derive(Debug)]
     pub enum ReadyState {
         /// Client has been created. `open()` not called yet.
@@ -290,33 +323,22 @@ pub mod raw {
         }
     }
 
-    /// See MDN docs.
+    /// The main interface to the XmlHttpRequestUpload API.
+    ///
+    /// This is mainly used as an event target for uploads (see [module docs](super)), and is
+    /// constructed by the [`upload()`](crate::callback::XmlHttpRequest::upload) method on
+    /// [XmlHttpRequest](crate::callback::XmlHttpRequest)).
+    ///
+    /// [MDN docs](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/upload)
     #[derive(Debug, Clone)]
     pub struct XmlHttpRequestUpload {
         upload: web_sys::XmlHttpRequestUpload,
     }
 
-    impl XmlHttpRequestUpload {
-        /// see mdn
-        pub fn set_onload<C>(&self, callback: C)
-        where
-            C: FnMut(web_sys::ProgressEvent) + 'static,
-        {
-            let closure = Closure::wrap(Box::new(callback) as Box<FnMut(web_sys::ProgressEvent)>);
-            self.upload
-                .set_onload(Some(closure.as_ref().unchecked_ref()));
-            closure.forget();
-        }
-
-        /// see mdn
-        pub fn set_onprogress<C>(&self, callback: C)
-        where
-            C: FnMut(web_sys::ProgressEvent) + 'static,
-        {
-            let closure = Closure::wrap(Box::new(callback) as Box<FnMut(web_sys::ProgressEvent)>);
-            self.upload
-                .set_onprogress(Some(closure.as_ref().unchecked_ref()));
-            closure.forget();
+    // This is so it can be used as an event target by gloo-events.
+    impl AsRef<web_sys::EventTarget> for XmlHttpRequestUpload {
+        fn as_ref(&self) -> &web_sys::EventTarget {
+            self.upload.as_ref()
         }
     }
 }
