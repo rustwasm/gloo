@@ -22,10 +22,10 @@ wasm-bindgen-test = "0.2.37"
 
 [dev-dependencies.web-sys]
 features = [
-	"HtmlElement",
-	"Window",
-	"Document",
-	"Element",
-	"MouseEvent",
-	"ProgressEvent",
+    "HtmlElement",
+    "Window",
+    "Document",
+    "Element",
+    "MouseEvent",
+    "ProgressEvent",
 ]
