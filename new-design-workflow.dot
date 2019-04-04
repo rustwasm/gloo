@@ -1,0 +1,98 @@
+// Re-render the PNG image with:
+//
+//     dot -Tpng new-design-workflow.dot -o new-design-workflow.png
+
+digraph {
+  nodesep = 1.5;
+
+  // Nodes
+
+  start [shape = "point", style = "invis", width = 0];
+  proposed [label = <<b>Design Proposed</b>>, shape = "circle", style = "filled", fillcolor = "#c5def5"];
+  accepted [label = <<b>Design Accepted</b>>, shape = "circle", style = "filled", fillcolor = "#c5def5"];
+  closed [label = <<b>Closed</b>>, shape = "doublecircle", style = "filled", fillcolor = "#f48b9b"];
+
+  wip_impl [label = <<b>WIP Implementation</b>>, shape = "circle", style = "filled", fillcolor = "#c5def5"];
+  changes_needed [label = <<b>Changes Needed</b>>, shape = "circle", style = "filled", fillcolor = "#c5def5"];
+  merged [label = <<b>Merged into Gloo</b>>, shape = "doublecircle", style = "filled", fillcolor = "#0be27e"];
+
+  // Edges
+
+  start -> proposed [label = <
+    <table border="0">
+      <tr><td align="left" cellpadding="5"><b>📝 Propose API Design</b></td></tr>
+      <tr><td align="left">Explain motivation and use cases</td></tr>
+      <tr><td align="left">Alternatives and rationale</td></tr>
+      <tr><td align="left">Uses API proposal template</td></tr>
+    </table>
+  >];
+
+  proposed -> proposed [label = <
+    <table border="0">
+      <tr><td align="left" cellpadding="5"><b>💬 Design Discussion</b></td></tr>
+      <tr><td align="left">Determine public types and function signatures</td></tr>
+      <tr><td align="left">Are the abstractions zero-cost?</td></tr>
+      <tr><td align="left">Does it expose the onion layers?</td></tr>
+      <tr><td align="left">Work towards consensus</td></tr>
+    </table>
+  >];
+
+  proposed -> closed [label = <
+    <table border="0">
+      <tr><td align="left" cellpadding="5"><b>❌ Rejected</b></td></tr>
+      <tr><td align="left">Fatal flaw discovered</td></tr>
+      <tr><td align="left">Consensus this doesn't belong in Gloo</td></tr>
+    </table>
+  >];
+
+  proposed -> closed [label = <
+    <table border="0">
+      <tr><td align="left" cellpadding="5"><b>📆 Delayed</b></td></tr>
+      <tr><td align="left">Promising, but don't want to focus on it now</td></tr>
+      <tr><td align="left">Blocked on something else</td></tr>
+    </table>
+  >];
+
+  proposed -> accepted [label = <
+    <table border="0">
+      <tr><td align="left" cellpadding="5"><b>✔ Accepted</b></td></tr>
+      <tr><td align="left">Consensus we want this design</td></tr>
+      <tr><td align="left">Clear how we will implement it</td></tr>
+      <tr><td align="left">2 or more team members sign off</td></tr>
+      <tr><td align="left">0 team members register concerns</td></tr>
+    </table>
+  >];
+
+  accepted -> wip_impl [label = <
+    <table border="0">
+      <tr><td align="left" cellpadding="5"><b>🔨 Pull Request Created</b></td></tr>
+      <tr><td align="left">Adds new <font face="monospace">gloo_whatever</font> crate</td></tr>
+      <tr><td align="left">Adds tests/docs/examples</td></tr>
+    </table>
+  >];
+
+  wip_impl -> changes_needed [label = <
+    <table border="0">
+      <tr><td align="left" cellpadding="5"><b>🤔 Changes Requested</b></td></tr>
+      <tr><td align="left">Missing docs/examples/tests</td></tr>
+      <tr><td align="left">CI is failing</td></tr>
+    </table>
+  >];
+
+  changes_needed -> wip_impl [label = <
+    <table border="0">
+      <tr><td align="left" cellpadding="5"><b>😂 Feedback Addressed</b></td></tr>
+      <tr><td align="left">Tests/docs/examples fixed</td></tr>
+      <tr><td align="left">CI is green</td></tr>
+    </table>
+  >];
+
+  wip_impl -> merged [label = <
+    <table border="0">
+      <tr><td align="left" cellpadding="5"><b>🎉 Merge</b></td></tr>
+      <tr><td align="left">All crate checklist items are checked</td></tr>
+      <tr><td align="left">CI is green</td></tr>
+      <tr><td align="left">At least 1 team member approves and merges PR</td></tr>
+    </table>
+  >];
+}
