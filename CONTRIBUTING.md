@@ -143,40 +143,40 @@ should follow:
 * [ ] Crate's public interface follows the [Rust API Guidelines][api-guidelines].
 
 * [ ] Callback-taking APIs are generic over `F: Fn(A) -> B` (or `FnMut` or
-      `FnOnce`) instead of taking `wasm_bindgen::Closure`s or
-      `js_sys::Function`s directly.
+  `FnOnce`) instead of taking `wasm_bindgen::Closure`s or
+  `js_sys::Function`s directly.
 
 * [ ] If the API can be implemented as a Future / Stream, then it should first
-      be implemented as a callback, with the callback API put into the
-      `callback` submodule.
+  be implemented as a callback, with the callback API put into the `callback`
+  submodule.
 
-      Then the Future / Stream should be implemented using the callback API, and
-      should be put into the `future` or `stream` submodule.
+  Then the Future / Stream should be implemented using the callback API, and
+  should be put into the `future` or `stream` submodule.
 
-      Make sure that the callback and Future / Stream APIs properly support
-      cancellation (if it is possible to do so).
+  Make sure that the callback and Future / Stream APIs properly support
+  cancellation (if it is possible to do so).
 
 * [ ] Uses nice Rust-y types and interfaces instead of passing around untyped
-      `JsValue`s.
+  `JsValue`s.
 
 * [ ] Has `fn as_raw(&self) -> &web_sys::Whatever` functions to get the
-      underlying raw `web_sys`, `js_sys`, or `JsValue` type. This provides an
-      escape hatch for dropping down to raw `web_sys` bindings when an API isn't
-      fully supported by the crate yet.
+  underlying raw `web_sys`, `js_sys`, or `JsValue` type. This provides an escape
+  hatch for dropping down to raw `web_sys` bindings when an API isn't fully
+  supported by the crate yet.
 
-      Similar for `from_raw` constructors and `into_raw` conversion methods when
-      applicable.
+  Similar for `from_raw` constructors and `into_raw` conversion methods when
+  applicable.
 
 * [ ] There is a loose hierarchy with "mid-level" APIs (which are essentially
-      thin wrappers over the low-level APIs), and "high-level" APIs (which make
-      more substantial changes).
+  thin wrappers over the low-level APIs), and "high-level" APIs (which make more
+  substantial changes).
 
-      As a general rule, the high-level APIs should be built on top of the
-      mid-level APIs, which in turn should be built on top of the low-level APIs
-      (e.g. `web_sys`)
+  As a general rule, the high-level APIs should be built on top of the mid-level
+  APIs, which in turn should be built on top of the low-level APIs
+  (e.g. `web_sys`)
 
-      There are exceptions to this, but they have to be carefully decided on a
-      case-by-case basis.
+  There are exceptions to this, but they have to be carefully decided on a
+  case-by-case basis.
 
 ### Implementation and Feedback Cycle
 
@@ -204,19 +204,19 @@ Here is a checklist that all crate and API implementations in Gloo should
 fulfill:
 
 * [ ] The crate should be named `gloo-foobar`, located at `gloo/crates/foobar`,
-      and re-exported from the umbrella Gloo crate like:
+  and re-exported from the umbrella Gloo crate like:
 
-      ```rust
-      // gloo/src/lib.rs
+  ```rust
+  // gloo/src/lib.rs
 
-      pub use gloo_foobar as foobar;
-      ```
+  pub use gloo_foobar as foobar;
+  ```
 
 * [ ] The `authors` entry in `gloo/crates/foobar/Cargo.toml` is "The Rust and
-      WebAssembly Working Group".
+  WebAssembly Working Group".
 
 * [ ] Uses [`unwrap_throw` and `expect_throw`][unwrap-throw] instead of normal
-      `unwrap` and `expect`.
+  `unwrap` and `expect`.
 
 * [ ] Headless browser and/or Node.js tests via `wasm-pack test`.
 
@@ -225,7 +225,7 @@ fulfill:
 * [ ] Crate's root module documentation has at least one realistic example.
 
 * [ ] Crate has at least a brief description of how to use it in the Gloo guide
-      (the `mdbook` located at `gloo/guide`).
+  (the `mdbook` located at `gloo/guide`).
 
 [unwrap-throw]: https://docs.rs/wasm-bindgen/0.2.37/wasm_bindgen/trait.UnwrapThrowExt.html
 [api-guidelines]: https://rust-lang-nursery.github.io/api-guidelines/
