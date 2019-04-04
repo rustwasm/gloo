@@ -225,7 +225,7 @@ thread_local! {
 ///     }
 /// }
 /// ```
-#[must_use = "event listeners will never be called after being dropped"]
+#[must_use = "event listener will never be called after being dropped"]
 pub struct EventListener {
     target: EventTarget,
     event_type: Cow<'static, str>,
