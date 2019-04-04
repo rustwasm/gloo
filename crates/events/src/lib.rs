@@ -283,7 +283,7 @@ impl EventListener {
     ///
     /// # Examples
     ///
-    /// Registers a [`"click"`](https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event) event and casts it to the correct type
+    /// Registers a [`"click"`](https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event) event and downcasts it to the correct `Event` subtype
     /// (which is [`MouseEvent`](https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.MouseEvent.html)):
     ///
     /// ```rust,no_run
@@ -443,7 +443,7 @@ impl EventListener {
     ///
     /// # Event type
     ///
-    /// The event type can be either a `&'static str` like `"click"`, or it can be a `String`.
+    /// The event type can be either a `&'static str` like `"click"`, or it can be a dynamically constructed `String`.
     ///
     /// All event types are supported. Here is a [partial list](https://developer.mozilla.org/en-US/docs/Web/Events)
     /// of the available event types.
