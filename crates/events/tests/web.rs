@@ -79,7 +79,6 @@ fn new_with_options() -> impl Future<Item = (), Error = JsValue> {
             "click",
             &EventListenerOptions {
                 phase: EventListenerPhase::Capture,
-                once: false,
                 passive: false,
             },
             move |e| {
@@ -95,22 +94,23 @@ fn new_with_options() -> impl Future<Item = (), Error = JsValue> {
         body.click();
     })
     .and_then(|results| {
-        is(results.len(), 2)?;
-        Ok(())
+        is(results, vec![
+            (),
+            (),
+        ])
     })
 }
 
 #[wasm_bindgen_test(async)]
-fn new_with_options_once() -> impl Future<Item = (), Error = JsValue> {
+fn once_with_options() -> impl Future<Item = (), Error = JsValue> {
     mpsc(|sender| {
         let body = body();
 
-        let _handler = EventListener::new_with_options(
+        let _handler = EventListener::once_with_options(
             &body,
             "click",
             &EventListenerOptions {
                 phase: EventListenerPhase::Capture,
-                once: true,
                 passive: false,
             },
             move |e| {
@@ -126,8 +126,9 @@ fn new_with_options_once() -> impl Future<Item = (), Error = JsValue> {
         body.click();
     })
     .and_then(|results| {
-        is(results.len(), 1)?;
-        Ok(())
+        is(results, vec![
+            (),
+        ])
     })
 }
 
@@ -148,8 +149,10 @@ fn new() -> impl Future<Item = (), Error = JsValue> {
         body.click();
     })
     .and_then(|results| {
-        is(results.len(), 2)?;
-        Ok(())
+        is(results, vec![
+            (),
+            (),
+        ])
     })
 }
 
@@ -170,8 +173,9 @@ fn once() -> impl Future<Item = (), Error = JsValue> {
         body.click();
     })
     .and_then(|results| {
-        is(results.len(), 1)?;
-        Ok(())
+        is(results, vec![
+            (),
+        ])
     })
 }
 

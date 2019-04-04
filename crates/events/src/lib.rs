@@ -49,7 +49,8 @@ impl Default for EventListenerPhase {
     }
 }
 
-/// Specifies options for [`EventListener::new_with_options`](struct.EventListener.html#method.new_with_options).
+/// Specifies options for [`EventListener::new_with_options`](struct.EventListener.html#method.new_with_options) and
+/// [`EventListener::once_with_options`](struct.EventListener.html#method.once_with_options).
 ///
 /// # Default
 ///
@@ -58,7 +59,6 @@ impl Default for EventListenerPhase {
 /// #
 /// EventListenerOptions {
 ///     phase: EventListenerPhase::Bubble,
-///     once: false,
 ///     passive: true,
 /// }
 /// # ;
@@ -82,18 +82,6 @@ impl Default for EventListenerPhase {
 /// let options = EventListenerOptions::enable_prevent_default();
 /// ```
 ///
-/// Specifies multiple options, using the default for the rest:
-///
-/// ```rust
-/// # use gloo_events::{EventListenerOptions, EventListenerPhase};
-/// #
-/// let options = EventListenerOptions {
-///     phase: EventListenerPhase::Capture,
-///     passive: false,
-///     ..Default::default()
-/// };
-/// ```
-///
 /// Specifies all options:
 ///
 /// ```rust
@@ -101,7 +89,6 @@ impl Default for EventListenerPhase {
 /// #
 /// let options = EventListenerOptions {
 ///     phase: EventListenerPhase::Capture,
-///     once: true,
 ///     passive: false,
 /// };
 /// ```
@@ -109,9 +96,6 @@ impl Default for EventListenerPhase {
 pub struct EventListenerOptions {
     /// The phase that the event listener should be run in.
     pub phase: EventListenerPhase,
-
-    /// Whether the event listener will fire once (`true`) or multiple times (`false`).
-    pub once: bool,
 
     /// If this is `true` then performance is improved, but it is not possible to use
     /// [`event.prevent_default()`](https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.Event.html#method.prevent_default).
@@ -168,11 +152,11 @@ impl EventListenerOptions {
     }
 
     #[inline]
-    fn to_js(&self) -> AddEventListenerOptions {
+    fn to_js(&self, once: bool) -> AddEventListenerOptions {
         let mut options = AddEventListenerOptions::new();
 
         options.capture(self.phase.is_capture());
-        options.once(self.once);
+        options.once(once);
         options.passive(self.passive);
 
         options
@@ -184,7 +168,6 @@ impl Default for EventListenerOptions {
     fn default() -> Self {
         Self {
             phase: Default::default(),
-            once: false,
             passive: true,
         }
     }
@@ -193,12 +176,8 @@ impl Default for EventListenerOptions {
 // This defaults passive to true to avoid performance issues in browsers:
 // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#Improving_scrolling_performance_with_passive_listeners
 thread_local! {
-    static NEW_OPTIONS: AddEventListenerOptions = EventListenerOptions::default().to_js();
-
-    static ONCE_OPTIONS: AddEventListenerOptions = EventListenerOptions {
-        once: true,
-        ..EventListenerOptions::default()
-    }.to_js();
+    static NEW_OPTIONS: AddEventListenerOptions = EventListenerOptions::default().to_js(false);
+    static ONCE_OPTIONS: AddEventListenerOptions = EventListenerOptions::default().to_js(true);
 }
 
 /// RAII type which is used to manage DOM event listeners.
@@ -281,26 +260,14 @@ impl EventListener {
 
     /// Registers an event listener on an [`EventTarget`](https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.EventTarget.html).
     ///
-    /// # Examples
+    /// For specifying options, there is a corresponding [`EventListener::new_with_options`](#method.new_with_options) method.
     ///
-    /// Registers a [`"click"`](https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event) event and downcasts it to the correct `Event` subtype
-    /// (which is [`MouseEvent`](https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.MouseEvent.html)):
-    ///
-    /// ```rust,no_run
-    /// # use gloo_events::EventListener;
-    /// # use wasm_bindgen::{JsCast, UnwrapThrowExt};
-    /// # let target = unimplemented!();
-    /// #
-    /// let listener = EventListener::new(&target, "click", move |event| {
-    ///     let event = event.dyn_into::<web_sys::MouseEvent>().unwrap_throw();
-    ///
-    ///     // ...
-    /// });
-    /// ```
+    /// If you only need the event to fire once, you can use [`EventListener::once`](#method.once) instead,
+    /// which accepts an `FnOnce` closure.
     ///
     /// # Event type
     ///
-    /// The event type can be either a `&'static str` like `"click"`, or it can be a `String`.
+    /// The event type can be either a `&'static str` like `"click"`, or it can be a dynamically constructed `String`.
     ///
     /// All event types are supported. Here is a [partial list](https://developer.mozilla.org/en-US/docs/Web/Events) of the available event types.
     ///
@@ -342,6 +309,23 @@ impl EventListener {
     /// EventListener::new_with_options(target, event_type, &options, callback)
     /// # ;
     /// ```
+    ///
+    /// # Examples
+    ///
+    /// Registers a [`"click"`](https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event) event and downcasts it to the correct `Event` subtype
+    /// (which is [`MouseEvent`](https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.MouseEvent.html)):
+    ///
+    /// ```rust,no_run
+    /// # use gloo_events::EventListener;
+    /// # use wasm_bindgen::{JsCast, UnwrapThrowExt};
+    /// # let target = unimplemented!();
+    /// #
+    /// let listener = EventListener::new(&target, "click", move |event| {
+    ///     let event = event.dyn_into::<web_sys::MouseEvent>().unwrap_throw();
+    ///
+    ///     // ...
+    /// });
+    /// ```
     #[inline]
     pub fn new<S, F>(target: &EventTarget, event_type: S, callback: F) -> Self
     where
@@ -363,6 +347,8 @@ impl EventListener {
 
     /// This is exactly the same as [`EventListener::new`](#method.new), except the event will only fire once,
     /// and it accepts `FnOnce` instead of `FnMut`.
+    ///
+    /// For specifying options, there is a corresponding [`EventListener::once_with_options`](#method.once_with_options) method.
     ///
     /// # Examples
     ///
@@ -403,6 +389,20 @@ impl EventListener {
     ///
     /// It is recommended to use [`EventListener::new`](#method.new) instead, because it has better performance, and it is more convenient.
     ///
+    /// If you only need the event to fire once, you can use [`EventListener::once_with_options`](#method.once_with_options) instead,
+    /// which accepts an `FnOnce` closure.
+    ///
+    /// # Event type
+    ///
+    /// The event type can be either a `&'static str` like `"click"`, or it can be a dynamically constructed `String`.
+    ///
+    /// All event types are supported. Here is a [partial list](https://developer.mozilla.org/en-US/docs/Web/Events)
+    /// of the available event types.
+    ///
+    /// # Options
+    ///
+    /// See the documentation for [`EventListenerOptions`](struct.EventListenerOptions.html) for more details.
+    ///
     /// # Examples
     ///
     /// Registers a [`"touchstart"`](https://developer.mozilla.org/en-US/docs/Web/API/Element/touchstart_event)
@@ -440,17 +440,6 @@ impl EventListener {
     ///     // ...
     /// });
     /// ```
-    ///
-    /// # Event type
-    ///
-    /// The event type can be either a `&'static str` like `"click"`, or it can be a dynamically constructed `String`.
-    ///
-    /// All event types are supported. Here is a [partial list](https://developer.mozilla.org/en-US/docs/Web/Events)
-    /// of the available event types.
-    ///
-    /// # Options
-    ///
-    /// See the documentation for [`EventListenerOptions`](struct.EventListenerOptions.html) for more details.
     #[inline]
     pub fn new_with_options<S, F>(
         target: &EventTarget,
@@ -468,7 +457,71 @@ impl EventListener {
             target,
             event_type.into(),
             callback,
-            &options.to_js(),
+            &options.to_js(false),
+            options.phase,
+        )
+    }
+
+    /// This is exactly the same as [`EventListener::new_with_options`](#method.new_with_options), except the event will only fire once,
+    /// and it accepts `FnOnce` instead of `FnMut`.
+    ///
+    /// It is recommended to use [`EventListener::once`](#method.once) instead, because it has better performance, and it is more convenient.
+    ///
+    /// # Examples
+    ///
+    /// Registers a [`"load"`](https://developer.mozilla.org/en-US/docs/Web/API/FileReader/load_event)
+    /// event and uses
+    /// [`event.prevent_default()`](https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.Event.html#method.prevent_default):
+    ///
+    /// ```rust,no_run
+    /// # use gloo_events::{EventListener, EventListenerOptions};
+    /// # let target = unimplemented!();
+    /// #
+    /// let options = EventListenerOptions::enable_prevent_default();
+    ///
+    /// let listener = EventListener::once_with_options(&target, "load", &options, move |event| {
+    ///     event.prevent_default();
+    ///
+    ///     // ...
+    /// });
+    /// ```
+    ///
+    /// Registers a [`"click"`](https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event)
+    /// event in the capturing phase and uses
+    /// [`event.stop_propagation()`](https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.Event.html#method.stop_propagation)
+    /// to stop the event from bubbling:
+    ///
+    /// ```rust,no_run
+    /// # use gloo_events::{EventListener, EventListenerOptions};
+    /// # let target = unimplemented!();
+    /// #
+    /// let options = EventListenerOptions::run_in_capture_phase();
+    ///
+    /// let listener = EventListener::once_with_options(&target, "click", &options, move |event| {
+    ///     // Stop the event from bubbling
+    ///     event.stop_propagation();
+    ///
+    ///     // ...
+    /// });
+    /// ```
+    #[inline]
+    pub fn once_with_options<S, F>(
+        target: &EventTarget,
+        event_type: S,
+        options: &EventListenerOptions,
+        callback: F,
+    ) -> Self
+    where
+        S: Into<Cow<'static, str>>,
+        F: FnOnce(Event) + 'static,
+    {
+        let callback = Closure::once(callback);
+
+        Self::raw_new(
+            target,
+            event_type.into(),
+            callback,
+            &options.to_js(true),
             options.phase,
         )
     }
