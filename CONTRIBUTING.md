@@ -104,6 +104,10 @@ consider. When coming to consensus on a design, we use a simplified, informal
 version of [our RFC process][rfcs], where we have design discussions inside the
 Gloo issues tracker.
 
+> Note: when fixing a bug in a semver-compatible way that doesn't add any new
+> API surface (i.e. changes are purely internal) we can skip the design proposal
+> part of this workflow, and jump straight to a pull request.
+
 The graph below gives an overview of the workflow for proposing, designing,
 implementing, and merging new crates and APIs into Gloo. Notably, we expect a
 large amount of design discussion to happen up front in the issue thread for the
