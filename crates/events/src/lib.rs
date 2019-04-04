@@ -286,7 +286,7 @@ impl EventListener {
     /// #
     /// let options = EventListenerOptions::enable_prevent_default();
     ///
-    /// EventListener::new_with_options(target, event_type, &options, callback)
+    /// EventListener::new_with_options(target, event_type, options, callback)
     /// # ;
     /// ```
     ///
@@ -306,7 +306,7 @@ impl EventListener {
     /// // This runs the event listener in the capture phase, rather than the bubble phase
     /// let options = EventListenerOptions::run_in_capture_phase();
     ///
-    /// EventListener::new_with_options(target, event_type, &options, callback)
+    /// EventListener::new_with_options(target, event_type, options, callback)
     /// # ;
     /// ```
     ///
@@ -415,7 +415,7 @@ impl EventListener {
     /// #
     /// let options = EventListenerOptions::enable_prevent_default();
     ///
-    /// let listener = EventListener::new_with_options(&target, "touchstart", &options, move |event| {
+    /// let listener = EventListener::new_with_options(&target, "touchstart", options, move |event| {
     ///     event.prevent_default();
     ///
     ///     // ...
@@ -433,7 +433,7 @@ impl EventListener {
     /// #
     /// let options = EventListenerOptions::run_in_capture_phase();
     ///
-    /// let listener = EventListener::new_with_options(&target, "click", &options, move |event| {
+    /// let listener = EventListener::new_with_options(&target, "click", options, move |event| {
     ///     // Stop the event from bubbling
     ///     event.stop_propagation();
     ///
@@ -444,7 +444,7 @@ impl EventListener {
     pub fn new_with_options<S, F>(
         target: &EventTarget,
         event_type: S,
-        options: &EventListenerOptions,
+        options: EventListenerOptions,
         callback: F,
     ) -> Self
     where
@@ -479,7 +479,7 @@ impl EventListener {
     /// #
     /// let options = EventListenerOptions::enable_prevent_default();
     ///
-    /// let listener = EventListener::once_with_options(&target, "load", &options, move |event| {
+    /// let listener = EventListener::once_with_options(&target, "load", options, move |event| {
     ///     event.prevent_default();
     ///
     ///     // ...
@@ -497,7 +497,7 @@ impl EventListener {
     /// #
     /// let options = EventListenerOptions::run_in_capture_phase();
     ///
-    /// let listener = EventListener::once_with_options(&target, "click", &options, move |event| {
+    /// let listener = EventListener::once_with_options(&target, "click", options, move |event| {
     ///     // Stop the event from bubbling
     ///     event.stop_propagation();
     ///
@@ -508,7 +508,7 @@ impl EventListener {
     pub fn once_with_options<S, F>(
         target: &EventTarget,
         event_type: S,
-        options: &EventListenerOptions,
+        options: EventListenerOptions,
         callback: F,
     ) -> Self
     where

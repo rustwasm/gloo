@@ -78,7 +78,7 @@ fn new_with_options() -> impl Future<Item = (), Error = JsValue> {
         let _handler = EventListener::new_with_options(
             &body,
             "click",
-            &EventListenerOptions {
+            EventListenerOptions {
                 phase: EventListenerPhase::Capture,
                 passive: false,
             },
@@ -105,7 +105,7 @@ fn once_with_options() -> impl Future<Item = (), Error = JsValue> {
         let _handler = EventListener::once_with_options(
             &body,
             "click",
-            &EventListenerOptions {
+            EventListenerOptions {
                 phase: EventListenerPhase::Capture,
                 passive: false,
             },
