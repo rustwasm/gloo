@@ -10,6 +10,7 @@ version = "0.1.0"
 [dependencies]
 gloo-timers = { version = "0.1.0", path = "crates/timers" }
 gloo-console-timer = { version = "0.1.0", path = "crates/console-timer" }
+gloo-events = { version = "0.1.0", path = "crates/events" }
 
 [features]
 default = []
