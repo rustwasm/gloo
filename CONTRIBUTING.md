@@ -19,8 +19,12 @@ yourself.
     - [Wasm Headless Browser Tests](#wasm-headless-browser-tests)
     - [Non-Wasm Tests](#non-wasm-tests)
   - [Formatting](#formatting)
-- [Gloo Crate Checklist](#gloo-crate-checklist)
-- [Designing APIs](#designing-apis)
+- [Workflow](#workflow)
+  - [Proposing a Design](#proposing-a-design)
+    - [Design Checklist](#design-checklist)
+  - [Implementation and Feedback Cycle](#implementation-and-feedback-cycle)
+    - [Implementation Checklist](#implementation-checklist)
+- [Team Members](#team-members)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -92,61 +96,7 @@ To (re)format the Gloo source code, run:
 $ cargo fmt --all
 ```
 
-## Gloo Crate Checklist
-
-Here is a checklist that all Gloo utility crates should fulfill:
-
-* [ ] The crate should be named `gloo-foobar`, located at `crates/foobar`, and
-      re-exported from the umbrella crate like:
-
-      ```rust
-      pub use gloo_foobar as foobar;
-      ```
-
-* [ ] The `authors` entry in `Cargo.toml` is "The Rust and WebAssembly Working
-      Group".
-
-* [ ] Crate's public interface follows the [Rust API Guidelines][api-guidelines].
-
-* [ ] Uses [`unwrap_throw` and `expect_throw`][unwrap-throw] instead of normal `unwrap` and
-      `expect`.
-
-* [ ] Callback-taking APIs are generic over `F: Fn(A) -> B` (or `FnMut` or
-      `FnOnce`) instead of taking `wasm_bindgen::Closure`s or
-      `js_sys::Function`s directly.
-
-* [ ] If the API can be implemented as a Future / Stream, then it should first be implemented as a callback, with the callback API put into the `callback` submodule.
-
-     Then the Future / Stream should be implemented using the callback API, and should be put into the `future` or `stream` submodule.
-
-     Make sure that the callback and Future / Stream APIs properly support cancellation (if it is possible to do so).
-
-* [ ] Uses nice Rust-y types and interfaces instead of passing around untyped
-      `JsValue`s.
-
-* [ ] Has `fn as_raw(&self) -> &web_sys::Whatever` functions to get the
-      underlying raw `web_sys`, `js_sys`, or `JsValue` type. This provides an
-      escape hatch for dropping down to raw `web_sys` bindings when an API isn't
-      fully supported by the crate yet.
-
-* [ ] There is a loose hierarchy with "mid-level" APIs (which are essentially thin wrappers over the low-level APIs), and "high-level" APIs (which make more substantial changes).
-
-     As a general rule, the high-level APIs should be built on top of the mid-level APIs, which in turn should be built on top of the low-level APIs (e.g. `web_sys`)
-     
-     There are exceptions to this, but they have to be carefully decided on a case-by-case basis.
-
-* [ ] Headless browser and/or Node.js tests via `wasm-pack test`.
-
-* [ ] Uses `#![deny(missing_docs, missing_debug_implementations)]`.
-
-* [ ] Crate's root module documentation has at least one realistic example.
-
-* [ ] Crate has at least a brief description of how to use it in the Gloo guide.
-
-[unwrap-throw]: https://docs.rs/wasm-bindgen/0.2.37/wasm_bindgen/trait.UnwrapThrowExt.html
-[api-guidelines]: https://rust-lang-nursery.github.io/api-guidelines/
-
-## Designing APIs
+## Workflow
 
 Designing APIs for Gloo, its utility crates, and interfaces between them takes a
 lot of care. The design space is large, and there is a lot of prior art to
@@ -154,7 +104,142 @@ consider. When coming to consensus on a design, we use a simplified, informal
 version of [our RFC process][rfcs], where we have design discussions inside the
 Gloo issues tracker.
 
+> Note: when fixing a bug in a semver-compatible way that doesn't add any new
+> API surface (i.e. changes are purely internal) we can skip the design proposal
+> part of this workflow, and jump straight to a pull request.
+
+The graph below gives an overview of the workflow for proposing, designing,
+implementing, and merging new crates and APIs into Gloo. Notably, we expect a
+large amount of design discussion to happen up front in the issue thread for the
+design proposal.
+
+[![Graph showing the workflow of proposing, designing, and merging new crates and
+APIs into Gloo](./new-design-workflow.png)](./new-design-workflow.png)
+
+[rfcs]: https://github.com/rustwasm/rfcs
+
+### Proposing a Design
+
+Before writing pull requests, we should have a clear idea of what is required
+for implementation. This means there should be a skeleton of the API in the form
+of types and function/method signatures. We should have a clear idea of the
+layers of APIs we are exposing, and how they are built upon one another.
+
+Note that exploratory implementations outside of Gloo are encouraged during this
+period to get a sense for the API's usage, but you shouldn't send a pull request
+until the design has been accepted.
+
+Before the design is accepted, at least two team members must have stated that
+they are in favor of accepting the design in the issue thread.
+
 [Here is an issue template you can use for proposing
 designs.](https://github.com/rustwasm/gloo/issues/new?assignees=&labels=&template=propose_design.md&title=)
 
-[rfcs]: https://github.com/rustwasm/rfcs
+#### Design Checklist
+
+Here is a checklist of some general design principles that Gloo crates and APIs
+should follow:
+
+* [ ] Crate's public interface follows the [Rust API Guidelines][api-guidelines].
+
+* [ ] Callback-taking APIs are generic over `F: Fn(A) -> B` (or `FnMut` or
+  `FnOnce`) instead of taking `wasm_bindgen::Closure`s or
+  `js_sys::Function`s directly.
+
+* [ ] If the API can be implemented as a Future / Stream, then it should first
+  be implemented as a callback, with the callback API put into the `callback`
+  submodule.
+
+  Then the Future / Stream should be implemented using the callback API, and
+  should be put into the `future` or `stream` submodule.
+
+  Make sure that the callback and Future / Stream APIs properly support
+  cancellation (if it is possible to do so).
+
+* [ ] Uses nice Rust-y types and interfaces instead of passing around untyped
+  `JsValue`s.
+
+* [ ] Has `fn as_raw(&self) -> &web_sys::Whatever` functions to get the
+  underlying raw `web_sys`, `js_sys`, or `JsValue` type. This provides an escape
+  hatch for dropping down to raw `web_sys` bindings when an API isn't fully
+  supported by the crate yet.
+
+  Similar for `from_raw` constructors and `into_raw` conversion methods when
+  applicable.
+
+* [ ] There is a loose hierarchy with "mid-level" APIs (which are essentially
+  thin wrappers over the low-level APIs), and "high-level" APIs (which make more
+  substantial changes).
+
+  As a general rule, the high-level APIs should be built on top of the mid-level
+  APIs, which in turn should be built on top of the low-level APIs
+  (e.g. `web_sys`)
+
+  There are exceptions to this, but they have to be carefully decided on a
+  case-by-case basis.
+
+### Implementation and Feedback Cycle
+
+Once we've accepted a design, we can move forward with implementation and
+creating pull requests.
+
+The implementation should generally be unsurprising, since we should have
+already worked out most of the kinks during the earlier design discussions. If
+there are significant new issues or concerns uncovered during implementation,
+then these should be brought up in the design proposal discussion thread again,
+and the evolved design reaffirmed with two team members signing off once
+again.
+
+If there are no new concerns uncovered, then the implementation just needs to be
+checked over by at least one team member. They provide code review and feedback
+on the implementation, then the feedback is addressed and pull request updated.
+Once the pull request is in a good place and CI is passing, a team member may
+approve the pull request and merge it into Gloo. If any team member raises
+concerns with the implementation, they must be resolved before the pull request
+is merged.
+
+#### Implementation Checklist
+
+Here is a checklist that all crate and API implementations in Gloo should
+fulfill:
+
+* [ ] The crate should be named `gloo-foobar`, located at `gloo/crates/foobar`,
+  and re-exported from the umbrella Gloo crate like:
+
+  ```rust
+  // gloo/src/lib.rs
+
+  pub use gloo_foobar as foobar;
+  ```
+
+* [ ] The `authors` entry in `gloo/crates/foobar/Cargo.toml` is "The Rust and
+  WebAssembly Working Group".
+
+* [ ] Uses [`unwrap_throw` and `expect_throw`][unwrap-throw] instead of normal
+  `unwrap` and `expect`.
+
+* [ ] Headless browser and/or Node.js tests via `wasm-pack test`.
+
+* [ ] Uses `#![deny(missing_docs, missing_debug_implementations)]`.
+
+* [ ] Crate's root module documentation has at least one realistic example.
+
+* [ ] Crate has at least a brief description of how to use it in the Gloo guide
+  (the `mdbook` located at `gloo/guide`).
+
+[unwrap-throw]: https://docs.rs/wasm-bindgen/0.2.37/wasm_bindgen/trait.UnwrapThrowExt.html
+[api-guidelines]: https://rust-lang-nursery.github.io/api-guidelines/
+
+## Team Members
+
+Team members sign off on design proposals and review pull requests to Gloo.
+
+* `@fitzgen`
+* `@Pauan`
+* `@rylev`
+* `@yoshuawuyts`
+* `@David-OConnor`
+
+If you make a handful of significant contributions to Gloo and participate in
+design proposals, then maybe you should be a team member! Think you or someone
+else would be a good fit? Reach out to us!
