@@ -1,8 +1,11 @@
+trigger: ["master"]
 pr: ["master"]
 
 jobs:
   - job: test_all_native
     displayName: "Native Tests"
+    condition: |
+      eq(variables['Build.Reason'], 'PullRequest')
     pool:
       vmImage: 'ubuntu-16.04'
     steps:
@@ -15,6 +18,8 @@ jobs:
         displayName: Run cargo check and test
   - job: test_headless_firefox
     displayName: "Headless Browser Tests (Firefox)"
+    condition: |
+      eq(variables['Build.Reason'], 'PullRequest')
     steps:
       - template: .ci/install-rust.yml
         parameters:
@@ -25,6 +30,8 @@ jobs:
           browser_flag: --firefox
   - job: test_headless_chrome
     displayName: "Headless Browser Tests (Chrome)"
+    condition: |
+      eq(variables['Build.Reason'], 'PullRequest')
     steps:
       - template: .ci/install-rust.yml
         parameters:
