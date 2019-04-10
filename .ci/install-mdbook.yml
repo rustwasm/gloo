@@ -1,0 +1,8 @@
+steps:
+  - template: ./install-rust.yml
+    parameters:
+      rust_version: stable
+  - script: |
+      which mdbook || cargo install mdbook
+      which mdbook-linkcheck || cargo install mdbook-linkcheck
+    displayName: "Install mdbook"
