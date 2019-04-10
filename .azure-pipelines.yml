@@ -47,3 +47,12 @@ jobs:
     steps:
       - template: .ci/install-mdbook.yml
       - script: (cd guide && mdbook build)
+  - job: deploy_book
+    displayName: "Doc - deploy the book"
+    condition: |
+      and(not(eq(variables['Build.Reason'], 'PullRequest')),
+          eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+    steps:
+      - template: .ci/install-mdbook.yml
+      - script: (cd guide && mdbook build)
+      - template: .ci/deploy-book.yml
