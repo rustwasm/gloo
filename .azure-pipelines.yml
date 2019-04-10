@@ -40,3 +40,10 @@ jobs:
       - template: .ci/wasm-pack-test-headless.yml
         parameters:
           browser_flag: --chrome
+  - job: build_book
+    condition: |
+      eq(variables['Build.Reason'], 'PullRequest')
+    displayName: "Doc - build the book"
+    steps:
+      - template: .ci/install-mdbook.yml
+      - script: (cd guide && mdbook build)
