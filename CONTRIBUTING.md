@@ -25,6 +25,9 @@ yourself.
   - [Implementation and Feedback Cycle](#implementation-and-feedback-cycle)
     - [Implementation Checklist](#implementation-checklist)
 - [Team Members](#team-members)
+- [Publishing Releases and Versioning](#publishing-releases-and-versioning)
+  - [Versioning](#versioning)
+  - [Publishing Checklist](#publishing-checklist)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
