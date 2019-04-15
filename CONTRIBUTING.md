@@ -101,8 +101,16 @@ $ cargo fmt --all
 Designing APIs for Gloo, its utility crates, and interfaces between them takes a
 lot of care. The design space is large, and there is a lot of prior art to
 consider. When coming to consensus on a design, we use a simplified, informal
-version of [our RFC process][rfcs], where we have design discussions inside the
-Gloo issues tracker.
+version of [our RFC process][rfcs].
+
+When making a proposal, you must create a new pull request on this repo.
+The pull request's title must start with `[RFC]`.
+
+The pull request must add a new file into the `rfcs` folder. This file
+contains all the information for the proposal.
+
+It is expected that other people will write reviews pointing out various
+flaws, which should be fixed by adding new commits to the pull request.
 
 > Note: when fixing a bug in a semver-compatible way that doesn't add any new
 > API surface (i.e. changes are purely internal) we can skip the design proposal
@@ -126,8 +134,8 @@ of types and function/method signatures. We should have a clear idea of the
 layers of APIs we are exposing, and how they are built upon one another.
 
 Note that exploratory implementations outside of Gloo are encouraged during this
-period to get a sense for the API's usage, but you shouldn't send a pull request
-until the design has been accepted.
+period to get a sense for the API's usage, but you shouldn't send an implementation
+pull request until the design has been accepted.
 
 Before the design is accepted, at least two team members must have stated that
 they are in favor of accepting the design in the issue thread.
