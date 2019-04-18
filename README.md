@@ -84,7 +84,7 @@ Gloo is this modular toolkit.
   performance in mind, to show everyone how fast the Web can be ;)
 
 * **Reliable:** Every crate should be thoroughly tested. Headless browser
-  tests. Quickcheck tests. Using the type system to make whole classes of bug
+  tests. Quickcheck tests. Using the type system to make whole classes of bugs
   impossible.
 
 * **Small:** Small code size for faster page loads. No accidentally pulling in
