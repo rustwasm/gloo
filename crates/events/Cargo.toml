@@ -21,6 +21,7 @@ futures = "0.1.25"
 wasm-bindgen-test = "0.2.37"
 
 [dev-dependencies.web-sys]
+version = "0.3.14"
 features = [
     "HtmlElement",
     "Window",
