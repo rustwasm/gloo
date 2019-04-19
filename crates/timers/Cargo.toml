@@ -5,7 +5,7 @@ authors = ["Rust and WebAssembly Working Group"]
 edition = "2018"
 
 [dependencies]
-wasm-bindgen = "0.2.40"
+wasm-bindgen = "0.2.43"
 js-sys = "0.3.17"
 
 [dependencies.futures_rs]
@@ -14,11 +14,11 @@ version = "0.1.25"
 optional = true
 
 [dependencies.wasm-bindgen-futures]
-version = "0.3.17"
+version = "0.3.19"
 optional = true
 
 [dependencies.web-sys]
-version = "0.3.17"
+version = "0.3.19"
 features = [
     "Window",
 ]
@@ -29,4 +29,4 @@ futures = ["futures_rs", "wasm-bindgen-futures"]
 
 
 [dev-dependencies]
-wasm-bindgen-test = "0.2.40"
+wasm-bindgen-test = "0.2.43"
