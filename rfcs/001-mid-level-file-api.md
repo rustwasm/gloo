@@ -55,12 +55,12 @@ There are two structs that implement this trait: `Blob` and `File`.
 struct Blob { ... }
 
 impl Blob {
-  fn new<T>(content: T) -> Blob
+  fn new<T>(content: Option<T>) -> Blob
     where
         T: std::convert::Into<BlobContents> // We'll look at BlobContents below
     { ... }
 
-  fn new_with_options<T>(content: T, mime_type: String) -> Blob
+  fn new_with_options<T>(content: Option<T>, mime_type: String) -> Blob
     where
         T: std::convert::Into<BlobContents>
     { ... }
