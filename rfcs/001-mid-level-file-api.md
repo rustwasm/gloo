@@ -15,9 +15,9 @@ First we have `FileList` which is simply a list of `File`s. This is an opaque st
 struct FileList { ... }
 
 impl FileList {
-  fn get(index: usize) -> Option<File> { ... }
+  fn get(index: u32) -> Option<File> { ... }
 
-  fn len(&self) -> usize { ... }
+  fn len(&self) -> u32 { ... }
 
   fn iter(&self) -> FileListIter { ... }
 
@@ -34,7 +34,7 @@ impl Index<usize> for FileList {
 
 There is no `FileList::new` since creating a raw `web_sys::FileList` is not possible without going through a `web_sys::HtmlInputElement`.
 
-Next we have a `blob` module that includes the trait `BlobLike`
+Next we the trait `BlobLike`
 ```rust
 trait BlobLike {
     fn size(&self) -> u64 { ... }
@@ -60,16 +60,15 @@ impl Blob {
         T: std::convert::Into<BlobContents> // We'll look at BlobContents below
     { ... }
 
-  fn new_with_options<T>(content: T, mime_type: Option<String>) -> Blob
+  fn new_with_options<T>(content: T, mime_type: String) -> Blob
     where
         T: std::convert::Into<BlobContents>
     { ... }
 
-  fn slice(&self, start: usize, end: usize) -> Blob { ... }
+  fn slice(&self, start: u64, end: u64) -> Blob { ... }
 }
 
 impl From<web_sys::Blob> for Blob { ... }
-
 
 impl BlobLike for Blob { ... }
 
@@ -80,20 +79,28 @@ impl File {
   fn new<T>(
         name: String,
         contents: Option<T>,
+  ) -> File
+    where
+        T: std::convert::Into<BlobContents>,
+    { ... }
+
+  fn new_with_options<T>(
+        name: String,
+        contents: Option<T>,
         mime_type: Option<String>,
         last_modified_date: Option<u64>,
-    ) -> File
+  ) -> File
     where
         T: std::convert::Into<BlobContents>,
     { ... }
 
   fn name(&self) -> String { ... }
 
-  fn last_modified_date(&self) -> u64 { ... }
+  fn last_modified_since_epoch(&self) -> Duration { ... }
 
-  fn slice(&self, start: usize, end: usize) -> File { ... }
+  fn slice(&self, start: u64, end: u64) -> File { ... }
 
-  fn as_blob(self) -> Blob { ... }
+  fn as_blob(&self) -> Blob { ... }
 }
 
 impl BlobLike for File { ... }
