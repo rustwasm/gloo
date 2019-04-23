@@ -24,7 +24,7 @@
 ///
 /// request.open(&http::Method::GET, "/");
 ///
-/// request.send_no_body();
+/// request.send_without_body();
 /// ```
 ///
 /// ### Events
@@ -120,8 +120,19 @@ pub mod callback {
             self.xhr.abort().unwrap_throw()
         }
 
+        /// Perform the request.
+        ///
+        /// Thise returns immediately - attach events handlers to be notified of the
+        /// progress and outcome of the request.
+        pub fn send<B: XhrBody>(&self, body: SendBody<B>) {
+            match body {
+                SendBody::None => self.send_without_body(),
+                SendBody::Body(body) => self.send_with_body(body),
+            }
+        }
+
         /// `send()` without a body.
-        pub fn send_no_body(&self) {
+        pub fn send_without_body(&self) {
             self.xhr
                 .send()
                 .expect_throw("Error sending request. Did you forget to call `open`?")
@@ -129,7 +140,7 @@ pub mod callback {
 
         /// Actually send the request. In order to know the outcome, you have to attach
         /// `load`, `abort` and `error` event listeners.
-        pub fn send<B: XhrBody>(&self, body: B) {
+        pub fn send_with_body<B: XhrBody>(&self, body: B) {
             body.send(&self.xhr)
                 .expect_throw("Error sending request. Did you forget to call `open`?")
         }
@@ -212,6 +223,15 @@ pub mod callback {
             ReadyState::from_u16(self.xhr.ready_state())
                 .expect_throw("XMLHttpRequest ReadyState must be 0 ≤ n ≤ 4")
         }
+    }
+
+    /// Represents the valid states for the request body: either a valid body or none.
+    #[derive(Debug)]
+    pub enum SendBody<B: XhrBody> {
+        /// No body.
+        None,
+        /// A valid XmlHttpRequest body (implementing the `XhrBody` trait).
+        Body(B),
     }
 
     /// This trait is implemented by all the types that can be used as the body of a
