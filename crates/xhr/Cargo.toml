@@ -16,11 +16,9 @@ version = "0.3.14"
 features = [
     "Blob",
     "Document",
-    "Event",
     "EventTarget",
     "File",
     "FormData",
-    "ProgressEvent",
     "XmlHttpRequest",
     "XmlHttpRequestEventTarget",
     "XmlHttpRequestUpload",
