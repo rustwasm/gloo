@@ -163,6 +163,9 @@ pub mod callback {
         }
 
         /// Get all the response headers.
+        ///
+        /// Note that this is a thin wrapper around the original API, header names are not case
+        /// insensitive.
         pub fn get_all_response_headers(&self) -> std::collections::HashMap<String, String> {
             self.xhr
                 .get_all_response_headers()
@@ -172,17 +175,17 @@ pub mod callback {
                     let mut elems = line.split(": ");
                     (
                         elems.next().unwrap_throw().to_string(),
-                        elems.next().unwrap_throw().to_string(),
+                        elems.next().unwrap_or("").to_string(),
                     )
                 })
                 .collect()
         }
 
         /// Get the response body, assuming `responseType` was set to text (the default).
-        pub fn response_as_string(&self) -> Option<String> {
+        pub fn response_as_string(&self) -> Option<js_sys::JsString> {
             // unwrap_throw is safe, because `response` is an accessor. If the response
             // is not present yet, it will be `null` (`None`).
-            self.xhr.response().unwrap_throw().as_string()
+            js_sys::JsString::try_from(&self.xhr.response().unwrap_throw()).map(|s| s.to_owned())
         }
 
         /// Get the response body, assuming `responseType` was set to `"arraybuffer"`.
@@ -211,7 +214,8 @@ pub mod callback {
         pub fn response_as_bytes(&self) -> Option<Vec<u8>> {
             let array_buffer = self.response_as_array_buffer()?;
             let byte_array = js_sys::Uint8Array::new(&array_buffer);
-            let mut dest_buffer = Vec::<u8>::with_capacity(byte_array.length() as usize);
+            let mut dest_buffer = Vec::new();
+            dest_buffer.resize(byte_array.length() as usize, 0);
             byte_array.copy_to(&mut dest_buffer);
             Some(dest_buffer)
         }
@@ -302,7 +306,7 @@ pub mod callback {
     }
 
     /// [MDN docs](https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/readyState)
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq, Eq)]
     pub enum ReadyState {
         /// Client has been created. `open()` not called yet.
         Unsent,
