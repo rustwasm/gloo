@@ -8,7 +8,7 @@
 ///
 /// ### Example:
 ///
-/// ```
+/// ```no_run
 /// use gloo_xhr::callback::XmlHttpRequest;
 /// use futures::sync::mpsc;
 /// use gloo_events::EventListener;
@@ -38,7 +38,7 @@
 ///
 /// You can conveniently attach event listeners with [gloo-events][gloo-events].
 ///
-/// ```
+/// ```no_run
 /// use gloo_xhr::callback::XmlHttpRequest;
 ///
 /// let request = XmlHttpRequest::new();
