@@ -283,8 +283,6 @@ pub mod callback {
     /// https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseType
     ///
     /// Attempts to set the value of responseType to "document" are ignored in a Worker.
-    ///
-    /// TODO: wrap the web_sys version instead
     #[derive(Debug)]
     pub enum ResponseType {
         /// ArrayBuffer
