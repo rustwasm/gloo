@@ -46,6 +46,8 @@ trait BlobLike {
     fn raw_mime_type(&self) -> String { ... }
 
     fn as_raw(&self) -> &web_sys::Blob;
+
+    fn slice(&self, start: u64, end: u64) -> Self 
 }
 ```
 There are two structs that implement this trait: `Blob` and `File`.
@@ -55,17 +57,15 @@ There are two structs that implement this trait: `Blob` and `File`.
 struct Blob { ... }
 
 impl Blob {
-  fn new<T>(content: Option<T>) -> Blob
+  fn new<T>(contents: T) -> Blob
     where
         T: std::convert::Into<BlobContents> // We'll look at BlobContents below
     { ... }
 
-  fn new_with_options<T>(content: Option<T>, mime_type: String) -> Blob
+  fn new_with_options<T>(contents: T, mime_type: String) -> Blob
     where
         T: std::convert::Into<BlobContents>
     { ... }
-
-  fn slice(&self, start: u64, end: u64) -> Blob { ... }
 }
 
 impl From<web_sys::Blob> for Blob { ... }
@@ -78,7 +78,7 @@ pub struct File { ... }
 impl File {
   fn new<T>(
         name: String,
-        contents: Option<T>,
+        contents: T,
   ) -> File
     where
         T: std::convert::Into<BlobContents>,
@@ -86,7 +86,7 @@ impl File {
 
   fn new_with_options<T>(
         name: String,
-        contents: Option<T>,
+        contents: T,
         mime_type: Option<String>,
         last_modified_date: Option<u64>,
   ) -> File
@@ -98,15 +98,11 @@ impl File {
 
   fn last_modified_since_epoch(&self) -> Duration { ... }
 
-  fn slice(&self, start: u64, end: u64) -> File { ... }
-
   fn as_blob(&self) -> Blob { ... }
 }
 
 impl BlobLike for File { ... }
 ```
-
-Both Blob and File come with builders that allow for creating new Blobs and Files in the builder style and not having to use `new` directly.
 
 `BlobContents` is simply a new-type around `wasm_bindgen::JsValue`s that can be used as the content of `Blob`s and `File`s:
 
