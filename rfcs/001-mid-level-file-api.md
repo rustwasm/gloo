@@ -47,7 +47,7 @@ trait BlobLike {
 
     fn as_raw(&self) -> &web_sys::Blob;
 
-    fn slice(&self, start: u64, end: u64) -> Self 
+    fn slice(&self, start: u64, end: u64) -> Self
 }
 ```
 There are two structs that implement this trait: `Blob` and `File`.
@@ -98,7 +98,7 @@ impl File {
 
   fn last_modified_since_epoch(&self) -> Duration { ... }
 
-  fn as_blob(&self) -> Blob { ... }
+  fn to_blob(&self) -> Blob { ... }
 }
 
 impl BlobLike for File { ... }
@@ -136,13 +136,13 @@ mod callbacks {
   impl FileReader {
     fn new() -> FileReader { ... }
 
-    fn read_as_string<F>(self, blob: &impl BlobLike, callback: F)
+    fn read_to_string<F>(self, blob: &impl BlobLike, callback: F)
         where F: FnOnce(Result<String, FileReadError>) { ... };
 
-    fn read_as_data_url<F>(self, blob: &impl BlobLike, callback: F)
+    fn read_to_data_url<F>(self, blob: &impl BlobLike, callback: F)
         where F: FnOnce(Result<String, FileReadError>) { ... };
 
-    fn read_as_array_buffer<F>(self, blob: &impl BlobLike, callback: F)
+    fn read_to_array_buffer<F>(self, blob: &impl BlobLike, callback: F)
         where F: FnOnce(Result<&web_sys::ArrayBuffer, FileReadError>) { ... };
 
     fn on_progress<F>(&mut self, callback: F)
@@ -160,11 +160,11 @@ mod futures {
   impl FileReader {
     fn new() -> FileReader { ... }
 
-    fn read_as_string(self, blob: &impl BlobLike) -> ReadAsString { ... }
+    fn read_to_string(self, blob: &impl BlobLike) -> ReadAsString { ... }
 
-    fn read_as_data_url(self, blob: &impl BlobLike) -> ReadAsDataUrl { ... }
+    fn read_to_data_url(self, blob: &impl BlobLike) -> ReadAsDataUrl { ... }
 
-    fn read_as_array_buffer(self, blob: &impl BlobLike) -> ReadAsArrayBuffer { ... }
+    fn read_to_array_buffer(self, blob: &impl BlobLike) -> ReadAsArrayBuffer { ... }
 
     fn on_progress(&self) -> OnProgressStream { }
 
