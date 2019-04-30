@@ -6,7 +6,8 @@ What is included?
 * Only standard rust types in the interface.
 * Type safe interface.
 * Error handling by returning results from all functions that can cause a runtime error.
-* Simplification of the interface wherever it does not limit the functionality. (note that this opinion differ a bit from my previous post, I think it is not possible to have a 1-1 correspondence to the WebGL API, but it should be as close as possible)
+* Simplification of the interface wherever it does not limit the functionality.
+* Keeping track of the current state for possible performance benefits and debug purposes.
 
 What is not included?
 * WebGL is a state machine which is not really aligned with the rust way of thinking. Unfortunately, there is not a straight forward and unbiased way to handle that. Therefore, I suggest to leave that to the higher level crates.
@@ -21,12 +22,14 @@ The web-sys WebGL functionality is difficult to approach because of the JS types
 Here’s an example implementation: 
 ```rust
 
+
 use web_sys;
 
 // There should be a struct for WebGL 2 context too.
 pub struct WebGlRenderingContext
 {
-    context: web_sys::WebGlRenderingContext
+    context: web_sys::WebGlRenderingContext,
+    state: State
 }
 
 impl WebGlRenderingContext {
@@ -34,7 +37,7 @@ impl WebGlRenderingContext {
     // used primarily from the Gloo canvas crate or something, not directly from the user.
     pub fn new(web_sys_context: web_sys::WebGlRenderingContext) -> Self
     {
-        WebGlRenderingContext { context: web_sys_context }
+        WebGlRenderingContext { context: web_sys_context, state: State::default() }
     }
 }
 
@@ -51,9 +54,31 @@ impl WebGlRenderingContext {
     }
 }
 
-// And another example:
+// A big question is: How do we handle state? I think it is impossible to avoid the state machine
+// if we want to stay anywhere near the WebGL interface. Therefore, the suggestion is to keep all of the states,
+// but also try to handle them by keeping track of them. This will not avoid that it is in a wrong state when
+// drawing, but it will make it possible to
+// 1) avoid changing state unnecessarily, thereby the user can set the state of everything before a draw call without loosing performance.
+// 2) expose debug helper functions
 
-#[derive(Debug, Eq, PartialEq)]
+pub struct State {
+    blend: bool,
+    blend_type_source: BlendType,
+    blend_type_destination: BlendType
+    // etc
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            blend: false,
+            blend_type_source: BlendType::SrcAlpha,
+            blend_type_destination: BlendType::OneMinusSrcAlpha
+        }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum BlendType
 {
     Zero,
@@ -79,15 +104,28 @@ impl WebGlRenderingContext {
         {
             return Err(Error::WebGLError { message: "blend_func cannot be called with both ConstantColor and ConstantAlpha.".to_string() });
         }
+
         // Check if the blend state is already the desired blend state, if it is, then we don't call the webgl function!
-        // ...
+        if self.state.blend_type_source != s_factor || self.state.blend_type_destination != d_factor
+        {
+            self.context.blend_func(s_factor as u32, d_factor as u32);
+        }
+
         Ok(())
+    }
+}
+
+// To help the user, make it easy to print the current state of the rendering context.
+impl std::fmt::Display for WebGlRenderingContext
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "Blending enabled {}", self.state.blend)
+        // ...
     }
 }
 
 // So next example is a bit more complex and this involves exposing another API than the one in web-sys/WebGL.
 // The goal here is not to copy the WebGL API, but rather to expose the exact same functionality as safely as possible.
-
 pub struct VertexShader<'a>
 {
     shader: web_sys::WebGlShader,
