@@ -173,11 +173,10 @@ pub enum Error {
 
 ## Drawbacks, rationale and alternatives
 
-This crate solves the easy problems with the web-sys (and WebGL) interface (rusty safe interface). The more hard problems (simple to use, avoid state machine, performance etc.) is difficult to address in general and especially without creating an opinionated library. Therefore, I envision this crate to be the foundation for a multitude of different opinionated libraries as well as to be used by graphics programmers that want low level control.
+This crate solves the easy problems with the web-sys (and WebGL) interface (rusty safe interface). The harder problems (simple to use, avoid state machine, performance etc.) is difficult to address in general and especially without creating an opinionated library. Therefore, I envision this crate to be the foundation for a multitude of different opinionated libraries as well as to be used by graphics programmers that want low level control.
 
 The alternative, as I see it, is to go straight to the higher level crates and then let graphics programmers use the web-sys API. However, I would have appreciated a crate like this a few months ago and I am probably not the only one.
 
 ## Unresolved questions
 
 * IMO, the wrapper should be as safe and simple as possible, but not limit the programmer in any way. This means that you should be able to do exactly the same as with the web-sys API, and that might make the API a bit uglier, but how bad it is going to be, I don’t know yet. In the cases where it is inevitably going to be an ugly API, I want it to be as similar to the WebGL API as possible.
-* Probably a lot more that I can’t think of right now…
