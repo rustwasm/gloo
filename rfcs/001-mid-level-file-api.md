@@ -8,31 +8,11 @@ The mid-level file API aims to implement File I/O on top of the raw JS apis foun
 
 ## The API
 
-First we have `FileList` which is simply a list of `File`s. This is an opaque struct that offers a way to iterate over `Files` and get individual files by index:
+First we have a way to turn a `web_sys::FileList` into a vector of `File`s (we'll look a the `File` struct below):
 
 ```rust
-#[derive(Debug, Clone)]
-struct FileList { ... }
-
-impl FileList {
-  fn get(index: u32) -> Option<File> { ... }
-
-  fn len(&self) -> u32 { ... }
-
-  fn iter(&self) -> FileListIter { ... }
-
-  fn as_raw(&self) -> &web_sys::FileList { ... }
-}
-
-impl AsRef<web_sys::FileList> for FileList { ... }
-impl From<web_sys::FileList> for FileList { ... }
-impl Index<usize> for FileList {
-    type Output = File;
-    fn index(&self, index: usize) -> &Self::Output { ... }
-}
+impl From<web_sys::FileList> for Vec<File> { ... }
 ```
-
-There is no `FileList::new` since creating a raw `web_sys::FileList` is not possible without going through a `web_sys::HtmlInputElement`.
 
 Next we the trait `BlobLike`
 ```rust
