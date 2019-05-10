@@ -84,7 +84,7 @@ fn new_with_options() -> impl Future<Item = (), Error = JsValue> {
             },
             move |e| {
                 sender.send(|| {
-                    is(e.dyn_into::<web_sys::MouseEvent>().is_ok(), true)?;
+                    is(e.dyn_ref::<web_sys::MouseEvent>().is_some(), true)?;
 
                     Ok(())
                 });
@@ -111,7 +111,7 @@ fn once_with_options() -> impl Future<Item = (), Error = JsValue> {
             },
             move |e| {
                 sender.send(|| {
-                    is(e.dyn_into::<web_sys::MouseEvent>().is_ok(), true)?;
+                    is(e.dyn_ref::<web_sys::MouseEvent>().is_some(), true)?;
 
                     Ok(())
                 });
@@ -131,7 +131,7 @@ fn new() -> impl Future<Item = (), Error = JsValue> {
 
         let _handler = EventListener::new(&body, "click", move |e| {
             sender.send(|| {
-                is(e.dyn_into::<web_sys::MouseEvent>().is_ok(), true)?;
+                is(e.dyn_ref::<web_sys::MouseEvent>().is_some(), true)?;
 
                 Ok(())
             });
@@ -150,7 +150,7 @@ fn once() -> impl Future<Item = (), Error = JsValue> {
 
         let _handler = EventListener::once(&body, "click", move |e| {
             sender.send(|| {
-                is(e.dyn_into::<web_sys::MouseEvent>().is_ok(), true)?;
+                is(e.dyn_ref::<web_sys::MouseEvent>().is_some(), true)?;
 
                 Ok(())
             });

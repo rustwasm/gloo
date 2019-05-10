@@ -230,7 +230,7 @@ thread_local! {
 pub struct EventListener {
     target: EventTarget,
     event_type: Cow<'static, str>,
-    callback: Option<Closure<FnMut(Event)>>,
+    callback: Option<Closure<FnMut(&Event)>>,
     phase: EventListenerPhase,
 }
 
@@ -239,7 +239,7 @@ impl EventListener {
     fn raw_new(
         target: &EventTarget,
         event_type: Cow<'static, str>,
-        callback: Closure<FnMut(Event)>,
+        callback: Closure<FnMut(&Event)>,
         options: &AddEventListenerOptions,
         phase: EventListenerPhase,
     ) -> Self {
@@ -283,7 +283,7 @@ impl EventListener {
     /// # use gloo_events::{EventListener, EventListenerOptions};
     /// # let target = unimplemented!();
     /// # let event_type = "click";
-    /// # let callback = move |e| {};
+    /// # fn callback(_: &web_sys::Event) {}
     /// #
     /// let options = EventListenerOptions::enable_prevent_default();
     ///
@@ -302,7 +302,7 @@ impl EventListener {
     /// # use gloo_events::{EventListener, EventListenerOptions};
     /// # let target = unimplemented!();
     /// # let event_type = "click";
-    /// # let callback = move |e| {};
+    /// # fn callback(_: &web_sys::Event) {}
     /// #
     /// // This runs the event listener in the capture phase, rather than the bubble phase
     /// let options = EventListenerOptions::run_in_capture_phase();
@@ -322,7 +322,7 @@ impl EventListener {
     /// # let target = unimplemented!();
     /// #
     /// let listener = EventListener::new(&target, "click", move |event| {
-    ///     let event = event.dyn_into::<web_sys::MouseEvent>().unwrap_throw();
+    ///     let event = event.dyn_ref::<web_sys::MouseEvent>().unwrap_throw();
     ///
     ///     // ...
     /// });
@@ -331,9 +331,9 @@ impl EventListener {
     pub fn new<S, F>(target: &EventTarget, event_type: S, callback: F) -> Self
     where
         S: Into<Cow<'static, str>>,
-        F: FnMut(Event) + 'static,
+        F: FnMut(&Event) + 'static,
     {
-        let callback = Closure::wrap(Box::new(callback) as Box<FnMut(Event)>);
+        let callback = Closure::wrap(Box::new(callback) as Box<FnMut(&Event)>);
 
         NEW_OPTIONS.with(move |options| {
             Self::raw_new(
@@ -362,7 +362,7 @@ impl EventListener {
     /// # let target = unimplemented!();
     /// #
     /// let listener = EventListener::once(&target, "load", move |event| {
-    ///     let event = event.dyn_into::<web_sys::ProgressEvent>().unwrap_throw();
+    ///     let event = event.dyn_ref::<web_sys::ProgressEvent>().unwrap_throw();
     ///
     ///     // ...
     /// });
@@ -371,7 +371,7 @@ impl EventListener {
     pub fn once<S, F>(target: &EventTarget, event_type: S, callback: F) -> Self
     where
         S: Into<Cow<'static, str>>,
-        F: FnOnce(Event) + 'static,
+        F: FnOnce(&Event) + 'static,
     {
         let callback = Closure::once(callback);
 
@@ -450,9 +450,9 @@ impl EventListener {
     ) -> Self
     where
         S: Into<Cow<'static, str>>,
-        F: FnMut(Event) + 'static,
+        F: FnMut(&Event) + 'static,
     {
-        let callback = Closure::wrap(Box::new(callback) as Box<FnMut(Event)>);
+        let callback = Closure::wrap(Box::new(callback) as Box<FnMut(&Event)>);
 
         Self::raw_new(
             target,
@@ -514,7 +514,7 @@ impl EventListener {
     ) -> Self
     where
         S: Into<Cow<'static, str>>,
-        F: FnOnce(Event) + 'static,
+        F: FnOnce(&Event) + 'static,
     {
         let callback = Closure::once(callback);
 
@@ -551,7 +551,7 @@ impl EventListener {
 
     /// Returns the callback.
     #[inline]
-    pub fn callback(&self) -> &Closure<FnMut(Event)> {
+    pub fn callback(&self) -> &Closure<FnMut(&Event)> {
         // This will never panic, because `callback` is always `Some`
         self.callback.as_ref().unwrap_throw()
     }
