@@ -1,7 +1,6 @@
 //! Callback-style timer APIs.
 
 use super::sys::*;
-use std::fmt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -11,6 +10,7 @@ use wasm_bindgen::JsCast;
 ///
 /// Once scheduled, you can either `cancel` so that it doesn't run or `forget`
 /// it so that it is un-cancel-able.
+#[derive(Debug)]
 #[must_use = "timeouts cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Timeout {
     id: Option<i32>,
@@ -22,12 +22,6 @@ impl Drop for Timeout {
         if let Some(id) = self.id {
             clear_timeout(id);
         }
-    }
-}
-
-impl fmt::Debug for Timeout {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Timeout").field("id", &self.id).finish()
     }
 }
 
@@ -114,6 +108,7 @@ impl Timeout {
 ///
 /// Once scheduled, you can either `cancel` so that it ceases to fire or `forget`
 /// it so that it is un-cancel-able.
+#[derive(Debug)]
 #[must_use = "intervals cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Interval {
     id: Option<i32>,
@@ -125,12 +120,6 @@ impl Drop for Interval {
         if let Some(id) = self.id {
             clear_interval(id);
         }
-    }
-}
-
-impl fmt::Debug for Interval {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Interval").field("id", &self.id).finish()
     }
 }
 

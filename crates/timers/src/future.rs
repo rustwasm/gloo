@@ -3,7 +3,6 @@
 use super::sys::*;
 use futures::prelude::*;
 use futures::sync::mpsc;
-use std::fmt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
@@ -47,6 +46,7 @@ use wasm_bindgen_futures::JsFuture;
 ///         })
 /// );
 /// ```
+#[derive(Debug)]
 #[must_use = "futures do nothing unless polled or spawned"]
 pub struct TimeoutFuture {
     id: Option<i32>,
@@ -92,14 +92,6 @@ impl TimeoutFuture {
     }
 }
 
-impl fmt::Debug for TimeoutFuture {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("TimeoutFuture")
-            .field("id", &self.id)
-            .finish()
-    }
-}
-
 impl Future for TimeoutFuture {
     type Item = ();
     type Error = ();
@@ -121,6 +113,7 @@ impl Future for TimeoutFuture {
 /// you can `drop` the stream.
 ///
 /// An interval stream will never resolve to `Err`.
+#[derive(Debug)]
 #[must_use = "streams do nothing unless polled or spawned"]
 pub struct IntervalStream {
     millis: u32,
@@ -171,14 +164,6 @@ impl Drop for IntervalStream {
         if let Some(id) = self.id {
             clear_interval(id);
         }
-    }
-}
-
-impl fmt::Debug for IntervalStream {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("IntervalStream")
-            .field("id", &self.id)
-            .finish()
     }
 }
 

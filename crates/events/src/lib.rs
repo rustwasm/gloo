@@ -225,6 +225,7 @@ thread_local! {
 ///     }
 /// }
 /// ```
+#[derive(Debug)]
 #[must_use = "event listener will never be called after being dropped"]
 pub struct EventListener {
     target: EventTarget,
@@ -578,17 +579,5 @@ impl Drop for EventListener {
                 )
                 .unwrap_throw();
         }
-    }
-}
-
-// TODO Remove this after https://github.com/rustwasm/wasm-bindgen/issues/1387 is fixed
-impl std::fmt::Debug for EventListener {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("EventListener")
-            .field("target", &self.target)
-            .field("event_type", &self.event_type)
-            .field("callback", &"Closure { ... }")
-            .field("phase", &self.phase)
-            .finish()
     }
 }
