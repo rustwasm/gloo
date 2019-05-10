@@ -25,6 +25,9 @@ yourself.
   - [Implementation and Feedback Cycle](#implementation-and-feedback-cycle)
     - [Implementation Checklist](#implementation-checklist)
 - [Team Members](#team-members)
+- [Publishing Releases and Versioning](#publishing-releases-and-versioning)
+  - [Versioning](#versioning)
+  - [Publishing Checklist](#publishing-checklist)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -251,3 +254,55 @@ Team members sign off on design proposals and review pull requests to Gloo.
 If you make a handful of significant contributions to Gloo and participate in
 design proposals, then maybe you should be a team member! Think you or someone
 else would be a good fit? Reach out to us!
+
+## Publishing Releases and Versioning
+
+### Versioning
+
+Whenever we bump a `gloo_whatever` utility crate's version, make sure to make a
+corresponding version bump for every crate that transitively depends upon
+`gloo_whatever`. Crates that do not transitively depend on `gloo_whatever`
+should not have their version bumped.
+
+For example, if we start with this dependency graph:
+
+```
+- gloo @ 0.1.2
+  - gloo_foo @ 0.1.2
+  - gloo_bar @ 0.1.3
+  - gloo_qux @ 0.1.4
+    - gloo_bar @ 0.1.3
+```
+
+If we make a bug fix in `gloo_bar` and bump its version from 0.1.3 to 0.1.4,
+then the cascading version bumps should result in this final dependency graph:
+
+```
+- gloo @ 0.1.3           # `gloo` has deps updated, version bumped
+  - gloo_foo @ 0.1.2     # `gloo_foo` remains at 0.1.2 since no deps changed
+  - gloo_bar @ 0.1.4     # `gloo_bar` had bug fix -> bumped to 0.1.4
+  - gloo_qux @ 0.1.5     # `gloo_qux` has its dep on `gloo_bar` updated, version bumped
+    - gloo_bar @ 0.1.4
+```
+
+Historically, this versioning scheme was agreed upon in [issue #66][].
+
+[issue #66]: https://github.com/rustwasm/gloo/issues/66
+
+### Publishing Checklist
+
+Here is a checklist for publishing new releases to crates.io:
+
+* [ ] Bump all the relevant crates' versions, as described above.
+
+* [ ] Write a `CHANGELOG.md` entry for the release.
+
+* [ ] Commit the changes and send a pull request for the release.
+
+* [ ] Once a team member has approved the pull request, and continuous
+      integration is green, merge the PR.
+
+* [ ] `cargo publish` each crate that had its version bumped.
+
+* [ ] Create a tag `X.Y.Z` for the umbrella `gloo` crate's version, and push
+      this tag to GitHub.
