@@ -1,13 +1,13 @@
 //! `Future`- and `Stream`-backed timers APIs.
 
-use crate::callback::{Timeout, Interval};
+use crate::callback::{Interval, Timeout};
 
-use wasm_bindgen::prelude::*;
-use futures_channel::{oneshot, mpsc};
+use futures_channel::{mpsc, oneshot};
 use futures_core::stream::Stream;
 use std::future::Future;
 use std::pin::Pin;
-use std::task::{Poll, Context};
+use std::task::{Context, Poll};
+use wasm_bindgen::prelude::*;
 
 /// A scheduled timeout as a `Future`.
 ///

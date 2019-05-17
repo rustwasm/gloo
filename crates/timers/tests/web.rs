@@ -3,7 +3,10 @@
 #![cfg(all(target_arch = "wasm32", feature = "futures"))]
 
 use futures_channel::{mpsc, oneshot};
-use futures_util::{stream::{self, StreamExt}, future::{select, Either, FutureExt}};
+use futures_util::{
+    future::{select, Either, FutureExt},
+    stream::{self, StreamExt},
+};
 use gloo_timers::{
     callback::{Interval, Timeout},
     future::{IntervalStream, TimeoutFuture},
@@ -72,7 +75,7 @@ async fn timeout_future_cancel() {
 
     let (who, other) = match select(a, b).await {
         Either::Left(x) => x,
-        Either::Right(_) => panic!("Timer for 2 ms finished before timer for 1 ms")
+        Either::Right(_) => panic!("Timer for 2 ms finished before timer for 1 ms"),
     };
     assert_eq!(who, 1);
     // Drop `b` so that its timer is canceled.

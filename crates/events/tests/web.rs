@@ -2,8 +2,8 @@
 
 #![cfg(target_arch = "wasm32")]
 
-use futures::prelude::*;
 use futures::channel::mpsc;
+use futures::prelude::*;
 use gloo_events::{EventListener, EventListenerOptions, EventListenerPhase};
 use js_sys::Error;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
@@ -86,7 +86,8 @@ async fn new_with_options() {
 
         body.click();
         body.click();
-    }).await;
+    })
+    .await;
     assert_eq!(results, Ok(vec![(), ()]));
 }
 
@@ -113,7 +114,8 @@ async fn once_with_options() {
 
         body.click();
         body.click();
-    }).await;
+    })
+    .await;
     assert_eq!(results, Ok(vec![()]));
 }
 
@@ -132,7 +134,8 @@ async fn new() {
 
         body.click();
         body.click();
-    }).await;
+    })
+    .await;
     assert_eq!(results, Ok(vec![(), ()]));
 }
 
@@ -151,7 +154,8 @@ async fn once() {
 
         body.click();
         body.click();
-    }).await;
+    })
+    .await;
     assert_eq!(results, Ok(vec![()]));
 }
 
@@ -205,6 +209,7 @@ async fn dynamic_registration() {
         drop(handler3);
 
         body.click();
-    }).await;
+    })
+    .await;
     assert_eq!(results, Ok(vec![1, 2, 2, 2, 3, 3]));
 }
