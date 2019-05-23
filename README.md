@@ -98,7 +98,40 @@ Gloo is this modular toolkit.
 
 ## Example
 
-TODO: we haven't built enough of Gloo to have anything compelling here yet!
+This example uses `gloo::events` for adding event listeners and `gloo::timers`
+for creating timeouts. It creates a `<button>` element and adds a "click" event
+listener to it. Whenever the button is clicked, it starts a one second timeout,
+which sets the button's text content to "Hello from one second ago!".
+
+```rust
+use gloo::{events::EventListener, timers::callback::Timeout};
+use wasm_bindgen::prelude::*;
+
+pub struct DelayedHelloButton {
+    button: web_sys::Element,
+    on_click: events::EventListener,
+}
+
+impl DelayedHelloButton {
+    pub fn new(document: &web_sys::Document) -> Result<DelayedHelloButton, JsValue> {
+        // Create a `<button>` element.
+        let button = document.create_element("button")?;
+
+        // Listen to "click" events on the button.
+        let button2 = button.clone();
+        let on_click = EventListener::new(&button, "click", move |_event| {
+            // After a one second timeout, update the button's text content.
+            let button3 = button2.clone();
+            Timeout::new(1_000, move || {
+                button3.set_text_content(Some("Hello from one second ago!"));
+            })
+            .forget();
+        });
+
+        Ok(DelayedHelloButton { button, on_click })
+    }
+}
+```
 
 ## Get Involved!
 
