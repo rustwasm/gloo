@@ -19,6 +19,7 @@ yourself.
     - [Wasm Headless Browser Tests](#wasm-headless-browser-tests)
     - [Non-Wasm Tests](#non-wasm-tests)
   - [Formatting](#formatting)
+  - [Updating `README.md`s](#updating-readmemds)
 - [Workflow](#workflow)
   - [Proposing a Design](#proposing-a-design)
     - [Design Checklist](#design-checklist)
@@ -48,10 +49,13 @@ These tools are required for building and testing Gloo:
   the whole code base.
 * [**`wasm-pack`:**][install-wasm-pack] We use `wasm-pack` to orchestrate
   headless browser testing.
+* [**`cargo readme`:**][cargo-readme] We use `cargo readme` to generate
+  `README.md`s from each crate's module documentation.
 
 [install-rust]: https://www.rust-lang.org/tools/install
 [rustfmt]: https://github.com/rust-lang/rustfmt
 [install-wasm-pack]: https://rustwasm.github.io/wasm-pack/installer/
+[cargo-readme]: https://github.com/livioribeiro/cargo-readme
 
 ### Building
 
@@ -97,6 +101,15 @@ To (re)format the Gloo source code, run:
 
 ```
 $ cargo fmt --all
+```
+
+### Updating `README.md`s
+
+To update each `gloo/crates/*/README.md` to reflect the crate's top-level
+documentation, go to the root of the repository and run:
+
+```
+./update-readmes.sh
 ```
 
 ## Workflow
