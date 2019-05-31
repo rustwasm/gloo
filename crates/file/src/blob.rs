@@ -36,41 +36,46 @@ impl BlobContents {
     }
 }
 
-impl std::convert::Into<wasm_bindgen::JsValue> for BlobContents {
-    fn into(self) -> wasm_bindgen::JsValue {
-        self.inner
+impl std::convert::From<BlobContents> for wasm_bindgen::JsValue {
+    fn from(blob_contents: BlobContents) -> wasm_bindgen::JsValue {
+        blob_contents.inner
     }
 }
 
-impl std::convert::Into<BlobContents> for &str {
-    fn into(self) -> BlobContents {
-        BlobContents::from_raw(wasm_bindgen::JsValue::from_str(self))
+impl std::convert::From<&str> for BlobContents {
+    fn from(str: &str) -> Self {
+        BlobContents::from_raw(wasm_bindgen::JsValue::from_str(str))
     }
 }
 
-impl std::convert::Into<BlobContents> for &[u8] {
-    fn into(self) -> BlobContents {
-        let array = unsafe { js_sys::Uint8Array::view(self) };
-        let array_clone = js_sys::Uint8Array::new(&array).buffer();
-        BlobContents::from_raw(array_clone.into())
+impl std::convert::From<&[u8]> for BlobContents {
+    fn from(buffer: &[u8]) -> Self {
+        let array = unsafe { js_sys::Uint8Array::view(buffer) };
+        BlobContents::from_raw(js_sys::Uint8Array::new(&array).into())
     }
 }
 
-impl std::convert::Into<BlobContents> for Blob {
-    fn into(self) -> BlobContents {
-        BlobContents::from_raw(self.inner.into())
+impl std::convert::From<Blob> for BlobContents {
+    fn from(blob: Blob) -> Self {
+        BlobContents::from_raw(blob.inner.into())
     }
 }
 
-impl std::convert::Into<BlobContents> for web_sys::Blob {
-    fn into(self) -> BlobContents {
-        BlobContents::from_raw(self.into())
+impl std::convert::From<File> for BlobContents {
+    fn from(file: File) -> Self {
+        BlobContents::from_raw(file.inner.into())
     }
 }
 
-impl std::convert::Into<BlobContents> for js_sys::ArrayBuffer {
-    fn into(self) -> BlobContents {
-        BlobContents::from_raw(self.into())
+impl std::convert::From<web_sys::Blob> for BlobContents {
+    fn from(blob: web_sys::Blob) -> Self {
+        BlobContents::from_raw(blob.into())
+    }
+}
+
+impl std::convert::From<js_sys::ArrayBuffer> for BlobContents {
+    fn from(buffer: js_sys::ArrayBuffer) -> Self {
+        BlobContents::from_raw(buffer.into())
     }
 }
 
@@ -125,11 +130,17 @@ impl BlobLike for File {
             .as_raw()
             .slice_with_f64_and_f64(start as f64, end as f64)
             .unwrap_throw();
+        let raw_mime_type = self.raw_mime_type();
+        let mime_type = if raw_mime_type == "" {
+            None
+        } else {
+            Some(raw_mime_type)
+        };
 
         File::new_with_options(
             self.name(),
             blob,
-            None,
+            mime_type,
             Some(self.last_modified_since_epoch()),
         )
     }
@@ -165,13 +176,8 @@ impl File {
             options.type_(&mime_type);
         }
         if let Some(last_modified) = last_modified_since_epoch {
-            let (millis, did_overflow_seconds) = last_modified.as_secs().overflowing_mul(1000);
-            let (millis, did_overflow_millis) =
-                millis.overflowing_add(last_modified.subsec_millis() as u64);
-            assert!(
-                !did_overflow_seconds && !did_overflow_millis,
-                "last modified since epoch duration overflowed"
-            );
+            let millis = last_modified.as_millis();
+            // TODO: max check
 
             options.last_modified(millis as f64);
         }
