@@ -113,6 +113,8 @@ impl BlobLike for Blob {
     }
 
     fn slice(&self, start: u64, end: u64) -> Self {
+        ensure_representable(start);
+        ensure_representable(end);
         Blob::from_raw(
             self.as_raw()
                 .slice_with_f64_and_f64(start as f64, end as f64)
@@ -126,6 +128,8 @@ impl BlobLike for File {
     }
 
     fn slice(&self, start: u64, end: u64) -> Self {
+        ensure_representable(start);
+        ensure_representable(end);
         let blob = self
             .as_raw()
             .slice_with_f64_and_f64(start as f64, end as f64)
@@ -175,10 +179,15 @@ impl File {
         if let Some(mime_type) = mime_type {
             options.type_(&mime_type);
         }
-        if let Some(last_modified) = last_modified_since_epoch {
-            let millis = last_modified.as_millis();
-            // TODO: max check
 
+        if let Some(last_modified) = last_modified_since_epoch {
+            // Max integer stably representable by f64
+            let max_integer: u128 = (2.0f64).powi(54) as u128;
+            let millis = last_modified.as_millis();
+            assert!(
+                millis <= max_integer,
+                "timestamp is too large and cannot be represented in JavaScript"
+            );
             options.last_modified(millis as f64);
         }
         let parts = js_sys::Array::of1(&contents.into().inner);
@@ -203,4 +212,16 @@ impl File {
     pub fn size(&self) -> u64 {
         self.inner.size() as u64
     }
+}
+
+fn ensure_representable(number: u64) {
+    // Max integer stably representable by f64
+    let max_integer: u64 = (2.0f64).powi(54) as u64;
+    assert!(
+        number <= max_integer,
+        format!(
+            "{} is too large and cannot be represented in JavaScript",
+            number
+        )
+    );
 }
