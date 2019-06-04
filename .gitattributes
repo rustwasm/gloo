@@ -1,0 +1,3 @@
+# These are programmatically generated with `cargo readme` so don't clutter
+# diffs with them and don't try and merge them.
+crates/*/README.md -diff -merge
