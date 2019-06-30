@@ -230,7 +230,7 @@ thread_local! {
 pub struct EventListener {
     target: EventTarget,
     event_type: Cow<'static, str>,
-    callback: Option<Closure<FnMut(&Event)>>,
+    callback: Option<Closure<dyn FnMut(&Event)>>,
     phase: EventListenerPhase,
 }
 
@@ -239,7 +239,7 @@ impl EventListener {
     fn raw_new(
         target: &EventTarget,
         event_type: Cow<'static, str>,
-        callback: Closure<FnMut(&Event)>,
+        callback: Closure<dyn FnMut(&Event)>,
         options: &AddEventListenerOptions,
         phase: EventListenerPhase,
     ) -> Self {
@@ -333,7 +333,7 @@ impl EventListener {
         S: Into<Cow<'static, str>>,
         F: FnMut(&Event) + 'static,
     {
-        let callback = Closure::wrap(Box::new(callback) as Box<FnMut(&Event)>);
+        let callback = Closure::wrap(Box::new(callback) as Box<dyn FnMut(&Event)>);
 
         NEW_OPTIONS.with(move |options| {
             Self::raw_new(
@@ -452,7 +452,7 @@ impl EventListener {
         S: Into<Cow<'static, str>>,
         F: FnMut(&Event) + 'static,
     {
-        let callback = Closure::wrap(Box::new(callback) as Box<FnMut(&Event)>);
+        let callback = Closure::wrap(Box::new(callback) as Box<dyn FnMut(&Event)>);
 
         Self::raw_new(
             target,
@@ -551,7 +551,7 @@ impl EventListener {
 
     /// Returns the callback.
     #[inline]
-    pub fn callback(&self) -> &Closure<FnMut(&Event)> {
+    pub fn callback(&self) -> &Closure<dyn FnMut(&Event)> {
         // This will never panic, because `callback` is always `Some`
         self.callback.as_ref().unwrap_throw()
     }
