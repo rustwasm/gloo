@@ -1,8 +1,14 @@
 [package]
 name = "gloo-timers"
+description = "Convenience crate for working with JavaScript timers"
 version = "0.1.0"
 authors = ["Rust and WebAssembly Working Group"]
 edition = "2018"
+license = "MIT/Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/rustwasm/gloo/tree/master/crates/timers"
+homepage = "https://github.com/rustwasm/gloo"
+categories = ["api-bindings", "asynchronous", "wasm"]
 
 [dependencies]
 wasm-bindgen = "0.2.43"
