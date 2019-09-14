@@ -1,8 +1,14 @@
 [package]
 name = "gloo-events"
-version = "0.1.0"
+description = "Convenience crate for working with DOM event listeners"
+version = "0.1.1"
 authors = ["Rust and WebAssembly Working Group"]
 edition = "2018"
+license = "MIT/Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/rustwasm/gloo/tree/master/crates/events"
+homepage = "https://github.com/rustwasm/gloo"
+categories = ["api-bindings", "asynchronous", "web-programming", "wasm"]
 
 [dependencies]
 wasm-bindgen = "0.2.43"
