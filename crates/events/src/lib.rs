@@ -189,9 +189,10 @@ thread_local! {
 /// ```rust
 /// # use gloo_events::EventListener;
 /// # use wasm_bindgen::UnwrapThrowExt;
-/// use futures::Poll;
+/// use std::pin::Pin;
+/// use std::task::{Context, Poll};
 /// use futures::stream::Stream;
-/// use futures::sync::mpsc;
+/// use futures::channel::mpsc;
 /// use web_sys::EventTarget;
 ///
 /// pub struct OnClick {
@@ -214,14 +215,17 @@ thread_local! {
 ///             listener,
 ///         }
 ///     }
+///
+///     fn project_receiver(self: Pin<&mut Self>) -> Pin<&mut mpsc::UnboundedReceiver<()>> {
+///         unsafe { self.map_unchecked_mut(|s| &mut s.receiver) } 
+///     }
 /// }
 ///
 /// impl Stream for OnClick {
 ///     type Item = ();
-///     type Error = ();
 ///
-///     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-///         self.receiver.poll().map_err(|_| unreachable!())
+///     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+///         self.project_receiver().poll_next(cx)
 ///     }
 /// }
 /// ```

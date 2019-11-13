@@ -1,8 +1,11 @@
 //! `Future`- and `Stream`-backed timers APIs.
 
+use std::task::{Poll, Context};
+use std::pin::Pin;
+use std::future::Future;
 use super::sys::*;
-use futures::prelude::*;
-use futures::sync::mpsc;
+use futures::stream::Stream;
+use futures::channel::mpsc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
@@ -24,27 +27,20 @@ use wasm_bindgen_futures::JsFuture;
 /// use futures::prelude::*;
 /// use gloo_timers::future::TimeoutFuture;
 ///
-/// let timeout_a = TimeoutFuture::new(1_000).map(|_| "a");
-/// let timeout_b = TimeoutFuture::new(2_000).map(|_| "b");
+/// let timeout_a = TimeoutFuture::new(1_000);
+/// let timeout_b = TimeoutFuture::new(2_000);
 ///
-/// wasm_bindgen_futures::spawn_local(
-///     timeout_a
-///         .select(timeout_b)
-///         .and_then(|(who, other)| {
-///             // `timeout_a` should have won this race.
-///             assert_eq!(who, "a");
-///
+/// wasm_bindgen_futures::spawn_local(async {
+///     match future::select(timeout_a, timeout_b).await {
+///         future::Either::Left((val, b)) => {
 ///             // Drop `timeout_b` to cancel its timeout.
-///             drop(other);
-///
-///             Ok(())
-///         })
-///         .map_err(|_| {
-///             wasm_bindgen::throw_str(
-///                 "unreachable -- timeouts never fail, only potentially hang"
-///             );
-///         })
-/// );
+///             drop(b);
+///         }
+///         future::Either::Right((a, val)) => {
+///             panic!("timeout_a should have won this race")
+///         }
+///     }
+/// });
 /// ```
 #[derive(Debug)]
 #[must_use = "futures do nothing unless polled or spawned"]
@@ -75,11 +71,10 @@ impl TimeoutFuture {
     /// use futures::prelude::*;
     /// use gloo_timers::future::TimeoutFuture;
     ///
-    /// wasm_bindgen_futures::spawn_local(
-    ///     TimeoutFuture::new(1_000).map(|_| {
-    ///         // Do stuff after one second...
-    ///     })
-    /// );
+    /// wasm_bindgen_futures::spawn_local(async {
+    ///     TimeoutFuture::new(1_000).await;
+    ///     // Do stuff after one second...
+    /// });
     /// ```
     pub fn new(millis: u32) -> TimeoutFuture {
         let mut id = None;
@@ -90,18 +85,25 @@ impl TimeoutFuture {
         let inner = JsFuture::from(promise);
         TimeoutFuture { id, inner }
     }
+
+    /// Project the pin onto the inner future.
+    fn project_inner(self: Pin<&mut Self>) -> Pin<&mut JsFuture> {
+        // Unsafe: The field `inner` must not be borrowed without structural pinning.
+        unsafe { self.map_unchecked_mut(|s| &mut s.inner) }
+    }
 }
 
 impl Future for TimeoutFuture {
-    type Item = ();
-    type Error = ();
+    type Output = ();
 
-    fn poll(&mut self) -> Poll<(), ()> {
-        match self.inner.poll() {
-            Ok(Async::Ready(_)) => Ok(Async::Ready(())),
-            Ok(Async::NotReady) => Ok(Async::NotReady),
-            // We only ever `resolve` the promise, never reject it.
-            Err(_) => wasm_bindgen::throw_str("unreachable"),
+    fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
+        match self.project_inner().poll(cx) {
+            Poll::Ready(result) => {
+                // We only ever `resolve` the promise, never reject it.
+                debug_assert!(result.is_ok());
+                Poll::Ready(())
+            }
+            Poll::Pending => Poll::Pending
         }
     }
 }
@@ -136,13 +138,13 @@ impl IntervalStream {
     /// use futures::prelude::*;
     /// use gloo_timers::future::IntervalStream;
     ///
-    /// wasm_bindgen_futures::spawn_local(
-    ///     IntervalStream::new(1_000)
-    ///         .for_each(|_| {
-    ///             // Do stuff every one second...
-    ///             Ok(())
-    ///         })
-    /// );
+    /// wasm_bindgen_futures::spawn_local(async {
+    ///     let mut interval = IntervalStream::new(1_000);
+    ///     loop {
+    ///         interval.next().await;
+    ///         // Do stuff every one second...
+    ///     }
+    /// });
     /// ```
     pub fn new(millis: u32) -> IntervalStream {
         let (sender, receiver) = mpsc::unbounded();
@@ -157,6 +159,12 @@ impl IntervalStream {
             inner: receiver,
         }
     }
+
+    /// Project the pin onto the inner stream
+    fn project_inner(self: Pin<&mut Self>) -> Pin<&mut mpsc::UnboundedReceiver<()>> {
+        // Unsafe: The field `inner` must not be borrowed without structural pinning.
+        unsafe { self.map_unchecked_mut(|s| &mut s.inner) }
+    }
 }
 
 impl Drop for IntervalStream {
@@ -169,9 +177,8 @@ impl Drop for IntervalStream {
 
 impl Stream for IntervalStream {
     type Item = ();
-    type Error = ();
 
-    fn poll(&mut self) -> Poll<Option<()>, ()> {
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         if self.id.is_none() {
             self.id = Some(set_interval(
                 self.closure.as_ref().unchecked_ref::<js_sys::Function>(),
@@ -179,6 +186,6 @@ impl Stream for IntervalStream {
             ));
         }
 
-        self.inner.poll()
+        self.project_inner().poll_next(cx)
     }
 }

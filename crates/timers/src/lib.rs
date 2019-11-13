@@ -38,14 +38,12 @@ use futures::prelude::*;
 use gloo_timers::future::TimeoutFuture;
 use wasm_bindgen_futures::spawn_local;
 
-let timeout = TimeoutFuture::new(1_000).and_then(|_| {
-    // Do something here after the one second timeout is up!
-#   Ok(())
-});
-
 // Spawn the `timeout` future on the local thread. If we just dropped it, then
 // the timeout would be cancelled with `clearTimeout`.
-spawn_local(timeout);
+spawn_local(async {
+    TimeoutFuture::new(1_000_).await;
+    // Do something here after the one second timeout is up!
+});
 ```
 
 ## Intervals

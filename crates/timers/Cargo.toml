@@ -11,16 +11,16 @@ homepage = "https://github.com/rustwasm/gloo"
 categories = ["api-bindings", "asynchronous", "wasm"]
 
 [dependencies]
-wasm-bindgen = "0.2.43"
-js-sys = "0.3.17"
+wasm-bindgen = "0.2.54"
+js-sys = "0.3.31"
 
 [dependencies.futures_rs]
 package = "futures"
-version = "0.1.25"
+version = "0.3"
 optional = true
 
 [dependencies.wasm-bindgen-futures]
-version = "0.3.19"
+version = "0.4.4"
 optional = true
 
 [dependencies.web-sys]
@@ -35,4 +35,4 @@ futures = ["futures_rs", "wasm-bindgen-futures"]
 
 
 [dev-dependencies]
-wasm-bindgen-test = "0.2.43"
+wasm-bindgen-test = "0.3.4"

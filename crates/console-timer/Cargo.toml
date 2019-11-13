@@ -11,11 +11,11 @@ homepage = "https://github.com/rustwasm/gloo"
 categories = ["api-bindings", "development-tools::profiling", "wasm"]
 
 [dependencies.web-sys]
-version = "0.3.17"
+version = "0.3.31"
 features = [
     "console",
 ]
 
 [dev-dependencies]
-wasm-bindgen-test = "0.2.43"
+wasm-bindgen-test = "0.3.4"
 gloo-timers = { version = "0.1.0", path = "../timers" }
