@@ -3,6 +3,7 @@
 #![cfg(target_arch = "wasm32")]
 
 use futures::prelude::*;
+use futures::channel::mpsc;
 use gloo_events::{EventListener, EventListenerOptions, EventListenerPhase};
 use js_sys::Error;
 use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
@@ -37,7 +38,7 @@ where
 
 #[derive(Clone)]
 struct Sender<A> {
-    sender: futures::channel::mpsc::UnboundedSender<Result<A, JsValue>>,
+    sender: mpsc::UnboundedSender<Result<A, JsValue>>,
 }
 
 impl<A> Sender<A> {
@@ -49,20 +50,13 @@ impl<A> Sender<A> {
     }
 }
 
-async fn mpsc<A, F>(f: F) -> Vec<A>
+async fn mpsc<A, F>(f: F) -> Result<Vec<A>, JsValue>
 where
     F: FnOnce(Sender<A>),
 {
-    let (sender, receiver) = futures::channel::mpsc::unbounded();
-
+    let (sender, receiver) = mpsc::unbounded();
     f(Sender { sender });
-
-    receiver
-        .map(|x| match x {
-            Ok(a) => a,
-            Err(_) => unreachable!(),
-        })
-        .collect().await
+    receiver.try_collect().await
 }
 
 // ----------------------------------------------------------------------------
@@ -71,7 +65,7 @@ where
 
 #[wasm_bindgen_test]
 async fn new_with_options() {
-    let results = mpsc::<(), _>(|sender| {
+    let results = mpsc(|sender| {
         let body = body();
 
         let _handler = EventListener::new_with_options(
@@ -93,12 +87,12 @@ async fn new_with_options() {
         body.click();
         body.click();
     }).await;
-    is(results, vec![(), ()]).unwrap_throw();
+    assert_eq!(results, Ok(vec![(), ()]));
 }
 
 #[wasm_bindgen_test]
 async fn once_with_options() {
-    let results = mpsc::<(), _>(|sender| {
+    let results = mpsc(|sender| {
         let body = body();
 
         let _handler = EventListener::once_with_options(
@@ -120,12 +114,12 @@ async fn once_with_options() {
         body.click();
         body.click();
     }).await;
-    is(results, vec![()]).unwrap_throw();
+    assert_eq!(results, Ok(vec![()]));
 }
 
 #[wasm_bindgen_test]
 async fn new() {
-    let results = mpsc::<(), _>(|sender| {
+    let results = mpsc(|sender| {
         let body = body();
 
         let _handler = EventListener::new(&body, "click", move |e| {
@@ -139,12 +133,12 @@ async fn new() {
         body.click();
         body.click();
     }).await;
-    is(results, vec![(), ()]).unwrap_throw();
+    assert_eq!(results, Ok(vec![(), ()]));
 }
 
 #[wasm_bindgen_test]
 async fn once() {
-    let results = mpsc::<(), _>(|sender| {
+    let results = mpsc(|sender| {
         let body = body();
 
         let _handler = EventListener::once(&body, "click", move |e| {
@@ -158,7 +152,7 @@ async fn once() {
         body.click();
         body.click();
     }).await;
-    is(results, vec![()]).unwrap_throw();
+    assert_eq!(results, Ok(vec![()]));
 }
 
 // TODO is it possible to somehow cleanup the closure after a timeout?
@@ -178,7 +172,7 @@ fn forget() {
 
 #[wasm_bindgen_test]
 async fn dynamic_registration() {
-    let results = mpsc::<usize, _>(|sender| {
+    let results = mpsc(|sender| {
         let body = body();
 
         let handler1 = EventListener::new(&body, "click", {
@@ -212,5 +206,5 @@ async fn dynamic_registration() {
 
         body.click();
     }).await;
-    is(results, vec![1, 2, 2, 2, 3, 3]).unwrap_throw();
+    assert_eq!(results, Ok(vec![1, 2, 2, 2, 3, 3]));
 }

@@ -1,14 +1,16 @@
 //! `Future`- and `Stream`-backed timers APIs.
 
-use std::task::{Poll, Context};
-use std::pin::Pin;
-use std::future::Future;
 use super::sys::*;
-use futures::stream::Stream;
-use futures::channel::mpsc;
-use wasm_bindgen::prelude::*;
+use crate::callback::Timeout;
+
+use futures_channel::mpsc;
+use futures_core::stream::Stream;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Poll, Context, Waker};
+use std::sync::{Arc, Mutex};
 use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::JsFuture;
+use wasm_bindgen::prelude::*;
 
 /// A scheduled timeout as a `Future`.
 ///
@@ -23,21 +25,18 @@ use wasm_bindgen_futures::JsFuture;
 /// # Example
 ///
 /// ```no_run
-/// # extern crate futures_rs as futures;
-/// use futures::prelude::*;
 /// use gloo_timers::future::TimeoutFuture;
+/// use futures_util::future::{select, Either};
+/// use wasm_bindgen_futures::spawn_local;
 ///
-/// let timeout_a = TimeoutFuture::new(1_000);
-/// let timeout_b = TimeoutFuture::new(2_000);
-///
-/// wasm_bindgen_futures::spawn_local(async {
-///     match future::select(timeout_a, timeout_b).await {
-///         future::Either::Left((val, b)) => {
-///             // Drop `timeout_b` to cancel its timeout.
+/// spawn_local(async {
+///     match select(TimeoutFuture::new(1_000), TimeoutFuture::new(2_000)).await {
+///         Either::Left((val, b)) => {
+///             // Drop the `2_000` ms timeout to cancel its timeout.
 ///             drop(b);
 ///         }
-///         future::Either::Right((a, val)) => {
-///             panic!("timeout_a should have won this race")
+///         Either::Right((a, val)) => {
+///             panic!("the `1_000` ms timeout should have won this race");
 ///         }
 ///     }
 /// });
@@ -45,16 +44,16 @@ use wasm_bindgen_futures::JsFuture;
 #[derive(Debug)]
 #[must_use = "futures do nothing unless polled or spawned"]
 pub struct TimeoutFuture {
-    id: Option<i32>,
-    inner: JsFuture,
+    inner: Timeout,
+    state: Arc<Mutex<TimeoutFutureState>>,
 }
 
-impl Drop for TimeoutFuture {
-    fn drop(&mut self) {
-        if let Some(id) = self.id {
-            clear_timeout(id);
-        }
-    }
+/// A state machine for the timeout future.
+#[derive(Debug)]
+enum TimeoutFutureState {
+    Init,
+    Polled(Waker),
+    Complete,
 }
 
 impl TimeoutFuture {
@@ -67,29 +66,32 @@ impl TimeoutFuture {
     /// # Example
     ///
     /// ```no_run
-    /// # extern crate futures_rs as futures;
-    /// use futures::prelude::*;
     /// use gloo_timers::future::TimeoutFuture;
+    /// use wasm_bindgen_futures::spawn_local;
     ///
-    /// wasm_bindgen_futures::spawn_local(async {
+    /// spawn_local(async {
     ///     TimeoutFuture::new(1_000).await;
     ///     // Do stuff after one second...
     /// });
     /// ```
     pub fn new(millis: u32) -> TimeoutFuture {
-        let mut id = None;
-        let promise = js_sys::Promise::new(&mut |resolve, _reject| {
-            id = Some(set_timeout(&resolve, millis as i32));
+        let state = Arc::new(Mutex::new(TimeoutFutureState::Init));
+        let state_ref = Arc::downgrade(&state);
+        let inner = Timeout::new(millis, move || {
+            let state = match state_ref.upgrade() {
+                Some(s) => s,
+                None => return
+            };
+            let mut state = state.lock().expect("mutex should not be poisoned");
+            match &*state {
+                TimeoutFutureState::Polled(waker) => {
+                    waker.wake_by_ref();
+                }
+                _ => ()
+            }
+            (*state) = TimeoutFutureState::Complete;
         });
-        debug_assert!(id.is_some());
-        let inner = JsFuture::from(promise);
-        TimeoutFuture { id, inner }
-    }
-
-    /// Project the pin onto the inner future.
-    fn project_inner(self: Pin<&mut Self>) -> Pin<&mut JsFuture> {
-        // Unsafe: The field `inner` must not be borrowed without structural pinning.
-        unsafe { self.map_unchecked_mut(|s| &mut s.inner) }
+        TimeoutFuture { inner, state }
     }
 }
 
@@ -97,13 +99,13 @@ impl Future for TimeoutFuture {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
-        match self.project_inner().poll(cx) {
-            Poll::Ready(result) => {
-                // We only ever `resolve` the promise, never reject it.
-                debug_assert!(result.is_ok());
-                Poll::Ready(())
+        let mut state = self.state.lock().unwrap();
+        match *state {
+            TimeoutFutureState::Init | TimeoutFutureState::Polled(_) => {
+                (*state) = TimeoutFutureState::Polled(cx.waker().clone());
+                Poll::Pending
             }
-            Poll::Pending => Poll::Pending
+            TimeoutFutureState::Complete => Poll::Ready(()),
         }
     }
 }
@@ -134,16 +136,14 @@ impl IntervalStream {
     /// # Example
     ///
     /// ```no_run
-    /// # extern crate futures_rs as futures;
-    /// use futures::prelude::*;
     /// use gloo_timers::future::IntervalStream;
+    /// use futures_util::stream::StreamExt;
+    /// use wasm_bindgen_futures::spawn_local;
     ///
-    /// wasm_bindgen_futures::spawn_local(async {
-    ///     let mut interval = IntervalStream::new(1_000);
-    ///     loop {
-    ///         interval.next().await;
+    /// spawn_local(async {
+    ///     IntervalStream::new(1_000).for_each(|_| {
     ///         // Do stuff every one second...
-    ///     }
+    ///     }).await;
     /// });
     /// ```
     pub fn new(millis: u32) -> IntervalStream {
@@ -158,12 +158,6 @@ impl IntervalStream {
             closure,
             inner: receiver,
         }
-    }
-
-    /// Project the pin onto the inner stream
-    fn project_inner(self: Pin<&mut Self>) -> Pin<&mut mpsc::UnboundedReceiver<()>> {
-        // Unsafe: The field `inner` must not be borrowed without structural pinning.
-        unsafe { self.map_unchecked_mut(|s| &mut s.inner) }
     }
 }
 
@@ -186,6 +180,6 @@ impl Stream for IntervalStream {
             ));
         }
 
-        self.project_inner().poll_next(cx)
+        Pin::new(&mut self.inner).poll_next(cx)
     }
 }

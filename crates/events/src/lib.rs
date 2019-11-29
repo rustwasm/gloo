@@ -1,7 +1,10 @@
 /*!
-Using event listeners with [`web-sys`](https://crates.io/crates/web-sys) is hard! This crate provides an [`EventListener`](struct.EventListener.html) type which makes it easy!
+Using event listeners with [`web-sys`](https://crates.io/crates/web-sys) is hard! This crate
+provides an [`EventListener`] type which makes it easy!
 
-See the documentation for [`EventListener`](struct.EventListener.html) for more information.
+See the documentation for [`EventListener`] for more information.
+
+[`EventListener`]: https://docs.rs/gloo-events/^0.1.0/gloo_events/struct.EventListener.html
 */
 #![deny(missing_docs, missing_debug_implementations)]
 
@@ -182,7 +185,8 @@ thread_local! {
 
 /// RAII type which is used to manage DOM event listeners.
 ///
-/// When the `EventListener` is dropped, it will automatically deregister the event listener and clean up the closure's memory.
+/// When the `EventListener` is dropped, it will automatically deregister the event listener and
+/// clean up the closure's memory.
 ///
 /// Normally the `EventListener` is stored inside of another struct, like this:
 ///
@@ -215,17 +219,13 @@ thread_local! {
 ///             listener,
 ///         }
 ///     }
-///
-///     fn project_receiver(self: Pin<&mut Self>) -> Pin<&mut mpsc::UnboundedReceiver<()>> {
-///         unsafe { self.map_unchecked_mut(|s| &mut s.receiver) } 
-///     }
 /// }
 ///
 /// impl Stream for OnClick {
 ///     type Item = ();
 ///
 ///     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
-///         self.project_receiver().poll_next(cx)
+///         Pin::new(&mut self.receiver).poll_next(cx)
 ///     }
 /// }
 /// ```

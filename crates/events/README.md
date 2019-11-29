@@ -20,6 +20,9 @@
   <sub>Built with 🦀🕸 by <a href="https://rustwasm.github.io/">The Rust and WebAssembly Working Group</a></sub>
 </div>
 
-Using event listeners with [`web-sys`](https://crates.io/crates/web-sys) is hard! This crate provides an [`EventListener`](struct.EventListener.html) type which makes it easy!
+Using event listeners with [`web-sys`](https://crates.io/crates/web-sys) is hard! This crate
+provides an [`EventListener`] type which makes it easy!
 
-See the documentation for [`EventListener`](struct.EventListener.html) for more information.
+See the documentation for [`EventListener`] for more information.
+
+[`EventListener`]: https://docs.rs/gloo-events/^0.1.0/gloo_events/struct.EventListener.html

@@ -33,15 +33,13 @@ timers is exposed.
 #![cfg_attr(feature = "futures", doc = "```no_run")]
 #![cfg_attr(not(feature = "futures"), doc = "```ignore")]
 /*!
-# extern crate futures_rs as futures;
-use futures::prelude::*;
 use gloo_timers::future::TimeoutFuture;
 use wasm_bindgen_futures::spawn_local;
 
 // Spawn the `timeout` future on the local thread. If we just dropped it, then
 // the timeout would be cancelled with `clearTimeout`.
 spawn_local(async {
-    TimeoutFuture::new(1_000_).await;
+    TimeoutFuture::new(1_000).await;
     // Do something here after the one second timeout is up!
 });
 ```
@@ -61,9 +59,6 @@ TODO
  */
 
 #![deny(missing_docs, missing_debug_implementations)]
-
-#[cfg(feature = "futures")]
-extern crate futures_rs as futures;
 
 pub mod callback;
 
