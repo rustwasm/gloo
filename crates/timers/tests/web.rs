@@ -2,10 +2,8 @@
 
 #![cfg(all(target_arch = "wasm32", feature = "futures"))]
 
-use futures_rs::{
-    prelude::*,
-    sync::{mpsc, oneshot},
-};
+use futures_channel::{mpsc, oneshot};
+use futures_util::{stream::{self, StreamExt}, future::{select, Either, FutureExt}};
 use gloo_timers::{
     callback::{Interval, Timeout},
     future::{IntervalStream, TimeoutFuture},
@@ -16,15 +14,15 @@ use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
 
-#[wasm_bindgen_test(async)]
-fn timeout() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
+#[wasm_bindgen_test]
+async fn timeout() {
     let (sender, receiver) = oneshot::channel();
     Timeout::new(1, || sender.send(()).unwrap()).forget();
-    receiver.map_err(|e| e.to_string().into())
+    receiver.await.unwrap();
 }
 
-#[wasm_bindgen_test(async)]
-fn timeout_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
+#[wasm_bindgen_test]
+async fn timeout_cancel() {
     let cell = Rc::new(Cell::new(false));
 
     let t = Timeout::new(1, {
@@ -44,16 +42,16 @@ fn timeout_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
     })
     .forget();
 
-    receiver.map_err(|e| e.to_string().into())
+    receiver.await.unwrap();
 }
 
-#[wasm_bindgen_test(async)]
-fn timeout_future() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
-    TimeoutFuture::new(1).map_err(|_| "impossible".into())
+#[wasm_bindgen_test]
+async fn timeout_future() {
+    TimeoutFuture::new(1).await;
 }
 
-#[wasm_bindgen_test(async)]
-fn timeout_future_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
+#[wasm_bindgen_test]
+async fn timeout_future_cancel() {
     let cell = Rc::new(Cell::new(false));
 
     let a = TimeoutFuture::new(1).map({
@@ -68,28 +66,24 @@ fn timeout_future_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsVal
         let cell = cell.clone();
         move |_| {
             cell.set(true);
-            2
+            2u32
         }
     });
 
-    a.select(b)
-        .map_err(|_| "impossible".into())
-        .and_then(|(who, other)| {
-            assert_eq!(who, 1);
-
-            // Drop `b` so that its timer is canceled.
-            drop(other);
-
-            TimeoutFuture::new(3).map_err(|_| "impossible".into())
-        })
-        .map(move |_| {
-            // We should never have fired `b`'s timer.
-            assert_eq!(cell.get(), false);
-        })
+    let (who, other) = match select(a, b).await {
+        Either::Left(x) => x,
+        Either::Right(_) => panic!("Timer for 2 ms finished before timer for 1 ms")
+    };
+    assert_eq!(who, 1);
+    // Drop `b` so that its timer is canceled.
+    drop(other);
+    TimeoutFuture::new(3).await;
+    // We should never have fired `b`'s timer.
+    assert_eq!(cell.get(), false);
 }
 
-#[wasm_bindgen_test(async)]
-fn interval() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
+#[wasm_bindgen_test]
+async fn interval() {
     let (mut sender, receiver) = mpsc::channel(1);
     let i = Interval::new(1, move || {
         if !sender.is_closed() {
@@ -97,19 +91,13 @@ fn interval() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
         }
     });
 
-    receiver
-        .take(5)
-        .map_err(|_| "impossible".into())
-        .collect()
-        .and_then(|results| {
-            drop(i);
-            assert_eq!(results.len(), 5);
-            Ok(())
-        })
+    let results: Vec<_> = receiver.take(5).collect().await;
+    drop(i);
+    assert_eq!(results.len(), 5);
 }
 
-#[wasm_bindgen_test(async)]
-fn interval_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
+#[wasm_bindgen_test]
+async fn interval_cancel() {
     let (mut i_sender, i_receiver) = mpsc::channel(1);
 
     let i = Interval::new(1, move || i_sender.try_send(()).unwrap());
@@ -122,26 +110,13 @@ fn interval_cancel() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
     })
     .forget();
 
-    receiver
-        .merge(i_receiver)
-        .take(2)
-        .map_err(|_| "impossible".into())
-        .collect()
-        .and_then(|results| {
-            // Should only be 1 item - and that's from the timeout. Anything more means interval spuriously fired.
-            assert_eq!(results.len(), 1);
-            Ok(())
-        })
+    let results: Vec<_> = stream::select(receiver, i_receiver).take(2).collect().await;
+    // Should only be 1 item - and that's from the timeout. Anything more means interval spuriously fired.
+    assert_eq!(results.len(), 1);
 }
 
-#[wasm_bindgen_test(async)]
-fn interval_stream() -> impl Future<Item = (), Error = wasm_bindgen::JsValue> {
-    IntervalStream::new(1)
-        .take(5)
-        .map_err(|_| "impossible".into())
-        .collect()
-        .and_then(|results| {
-            assert_eq!(results.len(), 5);
-            Ok(())
-        })
+#[wasm_bindgen_test]
+async fn interval_stream() {
+    let results: Vec<_> = IntervalStream::new(1).take(5).collect().await;
+    assert_eq!(results.len(), 5);
 }

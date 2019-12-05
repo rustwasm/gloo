@@ -1,7 +1,10 @@
 /*!
-Using event listeners with [`web-sys`](https://crates.io/crates/web-sys) is hard! This crate provides an [`EventListener`](struct.EventListener.html) type which makes it easy!
+Using event listeners with [`web-sys`](https://crates.io/crates/web-sys) is hard! This crate
+provides an [`EventListener`] type which makes it easy!
 
-See the documentation for [`EventListener`](struct.EventListener.html) for more information.
+See the documentation for [`EventListener`] for more information.
+
+[`EventListener`]: struct.EventListener.html
 */
 #![deny(missing_docs, missing_debug_implementations)]
 
@@ -182,16 +185,18 @@ thread_local! {
 
 /// RAII type which is used to manage DOM event listeners.
 ///
-/// When the `EventListener` is dropped, it will automatically deregister the event listener and clean up the closure's memory.
+/// When the `EventListener` is dropped, it will automatically deregister the event listener and
+/// clean up the closure's memory.
 ///
 /// Normally the `EventListener` is stored inside of another struct, like this:
 ///
 /// ```rust
 /// # use gloo_events::EventListener;
 /// # use wasm_bindgen::UnwrapThrowExt;
-/// use futures::Poll;
+/// use std::pin::Pin;
+/// use std::task::{Context, Poll};
 /// use futures::stream::Stream;
-/// use futures::sync::mpsc;
+/// use futures::channel::mpsc;
 /// use web_sys::EventTarget;
 ///
 /// pub struct OnClick {
@@ -218,10 +223,9 @@ thread_local! {
 ///
 /// impl Stream for OnClick {
 ///     type Item = ();
-///     type Error = ();
 ///
-///     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-///         self.receiver.poll().map_err(|_| unreachable!())
+///     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+///         Pin::new(&mut self.receiver).poll_next(cx)
 ///     }
 /// }
 /// ```

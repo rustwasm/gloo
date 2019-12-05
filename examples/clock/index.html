@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Clock</title>
+    </head>
+    <body>
+        <pre id="clock"></pre>
+        <script src="pkg/clock.js"></script>
+        <script>
+         wasm_bindgen("pkg/clock_bg.wasm");
+        </script>
+    </body>
+</html>

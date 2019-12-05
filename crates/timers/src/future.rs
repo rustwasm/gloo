@@ -1,11 +1,13 @@
 //! `Future`- and `Stream`-backed timers APIs.
 
-use super::sys::*;
-use futures::prelude::*;
-use futures::sync::mpsc;
+use crate::callback::{Timeout, Interval};
+
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::JsFuture;
+use futures_channel::{oneshot, mpsc};
+use futures_core::stream::Stream;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Poll, Context};
 
 /// A scheduled timeout as a `Future`.
 ///
@@ -20,45 +22,27 @@ use wasm_bindgen_futures::JsFuture;
 /// # Example
 ///
 /// ```no_run
-/// # extern crate futures_rs as futures;
-/// use futures::prelude::*;
 /// use gloo_timers::future::TimeoutFuture;
+/// use futures_util::future::{select, Either};
+/// use wasm_bindgen_futures::spawn_local;
 ///
-/// let timeout_a = TimeoutFuture::new(1_000).map(|_| "a");
-/// let timeout_b = TimeoutFuture::new(2_000).map(|_| "b");
-///
-/// wasm_bindgen_futures::spawn_local(
-///     timeout_a
-///         .select(timeout_b)
-///         .and_then(|(who, other)| {
-///             // `timeout_a` should have won this race.
-///             assert_eq!(who, "a");
-///
-///             // Drop `timeout_b` to cancel its timeout.
-///             drop(other);
-///
-///             Ok(())
-///         })
-///         .map_err(|_| {
-///             wasm_bindgen::throw_str(
-///                 "unreachable -- timeouts never fail, only potentially hang"
-///             );
-///         })
-/// );
+/// spawn_local(async {
+///     match select(TimeoutFuture::new(1_000), TimeoutFuture::new(2_000)).await {
+///         Either::Left((val, b)) => {
+///             // Drop the `2_000` ms timeout to cancel its timeout.
+///             drop(b);
+///         }
+///         Either::Right((a, val)) => {
+///             panic!("the `1_000` ms timeout should have won this race");
+///         }
+///     }
+/// });
 /// ```
 #[derive(Debug)]
 #[must_use = "futures do nothing unless polled or spawned"]
 pub struct TimeoutFuture {
-    id: Option<i32>,
-    inner: JsFuture,
-}
-
-impl Drop for TimeoutFuture {
-    fn drop(&mut self) {
-        if let Some(id) = self.id {
-            clear_timeout(id);
-        }
-    }
+    inner: Timeout,
+    rx: oneshot::Receiver<()>,
 }
 
 impl TimeoutFuture {
@@ -71,38 +55,29 @@ impl TimeoutFuture {
     /// # Example
     ///
     /// ```no_run
-    /// # extern crate futures_rs as futures;
-    /// use futures::prelude::*;
     /// use gloo_timers::future::TimeoutFuture;
+    /// use wasm_bindgen_futures::spawn_local;
     ///
-    /// wasm_bindgen_futures::spawn_local(
-    ///     TimeoutFuture::new(1_000).map(|_| {
-    ///         // Do stuff after one second...
-    ///     })
-    /// );
+    /// spawn_local(async {
+    ///     TimeoutFuture::new(1_000).await;
+    ///     // Do stuff after one second...
+    /// });
     /// ```
     pub fn new(millis: u32) -> TimeoutFuture {
-        let mut id = None;
-        let promise = js_sys::Promise::new(&mut |resolve, _reject| {
-            id = Some(set_timeout(&resolve, millis as i32));
+        let (tx, rx) = oneshot::channel();
+        let inner = Timeout::new(millis, move || {
+            // if the receiver was dropped we do nothing.
+            tx.send(()).unwrap_throw();
         });
-        debug_assert!(id.is_some());
-        let inner = JsFuture::from(promise);
-        TimeoutFuture { id, inner }
+        TimeoutFuture { inner, rx }
     }
 }
 
 impl Future for TimeoutFuture {
-    type Item = ();
-    type Error = ();
+    type Output = ();
 
-    fn poll(&mut self) -> Poll<(), ()> {
-        match self.inner.poll() {
-            Ok(Async::Ready(_)) => Ok(Async::Ready(())),
-            Ok(Async::NotReady) => Ok(Async::NotReady),
-            // We only ever `resolve` the promise, never reject it.
-            Err(_) => wasm_bindgen::throw_str("unreachable"),
-        }
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
+        Future::poll(Pin::new(&mut self.rx), cx).map(|t| t.unwrap_throw())
     }
 }
 /// A scheduled interval as a `Stream`.
@@ -116,10 +91,8 @@ impl Future for TimeoutFuture {
 #[derive(Debug)]
 #[must_use = "streams do nothing unless polled or spawned"]
 pub struct IntervalStream {
-    millis: u32,
-    id: Option<i32>,
-    closure: Closure<dyn FnMut()>,
-    inner: mpsc::UnboundedReceiver<()>,
+    receiver: mpsc::UnboundedReceiver<()>,
+    inner: Interval,
 }
 
 impl IntervalStream {
@@ -132,53 +105,31 @@ impl IntervalStream {
     /// # Example
     ///
     /// ```no_run
-    /// # extern crate futures_rs as futures;
-    /// use futures::prelude::*;
+    /// use futures_util::stream::StreamExt;
     /// use gloo_timers::future::IntervalStream;
+    /// use wasm_bindgen_futures::spawn_local;
     ///
-    /// wasm_bindgen_futures::spawn_local(
-    ///     IntervalStream::new(1_000)
-    ///         .for_each(|_| {
-    ///             // Do stuff every one second...
-    ///             Ok(())
-    ///         })
-    /// );
+    /// spawn_local(async {
+    ///     IntervalStream::new(1_000).for_each(|_| {
+    ///         // Do stuff every one second...
+    ///     }).await;
+    /// });
     /// ```
     pub fn new(millis: u32) -> IntervalStream {
         let (sender, receiver) = mpsc::unbounded();
-        let closure = Closure::wrap(Box::new(move || {
-            sender.unbounded_send(()).unwrap();
-        }) as Box<dyn FnMut()>);
+        let inner = Interval::new(millis, move || {
+            // if the receiver was dropped we do nothing.
+            sender.unbounded_send(()).unwrap_throw();
+        });
 
-        IntervalStream {
-            millis,
-            id: None,
-            closure,
-            inner: receiver,
-        }
-    }
-}
-
-impl Drop for IntervalStream {
-    fn drop(&mut self) {
-        if let Some(id) = self.id {
-            clear_interval(id);
-        }
+        IntervalStream { receiver, inner }
     }
 }
 
 impl Stream for IntervalStream {
     type Item = ();
-    type Error = ();
 
-    fn poll(&mut self) -> Poll<Option<()>, ()> {
-        if self.id.is_none() {
-            self.id = Some(set_interval(
-                self.closure.as_ref().unchecked_ref::<js_sys::Function>(),
-                self.millis as i32,
-            ));
-        }
-
-        self.inner.poll()
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        Stream::poll_next(Pin::new(&mut self.receiver), cx)
     }
 }
