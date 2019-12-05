@@ -25,4 +25,4 @@ provides an [`EventListener`] type which makes it easy!
 
 See the documentation for [`EventListener`] for more information.
 
-[`EventListener`]: https://docs.rs/gloo-events/^0.1.0/gloo_events/struct.EventListener.html
+[`EventListener`]: struct.EventListener.html
