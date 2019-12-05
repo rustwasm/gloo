@@ -66,7 +66,7 @@ async fn timeout_future_cancel() {
         let cell = cell.clone();
         move |_| {
             cell.set(true);
-            2 as u32
+            2u32
         }
     });
 

@@ -66,7 +66,7 @@ impl TimeoutFuture {
         let (tx, rx) = oneshot::channel();
         let inner = Timeout::new(millis, move || {
             // if the receiver was dropped we do nothing.
-            let _ = tx.send(());
+            tx.send(()).unwrap_throw();
         });
         TimeoutFuture { inner, rx }
     }
@@ -76,11 +76,7 @@ impl Future for TimeoutFuture {
     type Output = ();
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
-        match Future::poll(Pin::new(&mut self.rx), cx) {
-            Poll::Pending => Poll::Pending,
-            Poll::Ready(Ok(t)) => Poll::Ready(t),
-            Poll::Ready(Err(e)) => panic!("{}", e),
-        }
+        Future::poll(Pin::new(&mut self.rx), cx).map(|t| t.unwrap_throw())
     }
 }
 /// A scheduled interval as a `Stream`.
@@ -122,7 +118,7 @@ impl IntervalStream {
         let (sender, receiver) = mpsc::unbounded();
         let inner = Interval::new(millis, move || {
             // if the receiver was dropped we do nothing.
-            let _ = sender.unbounded_send(());
+            sender.unbounded_send(()).unwrap_throw();
         });
 
         IntervalStream { receiver, inner }

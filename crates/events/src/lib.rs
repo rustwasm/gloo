@@ -4,7 +4,7 @@ provides an [`EventListener`] type which makes it easy!
 
 See the documentation for [`EventListener`] for more information.
 
-[`EventListener`]: https://docs.rs/gloo-events/^0.1.0/gloo_events/struct.EventListener.html
+[`EventListener`]: struct.EventListener.html
 */
 #![deny(missing_docs, missing_debug_implementations)]
 
@@ -224,7 +224,7 @@ thread_local! {
 /// impl Stream for OnClick {
 ///     type Item = ();
 ///
-///     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+///     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
 ///         Pin::new(&mut self.receiver).poll_next(cx)
 ///     }
 /// }
