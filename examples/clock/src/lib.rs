@@ -23,7 +23,7 @@ pub fn main() {
     });
 }
 
-/// Render the date with the `:` flashing every second into `el`.
+/// Render the date with the `:` flashing on and off every second into `el`.
 fn render_date(el: &web_sys::Element) {
     // print the current date
     let date = chrono::Local::now();
