@@ -2,6 +2,7 @@
 
 use crate::callback::{Timeout, Interval};
 
+use wasm_bindgen::prelude::*;
 use futures_channel::{oneshot, mpsc};
 use futures_core::stream::Stream;
 use std::future::Future;
