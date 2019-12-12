@@ -1,8 +1,8 @@
 //! Callback-style timer APIs.
 
-use super::sys::*;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use web_sys::window;
 
 /// A scheduled timeout.
 ///
@@ -20,7 +20,9 @@ pub struct Timeout {
 impl Drop for Timeout {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            clear_timeout(id);
+            window()
+                .unwrap_throw()
+                .clear_timeout_with_handle(id);
         }
     }
 }
@@ -44,10 +46,13 @@ impl Timeout {
     {
         let closure = Closure::once(callback);
 
-        let id = set_timeout(
-            closure.as_ref().unchecked_ref::<js_sys::Function>(),
-            millis as i32,
-        );
+        let id = window()
+            .unwrap_throw()
+            .set_timeout_with_callback_and_timeout_and_arguments_0(
+                closure.as_ref().unchecked_ref::<js_sys::Function>(),
+                millis as i32
+            )
+            .unwrap_throw();
 
         Timeout {
             id: Some(id),
@@ -102,6 +107,7 @@ impl Timeout {
         self.closure.take().unwrap_throw()
     }
 }
+
 /// A scheduled interval.
 ///
 /// See `Interval::new` for scheduling new intervals.
@@ -118,7 +124,9 @@ pub struct Interval {
 impl Drop for Interval {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            clear_interval(id);
+            window()
+                .unwrap_throw()
+                .clear_interval_with_handle(id);
         }
     }
 }
@@ -141,10 +149,13 @@ impl Interval {
     {
         let closure = Closure::wrap(Box::new(callback) as Box<dyn FnMut()>);
 
-        let id = set_interval(
-            closure.as_ref().unchecked_ref::<js_sys::Function>(),
-            millis as i32,
-        );
+        let id = window()
+            .unwrap_throw()
+            .set_interval_with_callback_and_timeout_and_arguments_0(
+                closure.as_ref().unchecked_ref::<js_sys::Function>(),
+                millis as i32,
+            )
+            .unwrap_throw();
 
         Interval {
             id: Some(id),
