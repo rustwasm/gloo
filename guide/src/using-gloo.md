@@ -17,7 +17,7 @@ Add a `gloo` dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-gloo = "0.1"
+gloo = "0.2"
 ```
 
 ### `src/lib.rs`
@@ -45,7 +45,7 @@ add `gloo-timers` to our dependencies in `Cargo.toml`:
 
 ```toml
 [dependencies]
-gloo-timers = "0.1"
+gloo-timers = "0.2"
 ```
 
 ### `src/lib.rs`
