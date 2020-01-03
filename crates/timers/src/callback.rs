@@ -1,8 +1,25 @@
 //! Callback-style timer APIs.
 
+use js_sys::Reflect;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::window;
+use wasm_bindgen::{throw_val, JsCast, JsValue};
+use web_sys::{Window, WorkerGlobalScope};
+
+macro_rules! global {
+    ($global:ident, $fun:expr) => {{
+        let global: JsValue = js_sys::global().into();
+
+        if Reflect::has(&global, &String::from("Window").into()).unwrap_throw() {
+            let $global: Window = global.into();
+            $fun
+        } else if Reflect::has(&global, &String::from("WorkerGlobalScope").into()).unwrap_throw() {
+            let $global: WorkerGlobalScope = global.into();
+            $fun
+        } else {
+            throw_val(global.into())
+        }
+    }};
+}
 
 /// A scheduled timeout.
 ///
@@ -20,9 +37,7 @@ pub struct Timeout {
 impl Drop for Timeout {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            window()
-                .unwrap_throw()
-                .clear_timeout_with_handle(id);
+            global!(global, global.clear_timeout_with_handle(id));
         }
     }
 }
@@ -46,13 +61,15 @@ impl Timeout {
     {
         let closure = Closure::once(callback);
 
-        let id = window()
-            .unwrap_throw()
-            .set_timeout_with_callback_and_timeout_and_arguments_0(
-                closure.as_ref().unchecked_ref::<js_sys::Function>(),
-                millis as i32
-            )
-            .unwrap_throw();
+        let id = global!(
+            global,
+            global
+                .set_timeout_with_callback_and_timeout_and_arguments_0(
+                    closure.as_ref().unchecked_ref::<js_sys::Function>(),
+                    millis as i32,
+                )
+                .unwrap_throw()
+        );
 
         Timeout {
             id: Some(id),
@@ -124,9 +141,7 @@ pub struct Interval {
 impl Drop for Interval {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            window()
-                .unwrap_throw()
-                .clear_interval_with_handle(id);
+            global!(global, global.clear_interval_with_handle(id));
         }
     }
 }
@@ -149,13 +164,15 @@ impl Interval {
     {
         let closure = Closure::wrap(Box::new(callback) as Box<dyn FnMut()>);
 
-        let id = window()
-            .unwrap_throw()
-            .set_interval_with_callback_and_timeout_and_arguments_0(
-                closure.as_ref().unchecked_ref::<js_sys::Function>(),
-                millis as i32,
-            )
-            .unwrap_throw();
+        let id = global!(
+            global,
+            global
+                .set_interval_with_callback_and_timeout_and_arguments_0(
+                    closure.as_ref().unchecked_ref::<js_sys::Function>(),
+                    millis as i32,
+                )
+                .unwrap_throw()
+        );
 
         Interval {
             id: Some(id),
