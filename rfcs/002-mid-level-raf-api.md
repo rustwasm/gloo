@@ -17,6 +17,11 @@ struct Raf {
     state: Rc<RefCell<Option<RafState>>>,
 }
 
+struct RafState {
+    id: i32,
+    closure: Closure<dyn FnMut(f64)>,
+}
+
 impl Raf {
     fn new<F>(mut callback: F) -> Self where F: FnMut(f64) + 'static {
         let state: Rc<RefCell<Option<RafState>>> = Rc::new(RefCell::new(None));
