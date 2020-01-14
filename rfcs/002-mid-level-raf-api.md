@@ -74,4 +74,4 @@ impl Drop for Raf {
 
 The initial commit of this RFC uses the code verbatim from [dominator](https://github.com/Pauan/rust-dominator/) (with permission from the author)
 
-The wasm-bindgen guide proposes [another approach](https://rustwasm.github.io/wasm-bindgen/examples/request-animation-frame.html) which is similar in spirit but less gloo-like. Specifically, adapting this into a generic API that supports cancellation would likely require that the user call a `cancel()` function explicitly, rather than the RAII style proposed here.
+The wasm-bindgen guide proposes [another approach](https://rustwasm.github.io/wasm-bindgen/examples/request-animation-frame.html) which is similar in spirit. However, adapting this into a generic API that supports cancellation would likely require that the user call a `cancel()` function explicitly, rather than the RAII style proposed here.
