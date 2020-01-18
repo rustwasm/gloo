@@ -1,25 +1,50 @@
 //! Callback-style timer APIs.
 
-use js_sys::Reflect;
+use js_sys::{Function, Reflect};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::{throw_val, JsCast, JsValue};
 use web_sys::{Window, WorkerGlobalScope};
 
-macro_rules! global {
-    ($global:ident, $fun:expr) => {{
+thread_local! {
+    static GLOBAL: WindowOrWorker = WindowOrWorker::new();
+}
+
+enum WindowOrWorker {
+    Window(Window),
+    Worker(WorkerGlobalScope),
+}
+
+impl WindowOrWorker {
+    fn new() -> Self {
         let global: JsValue = js_sys::global().into();
 
         if Reflect::has(&global, &String::from("Window").into()).unwrap_throw() {
-            let $global: Window = global.into();
-            $fun
+            WindowOrWorker::Window(global.into())
         } else if Reflect::has(&global, &String::from("WorkerGlobalScope").into()).unwrap_throw() {
-            let $global: WorkerGlobalScope = global.into();
-            $fun
+            WindowOrWorker::Worker(global.into())
         } else {
-            throw_val(global.into())
+            throw_val(global)
         }
-    }};
+    }
 }
+
+macro_rules! impl_window_or_worker {
+    ($name:ident, ($($par_name:ident: $par_type:ty),*)$(, $return:ty)?) => {
+        impl WindowOrWorker {
+            fn $name(&self, $($par_name: $par_type),*) $( -> $return)? {
+                match self {
+                    Self::Window(window) => window.$name($($par_name),*),
+                    Self::Worker(worker) => worker.$name($($par_name),*),
+                }
+            }
+        }
+    };
+}
+
+impl_window_or_worker!(set_timeout_with_callback_and_timeout_and_arguments_0, (handler: &Function, timeout: i32), Result<i32, JsValue>);
+impl_window_or_worker!(clear_timeout_with_handle, (handle: i32));
+impl_window_or_worker!(clear_interval_with_handle, (handle: i32));
+impl_window_or_worker!(set_interval_with_callback_and_timeout_and_arguments_0, (handler: &Function, timeout: i32), Result<i32, JsValue>);
 
 /// A scheduled timeout.
 ///
@@ -37,7 +62,7 @@ pub struct Timeout {
 impl Drop for Timeout {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            global!(global, global.clear_timeout_with_handle(id));
+            GLOBAL.with(|global| global.clear_timeout_with_handle(id));
         }
     }
 }
@@ -61,15 +86,14 @@ impl Timeout {
     {
         let closure = Closure::once(callback);
 
-        let id = global!(
-            global,
+        let id = GLOBAL.with(|global| {
             global
                 .set_timeout_with_callback_and_timeout_and_arguments_0(
                     closure.as_ref().unchecked_ref::<js_sys::Function>(),
                     millis as i32,
                 )
                 .unwrap_throw()
-        );
+        });
 
         Timeout {
             id: Some(id),
@@ -141,7 +165,7 @@ pub struct Interval {
 impl Drop for Interval {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            global!(global, global.clear_interval_with_handle(id));
+            GLOBAL.with(|global| global.clear_interval_with_handle(id));
         }
     }
 }
@@ -164,15 +188,14 @@ impl Interval {
     {
         let closure = Closure::wrap(Box::new(callback) as Box<dyn FnMut()>);
 
-        let id = global!(
-            global,
+        let id = GLOBAL.with(|global| {
             global
                 .set_interval_with_callback_and_timeout_and_arguments_0(
                     closure.as_ref().unchecked_ref::<js_sys::Function>(),
                     millis as i32,
                 )
                 .unwrap_throw()
-        );
+        });
 
         Interval {
             id: Some(id),
