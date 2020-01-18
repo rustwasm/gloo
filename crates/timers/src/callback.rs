@@ -1,8 +1,65 @@
 //! Callback-style timer APIs.
 
+use js_sys::Function;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-use web_sys::window;
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::{Window, WorkerGlobalScope};
+
+thread_local! {
+    static GLOBAL: WindowOrWorker = WindowOrWorker::new();
+}
+
+enum WindowOrWorker {
+    Window(Window),
+    Worker(WorkerGlobalScope),
+}
+
+impl WindowOrWorker {
+    fn new() -> Self {
+        #[wasm_bindgen]
+        extern "C" {
+            type Global;
+
+            #[wasm_bindgen(method, getter, js_name = Window)]
+            fn window(this: &Global) -> JsValue;
+
+            #[wasm_bindgen(method, getter, js_name = WorkerGlobalScope)]
+            fn worker(this: &Global) -> JsValue;
+        }
+
+        let global: Global = js_sys::global().unchecked_into();
+
+        if !global.window().is_undefined() {
+            Self::Window(global.unchecked_into())
+        } else if !global.worker().is_undefined() {
+            Self::Worker(global.unchecked_into())
+        } else {
+            panic!("Only supported in a browser or web worker");
+        }
+    }
+}
+
+macro_rules! impl_window_or_worker {
+    ($(fn $name:ident($($par_name:ident: $par_type:ty),*)$( -> $return:ty)?;)+) => {
+        impl WindowOrWorker {
+            $(
+                fn $name(&self, $($par_name: $par_type),*)$( -> $return)? {
+                    match self {
+                        Self::Window(window) => window.$name($($par_name),*),
+                        Self::Worker(worker) => worker.$name($($par_name),*),
+                    }
+                }
+            )+
+        }
+    };
+}
+
+impl_window_or_worker! {
+    fn set_timeout_with_callback_and_timeout_and_arguments_0(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    fn set_interval_with_callback_and_timeout_and_arguments_0(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    fn clear_timeout_with_handle(handle: i32);
+    fn clear_interval_with_handle(handle: i32);
+}
 
 /// A scheduled timeout.
 ///
@@ -20,9 +77,7 @@ pub struct Timeout {
 impl Drop for Timeout {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            window()
-                .unwrap_throw()
-                .clear_timeout_with_handle(id);
+            GLOBAL.with(|global| global.clear_timeout_with_handle(id));
         }
     }
 }
@@ -46,13 +101,14 @@ impl Timeout {
     {
         let closure = Closure::once(callback);
 
-        let id = window()
-            .unwrap_throw()
-            .set_timeout_with_callback_and_timeout_and_arguments_0(
-                closure.as_ref().unchecked_ref::<js_sys::Function>(),
-                millis as i32
-            )
-            .unwrap_throw();
+        let id = GLOBAL.with(|global| {
+            global
+                .set_timeout_with_callback_and_timeout_and_arguments_0(
+                    closure.as_ref().unchecked_ref::<js_sys::Function>(),
+                    millis as i32,
+                )
+                .unwrap_throw()
+        });
 
         Timeout {
             id: Some(id),
@@ -124,9 +180,7 @@ pub struct Interval {
 impl Drop for Interval {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            window()
-                .unwrap_throw()
-                .clear_interval_with_handle(id);
+            GLOBAL.with(|global| global.clear_interval_with_handle(id));
         }
     }
 }
@@ -149,13 +203,14 @@ impl Interval {
     {
         let closure = Closure::wrap(Box::new(callback) as Box<dyn FnMut()>);
 
-        let id = window()
-            .unwrap_throw()
-            .set_interval_with_callback_and_timeout_and_arguments_0(
-                closure.as_ref().unchecked_ref::<js_sys::Function>(),
-                millis as i32,
-            )
-            .unwrap_throw();
+        let id = GLOBAL.with(|global| {
+            global
+                .set_interval_with_callback_and_timeout_and_arguments_0(
+                    closure.as_ref().unchecked_ref::<js_sys::Function>(),
+                    millis as i32,
+                )
+                .unwrap_throw()
+        });
 
         Interval {
             id: Some(id),

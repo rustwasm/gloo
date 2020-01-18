@@ -20,6 +20,7 @@ futures-channel = { version = "0.3", optional = true }
 version = "0.3.19"
 features = [
     "Window",
+    "WorkerGlobalScope",
 ]
 
 [features]
