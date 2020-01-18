@@ -1,8 +1,8 @@
 //! Callback-style timer APIs.
 
-use js_sys::{Function, Reflect};
+use js_sys::Function;
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::{throw_val, JsCast, JsValue};
+use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{Window, WorkerGlobalScope};
 
 thread_local! {
@@ -16,14 +16,25 @@ enum WindowOrWorker {
 
 impl WindowOrWorker {
     fn new() -> Self {
-        let global: JsValue = js_sys::global().into();
+        #[wasm_bindgen]
+        extern "C" {
+            type Global;
 
-        if Reflect::has(&global, &String::from("Window").into()).unwrap_throw() {
-            WindowOrWorker::Window(global.into())
-        } else if Reflect::has(&global, &String::from("WorkerGlobalScope").into()).unwrap_throw() {
-            WindowOrWorker::Worker(global.into())
+            #[wasm_bindgen(method, getter, js_name = Window)]
+            fn window(this: &Global) -> JsValue;
+
+            #[wasm_bindgen(method, getter, js_name = WorkerGlobalScope)]
+            fn worker(this: &Global) -> JsValue;
+        }
+
+        let global: Global = js_sys::global().unchecked_into();
+
+        if !global.window().is_undefined() {
+            Self::Window(global.unchecked_into())
+        } else if !global.worker().is_undefined() {
+            Self::Worker(global.unchecked_into())
         } else {
-            throw_val(global)
+            panic!("Only supported in a browser or web worker");
         }
     }
 }
