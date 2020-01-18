@@ -29,22 +29,26 @@ impl WindowOrWorker {
 }
 
 macro_rules! impl_window_or_worker {
-    ($name:ident, ($($par_name:ident: $par_type:ty),*)$(, $return:ty)?) => {
+    ($(fn $name:ident($($par_name:ident: $par_type:ty),*)$( -> $return:ty)?;)+) => {
         impl WindowOrWorker {
-            fn $name(&self, $($par_name: $par_type),*) $( -> $return)? {
-                match self {
-                    Self::Window(window) => window.$name($($par_name),*),
-                    Self::Worker(worker) => worker.$name($($par_name),*),
+            $(
+                fn $name(&self, $($par_name: $par_type),*)$( -> $return)? {
+                    match self {
+                        Self::Window(window) => window.$name($($par_name),*),
+                        Self::Worker(worker) => worker.$name($($par_name),*),
+                    }
                 }
-            }
+            )+
         }
     };
 }
 
-impl_window_or_worker!(set_timeout_with_callback_and_timeout_and_arguments_0, (handler: &Function, timeout: i32), Result<i32, JsValue>);
-impl_window_or_worker!(clear_timeout_with_handle, (handle: i32));
-impl_window_or_worker!(clear_interval_with_handle, (handle: i32));
-impl_window_or_worker!(set_interval_with_callback_and_timeout_and_arguments_0, (handler: &Function, timeout: i32), Result<i32, JsValue>);
+impl_window_or_worker! {
+    fn set_timeout_with_callback_and_timeout_and_arguments_0(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    fn set_interval_with_callback_and_timeout_and_arguments_0(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    fn clear_timeout_with_handle(handle: i32);
+    fn clear_interval_with_handle(handle: i32);
+}
 
 /// A scheduled timeout.
 ///
