@@ -1,0 +1,22 @@
+[package]
+name = "gloo-file"
+version = "0.1.0"
+authors = ["Rust and WebAssembly Working Group"]
+edition = "2018"
+
+[dependencies]
+futures = "0.1.20"
+wasm-bindgen = "0.2.40"
+js-sys = "0.3.17"
+gloo-events = { path = "../events", version = "0.1" }
+
+[dependencies.mime]
+version = "0.3.13"
+optional = true
+
+[dependencies.web-sys]
+version = "0.3.17"
+features = ["Blob", "File", "FileList", "FileReader", "HtmlInputElement", "BlobPropertyBag", "FilePropertyBag"]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.2.37"
