@@ -1,0 +1,36 @@
+[package]
+name = "gloo-notifications"
+version = "0.1.0"
+authors = ["Rust and WebAssembly Working Group"]
+edition = "2018"
+
+[dependencies]
+wasm-bindgen = "0.2.40"
+js-sys = "0.3.17"
+
+[dependencies.futures_rs]
+package = "futures"
+version = "0.1.25"
+optional = true
+
+[dependencies.wasm-bindgen-futures]
+version = "0.3.17"
+optional = true
+
+[dependencies.web-sys]
+version = "0.3.17"
+features = [
+    "Notification",
+    "NotificationOptions",
+    "NotificationDirection",
+    "NotificationPermission",
+    "GetNotificationOptions",
+]
+
+[features]
+default = []
+futures = ["futures_rs", "wasm-bindgen-futures"]
+
+
+[dev-dependencies]
+wasm-bindgen-test = "0.2.40"
