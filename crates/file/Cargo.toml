@@ -1,0 +1,34 @@
+[package]
+name = "gloo-file"
+version = "0.1.0"
+authors = ["Rust and WebAssembly Working Group"]
+edition = "2018"
+
+[dependencies]
+wasm-bindgen = "0.2.54"
+js-sys = "0.3.31"
+gloo-events = { path = "../events", version = "0.1" }
+mime = { version = "0.3.13", optional = true }
+futures-channel = { version = "0.3", optional = true }
+
+[dependencies.web-sys]
+version = "0.3.31"
+features = [
+    "Blob",
+    "File",
+    "FileList",
+    "FileReader",
+    "HtmlInputElement",
+    "BlobPropertyBag",
+    "FilePropertyBag",
+    "DomException",
+]
+
+[dev-dependencies]
+futures_rs = { version = "0.3", package = "futures" }
+wasm-bindgen-test = "0.3.4"
+chrono = { version = "0.4.10", features = ["wasmbind"] }
+
+[features]
+default = []
+futures = ["futures-channel"]
