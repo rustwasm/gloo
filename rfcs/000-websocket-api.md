@@ -29,7 +29,100 @@ modules: `callback` and `futures`. The `callback` API will be a thin wrapper aro
 providing some type safety and reducing boilerplate where possible. The `futures` API will use
 rust async concepts (`Stream + Sync`) to make it as easy and risk-free to use as possible.
 
-### `callback` api
+### The shared API
+
+```rust
+
+/// An incoming websocket message.
+pub enum Message {
+    /// Message was in the binary variation.
+    Binary(Vec<u8>),
+    /// Message was in the text variation.
+    Text(String),
+}
+
+impl Message {
+    /// Utility method.
+    pub fn as_binary(&self) -> Option<&[u8]> { .. }
+
+    /// Utility method.
+    pub fn as_text(&self) -> Option<&str> { .. }
+}
+
+/// Information about the closing of the socket.
+pub struct CloseEvent {
+    /// Whether the websocket was shut down cleanly.
+    pub was_clean: bool,
+    /// The code representing the reason for the closure (see [the spec] for details).
+    ///
+    /// [the spec]: https://tools.ietf.org/html/rfc6455#page-45
+    pub code: u16,
+    /// A text description of the reason for the closure.
+    pub reason: String,
+}
+
+/// The state of the websocket.
+///
+/// The websocket will usually transition between the states in order, but this is not always the
+/// case.
+pub enum State {
+    /// The connection has not yet been established.
+    Connecting,
+    /// The WebSocket connection is established and communication is possible.
+    Open,
+    /// The connection is going through the closing handshake, or the close() method has been
+    /// invoked.
+    Closing,
+    /// The connection has been closed or could not be opened.
+    Closed,
+}
+
+impl State {
+    /// Is this `State` `Connecting`.
+    pub fn is_connecting(&self) -> bool { .. }
+
+    /// Is this `State` `Open`.
+    pub fn is_open(&self) -> bool { .. }
+
+    /// Is this `State` `Closing`.
+    pub fn is_closing(&self) -> bool { .. }
+
+    /// Is this `State` `Closed`.
+    pub fn is_closed(&self) -> bool { .. }
+}
+
+/// This error occurs only if the URL passed to `connect`, or the URL or protocols passed to
+/// `connect_with_protocols` is malformed.
+#[derive(Debug)]
+pub struct ConnectError {
+    msg: String,
+}
+
+impl fmt::Display for ConnectError { .. }
+impl std::error::Error for ConnectError {}
+
+/// There was an error closing the connection.
+#[derive(Debug, Clone)]
+pub enum CloseError {
+    /// An invalid reason code was passed.
+    InvalidCode(u16),
+    /// An invalid reason string was passed.
+    InvalidReason(String),
+}
+
+impl fmt::Display for CloseError { .. }
+impl std::error::Error for CloseError {}
+
+/// Attempted to send a message before the connection was established.
+#[derive(Debug, Clone)]
+pub struct SendError;
+
+impl fmt::Display for SendError { .. }
+impl std::error::Error for SendError {}
+
+```
+
+### The `callback` API
 
 ```rust
 pub struct WebSocket { .. }
@@ -112,113 +205,12 @@ impl std::ops::Drop for WebSocket {
     }
 }
 
-/// An incoming websocket message.
-pub enum Message {
-    /// Message was in the binary variation.
-    Binary(Vec<u8>),
-    /// Message was in the text variation.
-    Text(String),
-}
-
-impl Message {
-    /// Utility method.
-    pub fn as_binary(&self) -> Option<&[u8]> {
-        match self {
-            Message::Binary(msg) => Some(msg),
-            Message::Text(_) => None,
-        }
-    }
-
-    /// Utility method.
-    pub fn as_text(&self) -> Option<&str> {
-        match self {
-            Message::Text(msg) => Some(msg),
-            Message::Binary(_) => None,
-        }
-    }
-}
-
-/// Information about the closing of the socket.
-pub struct CloseEvent {
-    /// Whether the websocket was shut down cleanly.
-    pub was_clean: bool,
-    /// The code representing the reason for the closure (see [the spec] for details).
-    ///
-    /// [the spec]: https://tools.ietf.org/html/rfc6455#page-45
-    pub code: u16,
-    /// A text description of the reason for the closure.
-    pub reason: String,
-}
-
-/// The state of the websocket.
-///
-/// The websocket will usually transition between the states in order, but this is not always the
-/// case.
-pub enum State {
-    /// The connection has not yet been established.
-    Connecting,
-    /// The WebSocket connection is established and communication is possible.
-    Open,
-    /// The connection is going through the closing handshake, or the close() method has been
-    /// invoked.
-    Closing,
-    /// The connection has been closed or could not be opened.
-    Closed,
-}
-
-impl State {
-    /// Is this `State` `Connecting`.
-    pub fn is_connecting(&self) -> bool { .. }
-
-    /// Is this `State` `Open`.
-    pub fn is_open(&self) -> bool { .. }
-
-    /// Is this `State` `Closing`.
-    pub fn is_closing(&self) -> bool { .. }
-
-    /// Is this `State` `Closed`.
-    pub fn is_closed(&self) -> bool { .. }
-}
-
-/// This error occurs only if the URL passed to `connect`, or the URL or protocols passed to
-/// `connect_with_protocols` is malformed.
-#[derive(Debug)]
-pub struct ConnectError {
-    msg: String,
-}
-
-impl fmt::Display for ConnectError { .. }
-impl std::error::Error for ConnectError {}
-
-/// There was an error closing the connection.
-#[derive(Debug, Clone)]
-pub enum CloseError {
-    /// An invalid reason code was passed.
-    InvalidCode(u16),
-    /// An invalid reason string was passed.
-    InvalidReason(String),
-}
-
-impl fmt::Display for CloseError { .. }
-impl std::error::Error for CloseError {}
-
-/// Attempted to send a message before the connection was established.
-#[derive(Debug, Clone)]
-pub struct SendError;
-
-impl fmt::Display for SendError { .. }
-impl std::error::Error for SendError {}
-
 ```
 
-### The `futures` interface
+### The `futures` API
 
 ```rust
-
-pub struct WebSocket {
-    inner: callback::WebSocket,
-    state: Rc<RefCell<State>>,
-}
+pub struct WebSocket { .. }
 
 impl Stream for WebSocket {
     type Item = Result<Message, ConnectionError>;
