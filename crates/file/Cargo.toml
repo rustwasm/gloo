@@ -10,6 +10,9 @@ repository = "https://github.com/rustwasm/gloo/tree/master/crates/file"
 homepage = "https://github.com/rustwasm/gloo"
 categories = ["api-bindings", "asynchronous", "wasm"]
 
+[package.metadata.docs.rs]
+features = ["futures"]
+
 [dependencies]
 wasm-bindgen = "0.2.54"
 js-sys = "0.3.31"
