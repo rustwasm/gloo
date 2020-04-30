@@ -1,14 +1,10 @@
-//! Provides wrappers for working with `Blob`s and `File`s from JavaScript.
 //!
-//! A `File` is just a `Blob` with some extra data: a name and a last modified time.
+//! Working with files and blobs on the Web.
 //!
-//! In the File API, `Blob`s are opaque objects that lazily fetch their contained data when
-//! asked. This allows a `Blob` to represent some resource that isn't completely available, for
-//! example a WebSocket message that is being received or a file that needs to be read from disk.
+//! These APIs come in two flavors:
 //!
-//! You can asynchronously access the contents of the `Blob` through callbacks,
-//! but that is rather inconvenient, so this crate provides some functions which
-//! return a `Future` instead.
+//! 1. a callback style (that more directly mimics the JavaScript APIs), and
+//! 2. a `Future` API.
 
 mod blob;
 mod file_list;
