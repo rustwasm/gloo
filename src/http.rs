@@ -12,7 +12,7 @@ pub use web_sys::{
 
 /// Valid request methods.
 #[derive(Clone, Copy, Debug)]
-pub enum RequestMethod {
+pub enum Method {
     GET,
     POST,
     PATCH,
@@ -20,14 +20,14 @@ pub enum RequestMethod {
     PUT,
 }
 
-impl fmt::Display for RequestMethod {
+impl fmt::Display for Method {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            RequestMethod::GET => "GET",
-            RequestMethod::POST => "POST",
-            RequestMethod::PATCH => "PATCH",
-            RequestMethod::DELETE => "DELETE",
-            RequestMethod::PUT => "PUT",
+            Method::GET => "GET",
+            Method::POST => "POST",
+            Method::PATCH => "PATCH",
+            Method::DELETE => "DELETE",
+            Method::PUT => "PUT",
         };
         write!(f, "{}", s)
     }
@@ -81,7 +81,7 @@ impl Request {
     }
 
     /// Sets the request method.
-    pub fn method(mut self, method: RequestMethod) -> Self {
+    pub fn method(mut self, method: Method) -> Self {
         self.options.method(&method.to_string());
         self
     }
@@ -141,27 +141,27 @@ impl Request {
 
     /// Creates a new [`GET`][RequestMethod::GET] `Request` with url.
     pub fn get(url: &str) -> Self {
-        Self::new(url).method(RequestMethod::GET)
+        Self::new(url).method(Method::GET)
     }
 
     /// Creates a new [`POST`][RequestMethod::POST] `Request` with url.
     pub fn post(url: &str) -> Self {
-        Self::new(url).method(RequestMethod::POST)
+        Self::new(url).method(Method::POST)
     }
 
     /// Creates a new [`PUT`][RequestMethod::PUT] `Request` with url.
     pub fn put(url: &str) -> Self {
-        Self::new(url).method(RequestMethod::PUT)
+        Self::new(url).method(Method::PUT)
     }
 
     /// Creates a new [`DELETE`][RequestMethod::DELETE] `Request` with url.
     pub fn delete(url: &str) -> Self {
-        Self::new(url).method(RequestMethod::DELETE)
+        Self::new(url).method(Method::DELETE)
     }
 
     /// Creates a new [`PATCH`][RequestMethod::PATCH] `Request` with url.
     pub fn patch(url: &str) -> Self {
-        Self::new(url).method(RequestMethod::PATCH)
+        Self::new(url).method(Method::PATCH)
     }
 }
 
