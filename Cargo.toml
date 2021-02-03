@@ -32,7 +32,8 @@ features = [
     'AbortSignal',
     'ReadableStream',
     'Blob',
-    'FormData'
+    'FormData',
+    'FileReader',
 ]
 
 [dev-dependencies]

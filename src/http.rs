@@ -6,7 +6,7 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::window;
 pub use web_sys::{
-    AbortSignal, Blob, FormData, Headers, ObserverCallback, ReadableStream, ReferrerPolicy,
+    AbortSignal, FormData, Headers, ObserverCallback, ReadableStream, ReferrerPolicy,
     RequestCache, RequestCredentials, RequestMode, RequestRedirect,
 };
 
@@ -211,18 +211,9 @@ impl Response {
         self.response.body()
     }
 
-    /// Gets as array buffer.
-    pub async fn array_buffer(&self) -> Result<js_sys::ArrayBuffer, Error> {
-        let promise = self.response.array_buffer().map_err(js_to_error)?;
-        let val = JsFuture::from(promise).await.map_err(js_to_error)?;
-        Ok(js_sys::ArrayBuffer::from(val))
-    }
-
-    /// Gets as blob.
-    pub async fn blob(&self) -> Result<Blob, Error> {
-        let promise = self.response.blob().map_err(js_to_error)?;
-        let val = JsFuture::from(promise).await.map_err(js_to_error)?;
-        Ok(Blob::from(val))
+    /// Gets the raw [`Response`][web_sys::Response] object.
+    pub fn as_raw(&self) -> &web_sys::Response {
+        &self.response
     }
 
     /// Gets the form data.
