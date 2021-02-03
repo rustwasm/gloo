@@ -1,4 +1,4 @@
-use crate::{Error, js_to_error};
+use crate::{js_to_error, Error};
 use serde::de::DeserializeOwned;
 use std::fmt;
 use wasm_bindgen::prelude::*;
@@ -6,8 +6,8 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::window;
 pub use web_sys::{
-    AbortSignal, FormData, Headers, ObserverCallback, ReadableStream, ReferrerPolicy,
-    RequestCache, RequestCredentials, RequestMode, RequestRedirect,
+    AbortSignal, FormData, Headers, ObserverCallback, ReadableStream, ReferrerPolicy, RequestCache,
+    RequestCredentials, RequestMode, RequestRedirect,
 };
 
 /// Valid request methods.
@@ -239,4 +239,3 @@ impl Response {
         Ok(String::from(&string))
     }
 }
-

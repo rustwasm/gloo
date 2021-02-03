@@ -11,8 +11,8 @@
 //! assert_eq!(resp.status(), 200);
 //! ```
 
-mod http;
 mod error;
+mod http;
 
-pub use http::*;
 pub use error::*;
+pub use http::*;

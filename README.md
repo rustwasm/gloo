@@ -1,5 +1,10 @@
 # Reqwasm
 
+![GitHub branch checks state](https://img.shields.io/github/checks-status/hamza1311/reqwasm/master)
+[![crates.io](https://img.shields.io/crates/v/reqwasm.svg?style=flat)](https://crates.io/crates/reqwasm)
+[![docs.rs](https://img.shields.io/docsrs/reqwasm)](https://docs.rs/reqwasm/)
+![licence](https://img.shields.io/crates/l/reqwasm)
+
 HTTP requests library for WASM Apps. It provides idiomatic Rust bindings for the `web_sys` `fetch` API
 
 ## Example

@@ -1,6 +1,6 @@
-use wasm_bindgen::{JsValue, JsCast};
-use thiserror::Error as ThisError;
 use std::fmt;
+use thiserror::Error as ThisError;
+use wasm_bindgen::{JsCast, JsValue};
 
 #[derive(Debug)]
 pub struct JsError {
@@ -38,7 +38,7 @@ pub(crate) fn js_to_error(js_value: JsValue) -> Error {
         Ok(error) => Error::JsError(JsError {
             name: String::from(error.name()),
             message: String::from(error.message()),
-            js_to_string: String::from(error.to_string())
+            js_to_string: String::from(error.to_string()),
         }),
         Err(_) => unreachable!("JsValue passed is not an Error type -- this is a bug"),
     }

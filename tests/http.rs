@@ -47,7 +47,10 @@ async fn gzip_response() {
         gzipped: bool,
     }
 
-    let resp = Request::get(&format!("{}/gzip", HTTPBIN_URL)).send().await.unwrap();
+    let resp = Request::get(&format!("{}/gzip", HTTPBIN_URL))
+        .send()
+        .await
+        .unwrap();
     let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(resp.status(), 200);
     assert_eq!(json.gzipped, true);
@@ -57,7 +60,7 @@ async fn gzip_response() {
 async fn post_json() {
     #[derive(Serialize, Deserialize, Debug)]
     struct Payload {
-        data: String
+        data: String,
     }
 
     #[derive(Deserialize, Debug)]
@@ -66,11 +69,16 @@ async fn post_json() {
     }
 
     let resp = Request::post(&format!("{}/anything", HTTPBIN_URL))
-        .body(serde_json::to_string(&Payload { data: "data".to_string() }).unwrap())
+        .body(
+            serde_json::to_string(&Payload {
+                data: "data".to_string(),
+            })
+            .unwrap(),
+        )
         .send()
-        .await.unwrap();
+        .await
+        .unwrap();
     let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(resp.status(), 200);
     assert_eq!(json.json.data, "data");
 }
-
