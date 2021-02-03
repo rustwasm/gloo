@@ -3,6 +3,7 @@ use thiserror::Error as ThisError;
 use wasm_bindgen::{JsCast, JsValue};
 
 #[derive(Debug)]
+#[doc(hidden)]
 pub struct JsError {
     pub name: String,
     pub message: String,
