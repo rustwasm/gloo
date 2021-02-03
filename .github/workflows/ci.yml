@@ -63,6 +63,7 @@ jobs:
           args: --target wasm32-unknown-unknown -- -D warnings
 
   test:
+    name: Test
     runs-on: ubuntu-latest
     services:
       httpbin:
@@ -72,6 +73,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - uses: actions/cache@v2
         with:
@@ -84,7 +88,7 @@ jobs:
             cargo-${{ runner.os }}-test-
             cargo-${{ runner.os }}-
 
-      - name: Run tests - yew-services
+      - name: Run tests
         env:
           HTTPBIN_URL: "http://localhost:8080"
         run: wasm-pack test --chrome --firefox --headless
