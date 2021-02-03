@@ -11,9 +11,9 @@ env:
 
 jobs:
   fmt:
+    name: Format
     runs-on: ubuntu-latest
     steps:
-      - name: Format
       - uses: actions/checkout@v2
 
       - uses: actions/cache@v2
@@ -60,7 +60,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -D warnings
+          args: --target wasm32-unknown-unknown -- -D warnings
 
   test:
     runs-on: ubuntu-latest
@@ -87,5 +87,4 @@ jobs:
       - name: Run tests - yew-services
         env:
           HTTPBIN_URL: "http://localhost:8080"
-        run: |
-          wasm-pack test --chrome --firefox --headless
+        run: wasm-pack test --chrome --firefox --headless
