@@ -10,24 +10,33 @@ pub use web_sys::{
     RequestCredentials, RequestMode, RequestRedirect,
 };
 
+#[allow(missing_docs, missing_debug_implementations, clippy::upper_case_acronyms)]
 /// Valid request methods.
 #[derive(Clone, Copy, Debug)]
 pub enum Method {
     GET,
+    HEAD,
     POST,
-    PATCH,
-    DELETE,
     PUT,
+    DELETE,
+    CONNECT,
+    OPTIONS,
+    TRACE,
+    PATCH,
 }
 
 impl fmt::Display for Method {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
             Method::GET => "GET",
+            Method::HEAD => "HEAD",
             Method::POST => "POST",
-            Method::PATCH => "PATCH",
-            Method::DELETE => "DELETE",
             Method::PUT => "PUT",
+            Method::DELETE => "DELETE",
+            Method::CONNECT => "CONNECT",
+            Method::OPTIONS => "OPTIONS",
+            Method::TRACE => "TRACE",
+            Method::PATCH => "PATCH",
         };
         write!(f, "{}", s)
     }
@@ -165,6 +174,14 @@ impl Request {
     }
 }
 
+impl fmt::Debug for Request {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Request")
+            .field("url", &self.url)
+            .finish()
+    }
+}
+
 /// The [`Request`]'s response
 pub struct Response {
     response: web_sys::Response,
@@ -237,5 +254,17 @@ impl Response {
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         let string = js_sys::JsString::from(val);
         Ok(String::from(&string))
+    }
+}
+
+impl fmt::Debug for Response {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Response")
+            .field("url", &self.url())
+            .field("redirected", &self.redirected())
+            .field("status", &self.status())
+            .field("headers", &self.headers())
+            .field("body_used", &self.body_used())
+            .finish()
     }
 }

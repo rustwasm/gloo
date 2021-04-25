@@ -15,6 +15,16 @@
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/wasm-bindgen-a82062b81cf554bd/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/wasm-bindgen-shared-fa652461552b431d/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/anyhow-100ac8b3388e41e9/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/log-244ef28ebcd19206/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/proc-macro2-81bed02536663df1/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/ryu-5c68ab8696240bfb/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde-ea962b808b156d0b/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde_derive-d6e19f5a9faf1605/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde_json-dde3016599e4a324/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/syn-3054561388feb4ef/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/wasm-bindgen-094b540d7f5b086d/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/wasm-bindgen-shared-dd17c95e42f7ec29/out" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
