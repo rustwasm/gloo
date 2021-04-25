@@ -10,7 +10,11 @@ pub use web_sys::{
     RequestCredentials, RequestMode, RequestRedirect,
 };
 
-#[allow(missing_docs, missing_debug_implementations, clippy::upper_case_acronyms)]
+#[allow(
+    missing_docs,
+    missing_debug_implementations,
+    clippy::upper_case_acronyms
+)]
 /// Valid request methods.
 #[derive(Clone, Copy, Debug)]
 pub enum Method {
@@ -176,9 +180,7 @@ impl Request {
 
 impl fmt::Debug for Request {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Request")
-            .field("url", &self.url)
-            .finish()
+        f.debug_struct("Request").field("url", &self.url).finish()
     }
 }
 

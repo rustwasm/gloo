@@ -19,6 +19,9 @@ serde_json = "1.0"
 anyhow = "1.0"
 thiserror = "1.0"
 
+gloo = "0.2"
+futures = "0.3.14"
+
 [dependencies.web-sys]
 version = "0.3.4"
 features = [
@@ -38,6 +41,13 @@ features = [
     'Blob',
     'FormData',
     'FileReader',
+
+    'WebSocket',
+    'ErrorEvent',
+    'FileReader',
+    'MessageEvent',
+    'ProgressEvent',
+    'BinaryType',
 ]
 
 [dev-dependencies]

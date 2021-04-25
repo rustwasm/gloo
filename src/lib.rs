@@ -11,10 +11,16 @@
 //! assert_eq!(resp.status(), 200);
 //! ```
 
-#![deny(missing_docs, missing_debug_implementations, missing_copy_implementations)]
+#![deny(
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations
+)]
 
 mod error;
 mod http;
+mod websocket;
 
 pub use error::*;
 pub use http::*;
+pub use websocket::*;
