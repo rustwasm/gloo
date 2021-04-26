@@ -1,15 +1,7 @@
-//! HTTP requests library for WASM apps. It provides idiomatic Rust bindings for the `web_sys` `fetch` API.
+//! HTTP requests library for WASM apps. It provides idiomatic Rust bindings for the `web_sys`
+//! `fetch` and `WebSocket` API.
 //!
-//! # Example
-//!
-//! ```no_run
-//! # use reqwasm::Request;
-//! let resp = Request::get("/path")
-//!     .send()
-//!     .await
-//!     .unwrap();
-//! assert_eq!(resp.status(), 200);
-//! ```
+//! See module level documentation for [`http`] and [`websocket`] to learn more.
 
 #![deny(
     missing_docs,
@@ -18,9 +10,7 @@
 )]
 
 mod error;
-mod http;
-mod websocket;
+pub mod http;
+pub mod websocket;
 
 pub use error::*;
-pub use http::*;
-pub use websocket::*;

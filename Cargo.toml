@@ -1,14 +1,17 @@
 [package]
 name = "reqwasm"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Hamza <muhammadhamza1311@gmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/hamza1311/reqwasm"
 description = "HTTP requests library for WASM Apps"
 readme = "README.md"
-keywords = ["requests", "http", "wasm"]
+keywords = ["requests", "http", "wasm", "websockets"]
 categories = ["wasm", "web-programming::http-client", "api-bindings"]
+exclude = [
+    ".idea",
+]
 
 [dependencies]
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
@@ -18,8 +21,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 anyhow = "1.0"
 thiserror = "1.0"
-
-gloo = "0.2"
 futures = "0.3.14"
 
 [dependencies.web-sys]

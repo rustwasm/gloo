@@ -1,4 +1,4 @@
-use reqwasm::*;
+use reqwasm::http::*;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen_test::*;
 

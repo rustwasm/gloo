@@ -1,3 +1,18 @@
+//! Wrapper around the `fetch` API.
+//!
+//! # Example
+//!
+//! ```
+//! # use reqwasm::http::Request;
+//! # async fn no_run() {
+//! let resp = Request::get("/path")
+//!     .send()
+//!     .await
+//!     .unwrap();
+//! assert_eq!(resp.status(), 200);
+//! # }
+//! ```
+
 use crate::{js_to_error, Error};
 use serde::de::DeserializeOwned;
 use std::fmt;
@@ -152,27 +167,27 @@ impl Request {
         }
     }
 
-    /// Creates a new [`GET`][RequestMethod::GET] `Request` with url.
+    /// Creates a new [`GET`][Method::GET] `Request` with url.
     pub fn get(url: &str) -> Self {
         Self::new(url).method(Method::GET)
     }
 
-    /// Creates a new [`POST`][RequestMethod::POST] `Request` with url.
+    /// Creates a new [`POST`][Method::POST] `Request` with url.
     pub fn post(url: &str) -> Self {
         Self::new(url).method(Method::POST)
     }
 
-    /// Creates a new [`PUT`][RequestMethod::PUT] `Request` with url.
+    /// Creates a new [`PUT`][Method::PUT] `Request` with url.
     pub fn put(url: &str) -> Self {
         Self::new(url).method(Method::PUT)
     }
 
-    /// Creates a new [`DELETE`][RequestMethod::DELETE] `Request` with url.
+    /// Creates a new [`DELETE`][Method::DELETE] `Request` with url.
     pub fn delete(url: &str) -> Self {
         Self::new(url).method(Method::DELETE)
     }
 
-    /// Creates a new [`PATCH`][RequestMethod::PATCH] `Request` with url.
+    /// Creates a new [`PATCH`][Method::PATCH] `Request` with url.
     pub fn patch(url: &str) -> Self {
         Self::new(url).method(Method::PATCH)
     }

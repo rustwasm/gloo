@@ -1,8 +1,38 @@
+//! Wrapper around `WebSocket` API
+//!
+//! # Example
+//!
+//! ```rust
+//! # use reqwasm::websocket::*;
+//! # use wasm_bindgen_futures::spawn_local;
+//! # use futures::{SinkExt, StreamExt};
+//! # macro_rules! console_log {
+//!     ($($expr:expr),*) => {{}};
+//! }
+//! # fn no_run() {
+//! let ws = WebSocket::open("wss://echo.websocket.org").unwrap();
+//!
+//! let (mut sender, mut receiver) = (ws.sender, ws.receiver);
+//!
+//! spawn_local(async move {
+//!     while let Some(m) = receiver.next().await {
+//!         match m {
+//!             Ok(Message::Text(m)) => console_log!("message", m),
+//!             Ok(Message::Bytes(m)) => console_log!("message", format!("{:?}", m)),
+//!             Err(e) => {}
+//!         }
+//!     }
+//! });
+//!
+//! spawn_local(async move {
+//!     sender.send(Message::Text("test".to_string())).await.unwrap();
+//! })
+//! # }
+//! ```
 use crate::{js_to_error, JsError};
 use futures::channel::mpsc;
 use futures::channel::mpsc::{UnboundedReceiver, UnboundedSender};
 use futures::StreamExt;
-pub use gloo::file::Blob;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{ErrorEvent, MessageEvent};
@@ -18,7 +48,7 @@ pub struct WebSocket {
     pub sender: UnboundedSender<Message>,
 }
 
-/// Message received from WebSocket.
+/// Message sent to and received from WebSocket.
 #[derive(Debug, PartialEq)]
 pub enum Message {
     /// String message
