@@ -19,7 +19,7 @@ pub struct WebSocket {
 }
 
 /// Message received from WebSocket.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Message {
     /// String message
     Text(String),
