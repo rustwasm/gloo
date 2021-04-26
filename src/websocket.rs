@@ -7,8 +7,8 @@
 //! # use wasm_bindgen_futures::spawn_local;
 //! # use futures::{SinkExt, StreamExt};
 //! # macro_rules! console_log {
-//!     ($($expr:expr),*) => {{}};
-//! }
+//! #    ($($expr:expr),*) => {{}};
+//! # }
 //! # fn no_run() {
 //! let ws = WebSocket::open("wss://echo.websocket.org").unwrap();
 //!
