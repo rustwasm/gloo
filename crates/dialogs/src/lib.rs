@@ -7,7 +7,7 @@ pub fn alert(message: &str) {
     window().alert_with_message(message).unwrap_throw()
 }
 
-/// Calls the confirm  function.
+/// Calls the confirm function.
 ///
 /// [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/Window/confirm)
 pub fn confirm(message: &str) -> bool {
