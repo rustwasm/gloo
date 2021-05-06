@@ -8,3 +8,5 @@ pub use gloo_console_timer as console_timer;
 pub use gloo_events as events;
 pub use gloo_file as file;
 pub use gloo_timers as timers;
+pub use gloo_dialogs as dialogs;
+pub use gloo_render as render;
