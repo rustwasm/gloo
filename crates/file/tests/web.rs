@@ -102,6 +102,5 @@ const PNG_FILE: &'static [u8] = &[
 ];
 
 #[cfg(feature = "futures")]
-const PNG_FILE_DATA: &'static str =
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAA\
+const PNG_FILE_DATA: &'static str = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAA\
      Al21bKAAAAA1BMVEX/TQBcNTh/AAAAAXRSTlPM0jRW/QAAAApJREFUeJxjYgAAAAYAAzY3fKgAAAAASUVORK5CYII=";
