@@ -5,20 +5,25 @@
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 /// Handle for [`request_animation_frame`].
 #[derive(Debug)]
 pub struct AnimationFrame {
     render_id: i32,
     closure: Closure<dyn Fn(JsValue)>,
+    is_done: Rc<RefCell<bool>>
 }
 
 impl Drop for AnimationFrame {
     fn drop(&mut self) {
-        web_sys::window()
-            .unwrap_throw()
-            .cancel_animation_frame(self.render_id)
-            .unwrap_throw()
+        if !(*self.is_done.borrow()) {
+            web_sys::window()
+                .unwrap_throw()
+                .cancel_animation_frame(self.render_id)
+                .unwrap_throw()
+        }
     }
 }
 
@@ -29,9 +34,15 @@ pub fn request_animation_frame<F>(callback: F) -> AnimationFrame
 where
     F: Fn(f64) + 'static,
 {
-    let callback = move |v: JsValue| {
-        let time: f64 = v.as_f64().unwrap_or(0.0);
-        callback(time)
+    let is_done = Rc::new(RefCell::new(false));
+
+    let callback = {
+        let is_done = Rc::clone(&is_done);
+        move |v: JsValue| {
+            let time: f64 = v.as_f64().unwrap_or(0.0);
+            callback(time);
+            *is_done.borrow_mut() = true
+        }
     };
 
     let callback: Closure<dyn Fn(JsValue)> =
@@ -44,5 +55,6 @@ where
     AnimationFrame {
         render_id,
         closure: callback,
+        is_done,
     }
 }
