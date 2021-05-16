@@ -3,22 +3,30 @@
 
 #![deny(missing_docs, missing_debug_implementations)]
 
+use std::cell::RefCell;
+use std::fmt;
+use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 /// Handle for [`request_animation_frame`].
 #[derive(Debug)]
 pub struct AnimationFrame {
     render_id: i32,
     closure: Closure<dyn Fn(JsValue)>,
-    is_done: Rc<RefCell<bool>>
+    callback_wrapper: Rc<RefCell<Option<CallbackWrapper>>>,
+}
+
+struct CallbackWrapper(Box<dyn FnOnce(f64) + 'static>);
+impl fmt::Debug for CallbackWrapper {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("CallbackWrapper")
+    }
 }
 
 impl Drop for AnimationFrame {
     fn drop(&mut self) {
-        if !(*self.is_done.borrow()) {
+        if self.callback_wrapper.borrow_mut().is_some() {
             web_sys::window()
                 .unwrap_throw()
                 .cancel_animation_frame(self.render_id)
@@ -30,23 +38,20 @@ impl Drop for AnimationFrame {
 /// Calls browser's `requestAnimationFrame`. It is cancelled when the handler is dropped.
 ///
 /// [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame)
-pub fn request_animation_frame<F>(callback: F) -> AnimationFrame
+pub fn request_animation_frame<F>(callback_once: F) -> AnimationFrame
 where
-    F: Fn(f64) + 'static,
+    F: FnOnce(f64) + 'static,
 {
-    let is_done = Rc::new(RefCell::new(false));
-
-    let callback = {
-        let is_done = Rc::clone(&is_done);
-        move |v: JsValue| {
+    let callback_wrapper = Rc::new(RefCell::new(Some(CallbackWrapper(Box::new(callback_once)))));
+    let callback: Closure<dyn Fn(JsValue)> = {
+        let callback_wrapper = Rc::clone(&callback_wrapper);
+        Closure::wrap(Box::new(move |v: JsValue| {
             let time: f64 = v.as_f64().unwrap_or(0.0);
+            let callback = callback_wrapper.borrow_mut().take().unwrap().0;
             callback(time);
-            *is_done.borrow_mut() = true
-        }
+        }))
     };
 
-    let callback: Closure<dyn Fn(JsValue)> =
-        Closure::wrap(Box::new(callback) as Box<dyn Fn(JsValue)>);
     let render_id = web_sys::window()
         .unwrap_throw()
         .request_animation_frame(callback.as_ref().unchecked_ref())
@@ -55,6 +60,6 @@ where
     AnimationFrame {
         render_id,
         closure: callback,
-        is_done,
+        callback_wrapper,
     }
 }
