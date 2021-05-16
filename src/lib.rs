@@ -10,3 +10,4 @@ pub use gloo_file as file;
 pub use gloo_storage as storage;
 pub use gloo_timers as timers;
 pub use gloo_dialogs as dialogs;
+pub use gloo_render as render;
