@@ -258,11 +258,8 @@ fulfill:
 
 Team members sign off on design proposals and review pull requests to Gloo.
 
-* `@fitzgen`
-* `@Pauan`
-* `@rylev`
-* `@yoshuawuyts`
-* `@David-OConnor`
+* `@jstarry`
+* `@hamza1311`
 
 If you make a handful of significant contributions to Gloo and participate in
 design proposals, then maybe you should be a team member! Think you or someone
