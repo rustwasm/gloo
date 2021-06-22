@@ -1,0 +1,98 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+
+jobs:
+  native_tests:
+    name: Native Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-native-tests-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-doc-tests-
+            cargo-${{ runner.os }}-
+
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all
+
+  browser_tests:
+    name: Browser Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+          profile: minimal
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-browser-tests-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-browser-tests-
+            cargo-${{ runner.os }}-
+
+      - name: Run tests
+        run: |
+          for x in $(ls crates); do
+            wasm-pack test --headless --firefox --chrome crates/$x -- --all-features
+            wasm-pack test --headless --firefox --chrome crates/$x -- --no-default-features
+          done
+
+  test_readme:
+    name: Test Readme
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            target
+          key: cargo-${{ runner.os }}-readme-tests-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-readme-tests-
+            cargo-${{ runner.os }}-
+
+      - name: Install `cargo-readme`
+        run: cargo install cargo-readme
+
+      - name: Test `README.md`s are up to date
+        run: |
+          ./update-readmes.sh
+          git diff --exit-code --name-only || {
+              echo 'Error: Found `README.md`s that are not up to date!'
+              echo
+              echo 'Run `./update-readmes.sh` and commit the changes.'
+          }

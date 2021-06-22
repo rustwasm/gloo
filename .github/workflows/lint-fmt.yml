@@ -1,0 +1,64 @@
+name: Lint & Format
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-fmt-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-fmt-
+            cargo-${{ runner.os }}-
+
+      - name: Run cargo fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: clippy
+          target: wasm32-unknown-unknown
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-clippy-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-clippy-
+            cargo-${{ runner.os }}-
+
+      - name: Run clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-targets -- -D warnings
