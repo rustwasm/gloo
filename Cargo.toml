@@ -23,3 +23,11 @@ default = []
 futures = ["gloo-timers/futures", "gloo-file/futures"]
 
 [workspace]
+members = [
+    "crates/console-timer",
+    "crates/timers",
+    "crates/events",
+    "crates/file",
+    "crates/dialogs",
+    "crates/storage",
+]
