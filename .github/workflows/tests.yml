@@ -86,7 +86,7 @@ jobs:
             cargo-${{ runner.os }}-
 
       - name: Install `cargo-readme`
-        run: cargo install cargo-readme
+        run: which cargo-readme || cargo install cargo-readme
 
       - name: Test `README.md`s are up to date
         run: |

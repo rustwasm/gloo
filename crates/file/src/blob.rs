@@ -252,7 +252,7 @@ impl File {
         let blob = self.deref().slice(start, end);
 
         let raw_mime_type = self.raw_mime_type();
-        let mime_type = if raw_mime_type == "" {
+        let mime_type = if raw_mime_type.is_empty() {
             None
         } else {
             Some(raw_mime_type)
@@ -261,7 +261,7 @@ impl File {
         File::new_(
             &self.name(),
             blob.into(),
-            mime_type.as_ref().map(|s| s.as_str()),
+            mime_type.as_deref(),
             Some(self.last_modified_time()),
         )
     }
@@ -335,6 +335,7 @@ fn safe_f64_to_u64(number: f64) -> u64 {
     if number > MAX_SAFE_INTEGER {
         throw_str("a rust number was too large and could not be represented in JavaScript");
     }
+    #[allow(clippy::float_cmp)] // TODO find a good solution?
     if number.floor() != number {
         throw_str(
             "a number could not be converted to an integer because it was not a whole number",
