@@ -62,5 +62,6 @@ TODO
 
 pub mod callback;
 
-#[cfg(feature = "futures")]
+#[cfg(any(feature = "futures", doc))]
+/// The Futures flavor of the API. Requires the `futures` feature.
 pub mod future;
