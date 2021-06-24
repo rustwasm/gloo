@@ -141,8 +141,7 @@ pub mod callbacks {
     }
 }
 
-#[cfg(any(feature = "futures", doc))]
-/// The Futures flavor of the API. Requires the `futures` feature.
+#[cfg(feature = "futures")]
 pub mod futures {
     use crate::{Blob, FileReadError};
     use std::future::Future;
