@@ -309,9 +309,7 @@ impl From<File> for Blob {
 /// [Number.MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER)
 fn safe_u64_to_f64(number: u64) -> f64 {
     // Max integer stably representable by f64
-    // todo use js_sys::Number::MAX_SAFE_INTEGER once stable
-    const MAX_SAFE_INTEGER: u64 = 9007199254740991; // (2^53 - 1)
-    if number > MAX_SAFE_INTEGER {
+    if number > (js_sys::Number::MAX_SAFE_INTEGER as u64) {
         throw_str("a rust number was too large and could not be represented in JavaScript");
     }
     number as f64
@@ -319,8 +317,7 @@ fn safe_u64_to_f64(number: u64) -> f64 {
 
 fn safe_u128_to_f64(number: u128) -> f64 {
     // Max integer stably representable by f64
-    // todo use js_sys::Number::MAX_SAFE_INTEGER once stable
-    const MAX_SAFE_INTEGER: u128 = 9007199254740991; // (2^53 - 1)
+    const MAX_SAFE_INTEGER: u128 = js_sys::Number::MAX_SAFE_INTEGER as u128; // (2^53 - 1)
     if number > MAX_SAFE_INTEGER {
         throw_str("a rust number was too large and could not be represented in JavaScript");
     }
@@ -330,13 +327,11 @@ fn safe_u128_to_f64(number: u128) -> f64 {
 /// Like safe_u64_to_f64, but additionally checks that the number is an integer.
 fn safe_f64_to_u64(number: f64) -> u64 {
     // Max integer stably representable by f64
-    // todo use js_sys::Number::MAX_SAFE_INTEGER once stable
-    const MAX_SAFE_INTEGER: f64 = 9007199254740991.0; // (2^53 - 1)
-    if number > MAX_SAFE_INTEGER {
+    if number > js_sys::Number::MAX_SAFE_INTEGER {
         throw_str("a rust number was too large and could not be represented in JavaScript");
     }
-    #[allow(clippy::float_cmp)] // TODO find a good solution?
-    if number.floor() != number {
+
+    if number.fract() != 0.0 {
         throw_str(
             "a number could not be converted to an integer because it was not a whole number",
         );
