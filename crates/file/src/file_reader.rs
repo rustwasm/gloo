@@ -228,10 +228,7 @@ enum ReadyState {
 
 impl ReadyState {
     fn is_done(&self) -> bool {
-        match self {
-            ReadyState::Done => true,
-            _ => false,
-        }
+        matches!(self, ReadyState::Done)
     }
 }
 
