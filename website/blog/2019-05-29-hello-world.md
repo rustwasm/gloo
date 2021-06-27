@@ -1,17 +1,15 @@
 ---
 slug: hello-world
-title: Hello
-author: Endilie Yacop Sucipto
+title: Hello World
+author: Muhammad Hamza
 author_title: Maintainer of Docusaurus
-author_url: https://github.com/endiliey
-author_image_url: https://avatars1.githubusercontent.com/u/17883920?s=460&v=4
-tags: [hello, docusaurus]
+author_url: https://github.com/hamza1311
+author_image_url: https://avatars.githubusercontent.com/u/47357913?v=4
+tags: [hello]
 ---
 
-Welcome to this blog. This blog is created with [**Docusaurus 2**](https://docusaurus.io/).
+Welcome to the first blog post of gloo. Gloo is a toolkit for building web applications and libraries with Rust and Wasm, 
+composed of modular crates.
 
-<!--truncate-->
-
-This is a test post.
-
-A whole bunch of other information.
+If you are interested in creating content for the blog or contributing to Gloo, please reach out to us. 
+We will be happy to have you work with us.
