@@ -1,5 +1,0 @@
-[book]
-authors = ["The Rust and WebAssembly Working Group"]
-multilingual = false
-src = "src"
-title = "The Gloo Guide"
