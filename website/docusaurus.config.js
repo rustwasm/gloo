@@ -25,8 +25,8 @@ module.exports = {
           label: 'Crates',
           items: [
             {
-              label: 'Console Timer',
-              href: '/docs/console-timer'
+              label: 'Console',
+              href: '/docs/console'
             },
             {
               label: 'Dialog',

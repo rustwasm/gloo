@@ -5,7 +5,7 @@ as [API documentation](https://docs.rs/gloo/).
 
 ## Gloo Crates
 
-1. [`console-timer`](docs/console-timer)
+1. [`console-timer`](docs/console)
 2. [`dialog`](docs/dialog)
 3. [`event`](docs/event)
 4. [`file`](docs/file)
