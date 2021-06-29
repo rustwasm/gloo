@@ -13,25 +13,25 @@
 //!
 //! ## Scoped Measurement
 //!
-//! Wrap code to be measured in a closure with `ConsoleTimer::scope`.
+//! Wrap code to be measured in a closure with [`Timer::scope`].
 //!
 //! ```no_run
-//! use gloo_console::timer::Timer;
+//! use gloo_console::Timer;
 //!
 //! let value = Timer::scope("foo", || {
-//! // Place code to be measured here
+//!     // Place code to be measured here
 //!     // Optionally return a value.
 //! });
 //! ```
 //!
 //! ## RAII-Style Measurement
 //!
-//! For scenarios where `ConsoleTimer::scope` can't be used, like with
+//! For scenarios where [`Timer::scope`] can't be used, like with
 //! asynchronous operations, you can use `ConsoleTimer::new` to create a timer.
 //! The measurement ends when the timer object goes out of scope / is dropped.
 //!
 //! ```no_run
-//! use gloo_console::timer::Timer;
+//! use gloo_console::Timer;
 //! use gloo_timers::callback::Timeout;
 //!
 //! // Start timing a new operation.
@@ -47,7 +47,7 @@ use web_sys::console;
 
 /// A console time measurement.
 ///
-/// See `ConsoleTimer::scope` for starting a labeled time measurement
+/// See [`Timer::scope`] for starting a labeled time measurement
 /// of code wrapped in a closure.
 #[derive(Debug)]
 pub struct Timer<'a> {
@@ -61,7 +61,7 @@ impl<'a> Timer<'a> {
     /// # Example
     ///
     /// ```no_run
-    /// use gloo_console::timer::Timer;
+    /// use gloo_console::Timer;
     ///
     /// let _timer = Timer::new("foo");
     /// ```
@@ -75,9 +75,9 @@ impl<'a> Timer<'a> {
     /// # Example
     ///
     /// ```no_run
-    /// use gloo_console_timer::ConsoleTimer;
+    /// use gloo_console::Timer;
     ///
-    /// let value = ConsoleTimer::scope("foo", || {
+    /// let value = Timer::scope("foo", || {
     ///     // Code to measure here
     /// });
     /// ```

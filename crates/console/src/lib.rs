@@ -1,8 +1,12 @@
 // #![deny(missing_docs, missing_debug_implementations)]
 
-pub mod timer;
+mod timer;
 pub mod externs;
 pub mod macros;
+mod counter;
+
+pub use counter::Counter;
+pub use timer::Timer;
 
 #[doc(hidden)]
 pub mod __macro {
