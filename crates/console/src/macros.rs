@@ -41,6 +41,22 @@ macro_rules! error {
 }
 
 #[macro_export]
+macro_rules! group {
+    ($($arg:expr),+) => {
+       $crate::externs::group(::std::boxed::Box::from([$($crate::__macro::JsValue::from($arg),)+]));
+    };
+    (collapsed $($arg:expr),+) => {
+       $crate::externs::group_collapsed(::std::boxed::Box::from([$($crate::__macro::JsValue::from($arg),)+]));
+    };
+}
+#[macro_export]
+macro_rules! group_end {
+    () => {
+        $crate::externs::group_end();
+    }
+}
+
+#[macro_export]
 macro_rules! info {
     ($($arg:expr),+) => {
        $crate::externs::info(::std::boxed::Box::from([$($crate::__macro::JsValue::from($arg),)+]));
@@ -57,7 +73,6 @@ macro_rules! table {
         $crate::__macro::table_with_data_and_columns($data, $columns);
     }
 }
-
 
 #[macro_export]
 macro_rules! log {

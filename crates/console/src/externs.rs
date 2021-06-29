@@ -25,9 +25,14 @@ extern "C" {
     #[wasm_bindgen(js_namespace = console, variadic)]
     pub fn error(items: Box<[JsValue]>);
 
-    // TODO console.group()
-    // TODO console.groupCollapsed()
-    // TODO console.groupEnd()
+    #[wasm_bindgen(js_namespace = console, variadic)]
+    pub fn group(items: Box<[JsValue]>);
+
+    #[wasm_bindgen(js_namespace = console, js_name = groupCollapsed, variadic)]
+    pub fn group_collapsed(items: Box<[JsValue]>);
+
+    #[wasm_bindgen(js_namespace = console, js_name = groupEnd)]
+    pub fn group_end();
 
     #[wasm_bindgen(js_namespace = console, variadic)]
     pub fn info(items: Box<[JsValue]>);
