@@ -1,6 +1,6 @@
-use wasm_bindgen::prelude::*;
-use std::boxed::Box;
 use js_sys::Array;
+use std::boxed::Box;
+use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 extern "C" {

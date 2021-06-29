@@ -82,8 +82,8 @@ impl<'a> Timer<'a> {
     /// });
     /// ```
     pub fn scope<F, T>(label: &str, f: F) -> T
-        where
-            F: FnOnce() -> T,
+    where
+        F: FnOnce() -> T,
     {
         let _timer = Timer::new(label);
         f()

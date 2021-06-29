@@ -1,8 +1,8 @@
 #[macro_export]
 macro_rules! clear {
     () => {
-       $crate::externs::clear();
-    }
+        $crate::externs::clear();
+    };
 }
 
 #[macro_export]
@@ -22,15 +22,15 @@ macro_rules! debug {
 #[macro_export]
 macro_rules! dir {
     ($($arg:expr),+) => {
-       $crate::externs::dir($crate::__macro::JsValue::from($arg));
-    }
+        $crate::externs::dir($crate::__macro::JsValue::from($arg));
+    };
 }
 
 #[macro_export]
 macro_rules! dirxml {
     ($($arg:expr),+) => {
-       $crate::externs::dirxml($crate::__macro::JsValue::from($arg));
-    }
+        $crate::externs::dirxml($crate::__macro::JsValue::from($arg));
+    };
 }
 
 #[macro_export]
@@ -53,7 +53,7 @@ macro_rules! group {
 macro_rules! group_end {
     () => {
         $crate::externs::group_end();
-    }
+    };
 }
 
 #[macro_export]
@@ -67,11 +67,11 @@ macro_rules! info {
 #[macro_export]
 macro_rules! table {
     ($data:expr) => {
-       $crate::externs::table_with_data($crate::__macro::JsValue::from($data));
+        $crate::externs::table_with_data($crate::__macro::JsValue::from($data));
     };
     ($data:expr, $columns:expr) => {
         $crate::__macro::table_with_data_and_columns($data, $columns);
-    }
+    };
 }
 
 #[macro_export]
