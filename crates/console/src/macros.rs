@@ -1,3 +1,4 @@
+/// Calls `console.clear()`
 #[macro_export]
 macro_rules! clear {
     () => {
@@ -5,6 +6,7 @@ macro_rules! clear {
     };
 }
 
+/// Calls `console.assert()`
 #[macro_export]
 macro_rules! assert {
     ($assertion:expr, $($arg:expr),+) => {
@@ -12,6 +14,7 @@ macro_rules! assert {
     }
 }
 
+/// Calls `console.debug()`
 #[macro_export]
 macro_rules! debug {
     ($($arg:expr),+) => {
@@ -19,6 +22,7 @@ macro_rules! debug {
     }
 }
 
+/// Calls `console.dir()`
 #[macro_export]
 macro_rules! dir {
     ($($arg:expr),+) => {
@@ -26,6 +30,7 @@ macro_rules! dir {
     };
 }
 
+/// Calls `console.dirxml()`
 #[macro_export]
 macro_rules! dirxml {
     ($($arg:expr),+) => {
@@ -33,6 +38,7 @@ macro_rules! dirxml {
     };
 }
 
+/// Calls `console.error()`
 #[macro_export]
 macro_rules! error {
     ($($arg:expr),+) => {
@@ -40,6 +46,9 @@ macro_rules! error {
     }
 }
 
+/// Calls `console.group()`
+///
+/// In order to call `console.groupCollapsed`, prefix the arguments with `collapsed`.
 #[macro_export]
 macro_rules! group {
     ($($arg:expr),+) => {
@@ -49,6 +58,8 @@ macro_rules! group {
        $crate::externs::group_collapsed(::std::boxed::Box::from([$($crate::__macro::JsValue::from($arg),)+]));
     };
 }
+
+/// Calls `console.groupEnd()`
 #[macro_export]
 macro_rules! group_end {
     () => {
@@ -56,6 +67,7 @@ macro_rules! group_end {
     };
 }
 
+/// Calls `console.info()`
 #[macro_export]
 macro_rules! info {
     ($($arg:expr),+) => {
@@ -63,7 +75,12 @@ macro_rules! info {
     }
 }
 
-/// We use serde to serialize the passed data object into JsValue.
+/// Calls `console.table()`
+///
+/// Since in most cases, this takes in an object, instead of, say a string literal/variable,
+/// we use [`serde`](https://serde.rs) to serialize the passed data object into [`JsValue`].
+///
+/// An `IntoIterator<Item = &str>` can be passed to specify the columns.
 #[macro_export]
 macro_rules! table {
     ($data:expr) => {
@@ -74,6 +91,7 @@ macro_rules! table {
     };
 }
 
+/// Calls `console.log()`
 #[macro_export]
 macro_rules! log {
     ($($arg:expr),+) => {
@@ -81,6 +99,7 @@ macro_rules! log {
     }
 }
 
+/// Calls `console.trace()`
 #[macro_export]
 macro_rules! trace {
     ($($arg:expr),+) => {
@@ -88,6 +107,7 @@ macro_rules! trace {
     }
 }
 
+/// Calls `console.warn()`
 #[macro_export]
 macro_rules! warn {
     ($($arg:expr),+) => {

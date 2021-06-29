@@ -1,11 +1,30 @@
-// #![deny(missing_docs, missing_debug_implementations)]
+//! The JavaScript's `console` object provides access to the browser's console.
+//! Using the `console` object in Rust/WASM directly is cumbersome as it requires JavaScript glue code.
+//! This crate exists to solve this problem by providing a set of ergonomic Rust APIs to deal
+//! with the browser console.
+//!
+//! # Example
+//!
+//! The following example logs text to the console using `console.log`
+//!
+//! ```no_run, rust
+//! # use wasm_bindgen::JsValue;
+//! use gloo_console::log;
+//!
+//! let object = JsValue::from("any JsValue can be logged");
+//! log!("text", object)
+//! ```
+
+#![deny(missing_docs, missing_debug_implementations)]
 
 mod counter;
+#[doc(hidden)]
 pub mod externs;
-pub mod macros;
+mod macros;
 mod timer;
 
 pub use counter::Counter;
+pub use macros::*;
 pub use timer::Timer;
 
 #[doc(hidden)]

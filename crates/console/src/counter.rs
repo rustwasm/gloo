@@ -23,8 +23,7 @@ use web_sys::console;
 
 /// A console time measurement.
 ///
-/// See `ConsoleTimer::scope` for starting a labeled time measurement
-/// of code wrapped in a closure.
+/// Dropping this will reset the counter to 0.
 #[derive(Debug)]
 pub struct Counter<'a> {
     label: &'a str,
@@ -46,6 +45,7 @@ impl<'a> Counter<'a> {
         Counter { label }
     }
 
+    /// Increments the counter
     pub fn count(&self) {
         console::count_with_label(self.label);
     }

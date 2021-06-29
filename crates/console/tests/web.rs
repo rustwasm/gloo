@@ -2,7 +2,7 @@
 
 #![cfg(target_arch = "wasm32")]
 
-use gloo_console::timer::Timer;
+use gloo_console::Timer;
 use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
