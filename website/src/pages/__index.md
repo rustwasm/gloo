@@ -1,10 +1,24 @@
-# Using Gloo
+Gloo is a toolkit for building web applications and libraries with Rust and Wasm, composed of
+modular crates. [Gloo crates](https://github.com/rustwasm/gloo/tree/master/crates)
+include example code, both in their respective `example` folders, and commented in their code, as well
+as [API documentation](https://docs.rs/gloo/).
+
+## Gloo Crates
+
+1. [`console-timer`](docs/console-timer)
+2. [`dialog`](docs/dialog)
+3. [`event`](docs/event)
+4. [`file`](docs/file)
+5. [`storage`](docs/storage)
+6. [`timer`](docs/timer)
+
+## Using Gloo
 
 Gloo is a *modular* toolkit: Each of its crates can either be used via the
 umbrella `gloo` crate, which re-exports all of them for a stream-lined, holistic
 experience, or each crate can be used independently.
 
-## Using the Whole Toolkit
+### Using the Whole Toolkit
 
 Using the whole toolkit via the umbrella `gloo` crate lets you hit the ground
 running, with everything at your fingertips. This is a good choice for people
