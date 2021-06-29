@@ -16,9 +16,9 @@
 //! Wrap code to be measured in a closure with `ConsoleTimer::scope`.
 //!
 //! ```no_run
-//! use gloo_console::timer::ConsoleTimer;
+//! use gloo_console::timer::Timer;
 //!
-//! let value = ConsoleTimer::scope("foo", || {
+//! let value = Timer::scope("foo", || {
 //! // Place code to be measured here
 //!     // Optionally return a value.
 //! });
@@ -31,11 +31,11 @@
 //! The measurement ends when the timer object goes out of scope / is dropped.
 //!
 //! ```no_run
-//! use gloo_console::timer::ConsoleTimer;
+//! use gloo_console::timer::Timer;
 //! use gloo_timers::callback::Timeout;
 //!
 //! // Start timing a new operation.
-//! let timer = ConsoleTimer::new("foo");
+//! let timer = Timer::new("foo");
 //!
 //! // And then asynchronously finish timing.
 //! let timeout = Timeout::new(1_000, move || {
@@ -50,24 +50,24 @@ use web_sys::console;
 /// See `ConsoleTimer::scope` for starting a labeled time measurement
 /// of code wrapped in a closure.
 #[derive(Debug)]
-pub struct ConsoleTimer<'a> {
+pub struct Timer<'a> {
     label: &'a str,
 }
 
-impl<'a> ConsoleTimer<'a> {
+impl<'a> Timer<'a> {
     /// Starts a console time measurement. The measurement
     /// ends when the constructed `ConsoleTimer` object is dropped.
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use gloo_console::timer::ConsoleTimer;
+    /// use gloo_console::timer::Timer;
     ///
-    /// let _timer = ConsoleTimer::new("foo");
+    /// let _timer = Timer::new("foo");
     /// ```
-    pub fn new(label: &'a str) -> ConsoleTimer<'a> {
+    pub fn new(label: &'a str) -> Timer<'a> {
         console::time_with_label(label);
-        ConsoleTimer { label }
+        Timer { label }
     }
 
     /// Starts a scoped console time measurement
@@ -85,12 +85,12 @@ impl<'a> ConsoleTimer<'a> {
         where
             F: FnOnce() -> T,
     {
-        let _timer = ConsoleTimer::new(label);
+        let _timer = Timer::new(label);
         f()
     }
 }
 
-impl<'a> Drop for ConsoleTimer<'a> {
+impl<'a> Drop for Timer<'a> {
     fn drop(&mut self) {
         console::time_end_with_label(self.label);
     }
