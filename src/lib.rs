@@ -4,7 +4,7 @@
 #![deny(missing_docs, missing_debug_implementations)]
 
 // Re-exports of toolkit crates.
-pub use gloo_console_timer as console_timer;
+pub use gloo_console as console;
 pub use gloo_dialogs as dialogs;
 pub use gloo_events as events;
 pub use gloo_file as file;
