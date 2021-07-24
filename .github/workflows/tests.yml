@@ -66,33 +66,3 @@ jobs:
             wasm-pack test --headless --firefox --chrome crates/$x -- --all-features
             wasm-pack test --headless --firefox --chrome crates/$x -- --no-default-features
           done
-
-  test_readme:
-    name: Test Readme
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ~/.cargo/bin
-            target
-          key: cargo-${{ runner.os }}-readme-tests-${{ hashFiles('**/Cargo.toml') }}
-          restore-keys: |
-            cargo-${{ runner.os }}-readme-tests-
-            cargo-${{ runner.os }}-
-
-      - name: Install `cargo-readme`
-        run: cargo install cargo-readme
-
-      - name: Test `README.md`s are up to date
-        run: |
-          ./update-readmes.sh
-          git diff --exit-code --name-only || {
-              echo 'Error: Found `README.md`s that are not up to date!'
-              echo
-              echo 'Run `./update-readmes.sh` and commit the changes.'
-          }

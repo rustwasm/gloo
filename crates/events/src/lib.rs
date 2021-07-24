@@ -155,7 +155,7 @@ impl EventListenerOptions {
     }
 
     #[inline]
-    fn to_js(&self, once: bool) -> AddEventListenerOptions {
+    fn as_js(&self, once: bool) -> AddEventListenerOptions {
         let mut options = AddEventListenerOptions::new();
 
         options.capture(self.phase.is_capture());
@@ -179,8 +179,8 @@ impl Default for EventListenerOptions {
 // This defaults passive to true to avoid performance issues in browsers:
 // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#Improving_scrolling_performance_with_passive_listeners
 thread_local! {
-    static NEW_OPTIONS: AddEventListenerOptions = EventListenerOptions::default().to_js(false);
-    static ONCE_OPTIONS: AddEventListenerOptions = EventListenerOptions::default().to_js(true);
+    static NEW_OPTIONS: AddEventListenerOptions = EventListenerOptions::default().as_js(false);
+    static ONCE_OPTIONS: AddEventListenerOptions = EventListenerOptions::default().as_js(true);
 }
 
 /// RAII type which is used to manage DOM event listeners.
@@ -462,7 +462,7 @@ impl EventListener {
             target,
             event_type.into(),
             callback,
-            &options.to_js(false),
+            &options.as_js(false),
             options.phase,
         )
     }
@@ -526,7 +526,7 @@ impl EventListener {
             target,
             event_type.into(),
             callback,
-            &options.to_js(true),
+            &options.as_js(true),
             options.phase,
         )
     }

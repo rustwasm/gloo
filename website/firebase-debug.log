@@ -1,0 +1,22 @@
+[debug] [2021-06-27T16:45:09.943Z] ----------------------------------------------------------------------
+[debug] [2021-06-27T16:45:09.945Z] Command:       /home/hamza/.nvm/versions/node/v14.17.0/bin/node /home/hamza/.nvm/versions/node/v14.17.0/bin/firebase init
+[debug] [2021-06-27T16:45:09.946Z] CLI Version:   9.14.0
+[debug] [2021-06-27T16:45:09.946Z] Platform:      linux
+[debug] [2021-06-27T16:45:09.946Z] Node Version:  v14.17.0
+[debug] [2021-06-27T16:45:09.958Z] Time:          Sun Jun 27 2021 21:45:09 GMT+0500 (Pakistan Standard Time)
+[debug] [2021-06-27T16:45:09.958Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2021-06-27T16:45:09.960Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2021-06-27T16:45:09.978Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2021-06-27T16:45:09.978Z] > authorizing via signed-in user (muhammadhamza1311@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /home/hamza/code/gloo/website
+
