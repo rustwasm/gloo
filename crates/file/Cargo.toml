@@ -27,6 +27,7 @@ features = [
     "File",
     "FileList",
     "FileReader",
+    "FileReaderSync",
     "HtmlInputElement",
     "BlobPropertyBag",
     "FilePropertyBag",

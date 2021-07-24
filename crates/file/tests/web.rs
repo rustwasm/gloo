@@ -4,9 +4,17 @@ use futures_rs::channel::mpsc;
 use futures_rs::prelude::*;
 use wasm_bindgen_test::*;
 
-use gloo_file::{callbacks::read_as_text, Blob, File};
+use gloo_file::{callbacks::read_as_text, Blob, File, read_as_text as sync_read_as_text};
 
 wasm_bindgen_test_configure!(run_in_browser);
+
+#[wasm_bindgen_test]
+fn sync_file_from_str() {
+    let file = File::new("a file", "hello");
+    assert_eq!(file.name(), "a file");
+
+    assert_eq!(sync_read_as_text(&file).unwrap(), "hello");
+}
 
 #[wasm_bindgen_test]
 async fn blob_from_str() {
