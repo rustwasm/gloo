@@ -2,7 +2,7 @@
 slug: hello-world
 title: Hello World
 author: Muhammad Hamza
-author_title: Maintainer of Docusaurus
+author_title: Maintainer of Gloo
 author_url: https://github.com/hamza1311
 author_image_url: https://avatars.githubusercontent.com/u/47357913?v=4
 tags: [hello]
