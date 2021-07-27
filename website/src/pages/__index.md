@@ -31,7 +31,7 @@ Add a `gloo` dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-gloo = "0.2"
+gloo = "0.3"
 ```
 
 ### `src/lib.rs`
