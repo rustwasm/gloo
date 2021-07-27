@@ -10,8 +10,6 @@ repository = "https://github.com/rustwasm/gloo/tree/master/crates/console"
 homepage = "https://github.com/rustwasm/gloo"
 categories = ["api-bindings", "development-tools::profiling", "wasm"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 js-sys = "0.3"

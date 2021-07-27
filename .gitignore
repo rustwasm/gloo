@@ -2,5 +2,9 @@
 **/*.rs.bk
 Cargo.lock
 
-guide/book
+# editor configs
 .vscode
+.idea
+
+# hosting cache
+.firebase/hosting.*.cache
