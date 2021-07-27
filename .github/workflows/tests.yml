@@ -63,6 +63,6 @@ jobs:
       - name: Run tests
         run: |
           for x in $(ls crates); do
-            wasm-pack test --headless --firefox --chrome crates/$x -- --all-features
-            wasm-pack test --headless --firefox --chrome crates/$x -- --no-default-features
+            wasm-pack test --headless --firefox --chrome crates/$x --all-features
+            wasm-pack test --headless --firefox --chrome crates/$x --no-default-features
           done
