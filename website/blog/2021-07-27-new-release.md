@@ -70,5 +70,5 @@ request_animation_frame(|_| {
 
 ## Looking for contributors
 
-Gloo project is need of contributors. I recently became maintainer of this project, and I'm trying to revive it.
+Gloo project is in need of contributors. I recently became maintainer of this project, and I'm trying to revive it.
 It would be really appreciated if you could contribute or raise awareness about the Gloo project.
