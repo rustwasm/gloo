@@ -25,32 +25,45 @@ This release focuses on adding new features and crates.
 log!("text");
 ```
 
-The formatting is done by browser. Any `JsValue` can be provided and it'll be logged as-is:
+The formatting is done on the browser side. Any `JsValue` can be provided and it'll be logged as-is:
 
 ```rust
 let object = JsValue::from("any JsValue can be logged");
 log!(object);
 ```
 
+Multiple values can also be provided:
+
+```rust
+let object = JsValue::from("Some JsValue");
+log!("literal", object);
+```
+
 #### `gloo-dialogs`
 
-`gloo-dialogs` provides wrapper for `alert`, `prompt` and `confirm` functions.
+`gloo-dialogs` provides wrapper for the following functions:
+
+- [`alert`](https://developer.mozilla.org/en-US/docs/Web/API/Window/alert)
+- [`confirm`](https://developer.mozilla.org/en-US/docs/Web/API/Window/confirm)
+- [`prompt`](https://developer.mozilla.org/en-US/docs/Web/API/Window/prompt)
 
 ```rust
 alert("Hello World!");
 ```
 
 ```rust
-confirm("Are you sure?");
+prompt("What do you want to say?");
 ```
 
+
 ```rust
-prompt("What do you want to say?");
+confirm("Are you sure?");
 ```
 
 #### `gloo-render`
 
-`gloo-render` provides wrapper for `requestAnimationFrame`:
+`gloo-render` provides wrapper for 
+[`requestAnimationFrame`](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame):
 
 ```rust
 request_animation_frame(|_| {
@@ -60,7 +73,8 @@ request_animation_frame(|_| {
 
 #### `gloo-storage`
 
-`gloo-storage` provides wrappers for the Web Storage API. It can be used to access both local storage and session storage.
+`gloo-storage` provides wrappers for the [Web Storage API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API).
+It can be used to access both local storage and session storage.
 
 ### Other changes
 
