@@ -3,7 +3,6 @@
   <h1><code>gloo-storage</code></h1>
 
   <p>
-    <a href="https://dev.azure.com/rustwasm/gloo/_build?definitionId=6"><img src="https://img.shields.io/azure-devops/build/rustwasm/gloo/6.svg?style=flat-square" alt="Build Status" /></a>
     <a href="https://crates.io/crates/gloo-storage"><img src="https://img.shields.io/crates/v/gloo-storage.svg?style=flat-square" alt="Crates.io version" /></a>
     <a href="https://crates.io/crates/gloo-storage"><img src="https://img.shields.io/crates/d/gloo-storage.svg?style=flat-square" alt="Download" /></a>
     <a href="https://docs.rs/gloo-storage"><img src="https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square" alt="docs.rs docs" /></a>
