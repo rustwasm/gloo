@@ -8,7 +8,7 @@ author_image_url: https://avatars.githubusercontent.com/u/47357913?v=4
 tags: [release]
 ---
 
-The Gloo team is happy to announce a new version of Gloo, 0.3.0.
+The Gloo team is happy to announce a new, long overdue, of Gloo, v0.3.0.
 Gloo is a modular toolkit for building fast, reliable Web applications and libraries with Rust and WASM.
 
 ## What's new
@@ -67,3 +67,8 @@ request_animation_frame(|_| {
 - We now use GitHub Actions instead of Azure for CI
 - READMEs and crate level docs are no longer synced
 - This website exists!!
+
+## Looking for contributors
+
+Gloo project is need of contributors. I recently became maintainer of this project, and I'm trying to revive it.
+It would be really appreciated if you could contribute or raise awareness about the Gloo project.
