@@ -19,7 +19,7 @@
   <sub>Built with 🦀🕸 by <a href="https://rustwasm.github.io/">The Rust and WebAssembly Working Group</a></sub>
 </div>
 
-This crate provides wrapper for the following functions.
+This crate provides wrappers for the following functions.
 - [`alert`](https://developer.mozilla.org/en-US/docs/Web/API/Window/alert)
 - [`confirm`](https://developer.mozilla.org/en-US/docs/Web/API/Window/confirm)
 - [`prompt`](https://developer.mozilla.org/en-US/docs/Web/API/Window/prompt)

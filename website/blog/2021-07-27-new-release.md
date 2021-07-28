@@ -8,7 +8,7 @@ author_image_url: https://avatars.githubusercontent.com/u/47357913?v=4
 tags: [release]
 ---
 
-The Gloo team is happy to announce a new, long overdue, of Gloo, v0.3.0.
+The Gloo team is happy to announce a new, long overdue, version of Gloo: v0.3.0.
 Gloo is a modular toolkit for building fast, reliable Web applications and libraries with Rust and WASM.
 
 ## What's new
@@ -41,7 +41,7 @@ log!("literal", object);
 
 #### `gloo-dialogs`
 
-`gloo-dialogs` provides wrapper for the following functions:
+`gloo-dialogs` provides wrappers for the following functions:
 
 - [`alert`](https://developer.mozilla.org/en-US/docs/Web/API/Window/alert)
 - [`confirm`](https://developer.mozilla.org/en-US/docs/Web/API/Window/confirm)
