@@ -13,7 +13,7 @@ categories = ["api-bindings", "development-tools::profiling", "wasm"]
 [dependencies]
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 js-sys = "0.3"
-serde = { version = "*", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
 [dependencies.web-sys]
 version = "0.3"
 features = [
