@@ -27,4 +27,4 @@ This crate provides wrappers for the following functions.
 `web-sys` provides a raw API which is hard to use. This crate provides an easy-to-use,
 idiomatic Rust API for these functions.
 
-See the API documentation to learn more.
+See the [API documentation](https://docs.rs/gloo-dialogs) to learn more.
