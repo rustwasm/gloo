@@ -5,7 +5,7 @@ as [API documentation](https://docs.rs/gloo/).
 
 ## Gloo Crates
 
-1. [`console-timer`](docs/console)
+1. [`console`](docs/console)
 2. [`dialog`](docs/dialog)
 3. [`event`](docs/event)
 4. [`file`](docs/file)
@@ -31,7 +31,7 @@ Add a `gloo` dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-gloo = "0.2"
+gloo = "0.3"
 ```
 
 ### `src/lib.rs`
