@@ -215,7 +215,7 @@ impl File {
     {
         let mut options = web_sys::FilePropertyBag::new();
         if let Some(mime_type) = mime_type {
-            options.type_(&mime_type);
+            options.type_(mime_type);
         }
 
         if let Some(last_modified_time) = last_modified_time {
@@ -229,7 +229,7 @@ impl File {
         // SAFETY: The original reference will live for the duration of this function call,
         // and `new File()` won't mutate the `Uint8Array` or keep a reference to it past the end of this call.
         let parts = js_sys::Array::of1(&unsafe { contents.into_jsvalue() });
-        let inner = web_sys::File::new_with_u8_array_sequence_and_options(&parts, &name, &options)
+        let inner = web_sys::File::new_with_u8_array_sequence_and_options(&parts, name, &options)
             .unwrap_throw();
 
         File::from(inner)
