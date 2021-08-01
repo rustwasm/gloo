@@ -11,31 +11,53 @@ mod sealed {
 use sealed::Sealed;
 
 /// This trait is used to overload the `Blob::new_with_options` function, allowing a variety of
-/// types to be used to create a `Blob`. Ignore this, and use &[u8], &str, etc to create a `Blob`.
+/// types to be used to create a `Blob`. Ignore this, and use &\[u8], &str, etc to create a `Blob`.
 ///
 /// The trait is sealed: it can only be implemented by types in this
 /// crate, as this crate relies on invariants regarding the `JsValue` returned from `into_jsvalue`.
 pub trait BlobContents: Sealed {
-    fn into_jsvalue(self) -> JsValue;
+    /// # Safety
+    ///
+    /// For `&[u8]` and `&str`, the returned `Uint8Array` must be modified,
+    /// and must not be kept past the lifetime of the original slice.
+    unsafe fn into_jsvalue(self) -> JsValue;
 }
 
 impl<'a> Sealed for &'a str {}
 impl<'a> BlobContents for &'a str {
-    fn into_jsvalue(self) -> JsValue {
-        JsValue::from_str(self)
+    unsafe fn into_jsvalue(self) -> JsValue {
+        // Converting a Rust string to a JS string re-encodes it from UTF-8 to UTF-16,
+        // and `Blob` re-encodes JS strings from UTF-16 to UTF-8.
+        // So, it's better to just pass the original bytes of the Rust string to `Blob`
+        // and avoid the round trip through UTF-16.
+        self.as_bytes().into_jsvalue()
     }
 }
 
 impl<'a> Sealed for &'a [u8] {}
 impl<'a> BlobContents for &'a [u8] {
-    fn into_jsvalue(self) -> JsValue {
-        js_sys::Uint8Array::from(self).into()
+    unsafe fn into_jsvalue(self) -> JsValue {
+        js_sys::Uint8Array::view(self).into()
     }
 }
 
 impl Sealed for js_sys::ArrayBuffer {}
 impl BlobContents for js_sys::ArrayBuffer {
-    fn into_jsvalue(self) -> JsValue {
+    unsafe fn into_jsvalue(self) -> JsValue {
+        self.into()
+    }
+}
+
+impl Sealed for js_sys::JsString {}
+impl BlobContents for js_sys::JsString {
+    unsafe fn into_jsvalue(self) -> JsValue {
+        self.into()
+    }
+}
+
+impl Sealed for Blob {}
+impl BlobContents for Blob {
+    unsafe fn into_jsvalue(self) -> JsValue {
         self.into()
     }
 }
@@ -69,7 +91,9 @@ impl Blob {
             properties.type_(mime_type);
         }
 
-        let parts = js_sys::Array::of1(&content.into_jsvalue());
+        // SAFETY: The slice will live for the duration of this function call,
+        // and `new Blob()` will not modify the bytes or keep a reference to them past the end of the call.
+        let parts = js_sys::Array::of1(&unsafe { content.into_jsvalue() });
         let inner = web_sys::Blob::new_with_u8_array_sequence_and_options(&parts, &properties);
 
         Blob::from(inner.unwrap_throw())
@@ -154,7 +178,7 @@ impl File {
     where
         T: BlobContents,
     {
-        Self::new_(name, contents.into_jsvalue(), None, None)
+        Self::new_with_options(name, contents, None, None)
     }
 
     /// Like `File::new`, but allows customizing the MIME type (also
@@ -189,19 +213,9 @@ impl File {
     where
         T: BlobContents,
     {
-        Self::new_(name, contents.into_jsvalue(), mime_type, last_modified_time)
-    }
-
-    /// Private constructor.
-    fn new_(
-        name: &str,
-        contents: JsValue,
-        mime_type: Option<&str>,
-        last_modified_time: Option<SystemTime>,
-    ) -> Self {
         let mut options = web_sys::FilePropertyBag::new();
         if let Some(mime_type) = mime_type {
-            options.type_(&mime_type);
+            options.type_(mime_type);
         }
 
         if let Some(last_modified_time) = last_modified_time {
@@ -212,8 +226,10 @@ impl File {
             options.last_modified(duration);
         }
 
-        let parts = js_sys::Array::of1(&contents);
-        let inner = web_sys::File::new_with_u8_array_sequence_and_options(&parts, &name, &options)
+        // SAFETY: The original reference will live for the duration of this function call,
+        // and `new File()` won't mutate the `Uint8Array` or keep a reference to it past the end of this call.
+        let parts = js_sys::Array::of1(&unsafe { contents.into_jsvalue() });
+        let inner = web_sys::File::new_with_u8_array_sequence_and_options(&parts, name, &options)
             .unwrap_throw();
 
         File::from(inner)
@@ -258,9 +274,9 @@ impl File {
             Some(raw_mime_type)
         };
 
-        File::new_(
+        File::new_with_options(
             &self.name(),
-            blob.into(),
+            blob,
             mime_type.as_deref(),
             Some(self.last_modified_time()),
         )
