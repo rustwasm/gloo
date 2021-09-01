@@ -2,7 +2,7 @@ use std::fmt;
 use thiserror::Error as ThisError;
 use wasm_bindgen::{JsCast, JsValue};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[doc(hidden)]
 pub struct JsError {
     pub name: String,
@@ -35,12 +35,16 @@ pub enum Error {
 }
 
 pub(crate) fn js_to_error(js_value: JsValue) -> Error {
+    Error::JsError(js_to_js_error(js_value))
+}
+
+pub(crate) fn js_to_js_error(js_value: JsValue) -> JsError {
     match js_value.dyn_into::<js_sys::Error>() {
-        Ok(error) => Error::JsError(JsError {
+        Ok(error) => JsError {
             name: String::from(error.name()),
             message: String::from(error.message()),
             js_to_string: String::from(error.to_string()),
-        }),
+        },
         Err(_) => unreachable!("JsValue passed is not an Error type -- this is a bug"),
     }
 }

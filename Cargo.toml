@@ -23,6 +23,9 @@ anyhow = "1.0"
 thiserror = "1.0"
 futures = "0.3.14"
 
+async-broadcast = "0.3"
+pin-project = "1"
+
 [dependencies.web-sys]
 version = "0.3.4"
 features = [
@@ -42,6 +45,7 @@ features = [
     'Blob',
     'FormData',
     'FileReader',
+    'CloseEvent',
 
     'WebSocket',
     'ErrorEvent',
