@@ -23,18 +23,30 @@ macro_rules! debug {
 }
 
 /// Calls `console.dir()`
+/// ## Example
+/// ```no_run
+/// # use gloo_console::dir;
+/// # use js_sys::Array;
+/// dir!(Array::of2(&1.into(), &2.into()));
+/// ```
 #[macro_export]
 macro_rules! dir {
-    ($($arg:expr),+) => {
-        $crate::externs::dir($crate::__macro::JsValue::from($arg));
+    ($arg:expr) => {
+        $crate::externs::dir(&$crate::__macro::JsValue::from($arg));
     };
 }
 
 /// Calls `console.dirxml()`
+/// ## Example
+/// ```no_run
+/// # use gloo_console::dirxml;
+/// # use js_sys::Array;
+/// dirxml!(Array::of2(&1.into(), &2.into()));
+/// ```
 #[macro_export]
 macro_rules! dirxml {
-    ($($arg:expr),+) => {
-        $crate::externs::dirxml($crate::__macro::JsValue::from($arg));
+    ($arg:expr) => {
+        $crate::externs::dirxml(&$crate::__macro::JsValue::from($arg));
     };
 }
 
