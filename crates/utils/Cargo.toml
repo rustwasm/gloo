@@ -2,6 +2,14 @@
 name = "gloo-utils"
 version = "0.1.0"
 edition = "2018"
+description = "Convenience crate for common `web_sys` features"
+authors = ["Rust and WebAssembly Working Group"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/rustwasm/gloo/tree/master/crates/utils"
+homepage = "https://github.com/rustwasm/gloo"
+categories = ["api-bindings", "wasm"]
+
 
 [dependencies]
 wasm-bindgen = "0.2"
