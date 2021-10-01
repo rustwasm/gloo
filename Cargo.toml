@@ -31,4 +31,5 @@ members = [
     "crates/dialogs",
     "crates/storage",
     "crates/console",
+    "crates/utils",
 ]
