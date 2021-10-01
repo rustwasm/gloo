@@ -57,7 +57,7 @@ impl TryFrom<JsValue> for JsError {
                     js_value,
                     js_to_string,
                 })
-            },
+            }
         }
     }
 }
