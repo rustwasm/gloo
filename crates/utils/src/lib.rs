@@ -1,4 +1,4 @@
-mod errors;
+pub mod errors;
 use wasm_bindgen::UnwrapThrowExt;
 
 /// Convenience function to avoid repeating expect logic.
