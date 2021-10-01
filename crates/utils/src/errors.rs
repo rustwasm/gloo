@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
 use std::fmt;
-use std::fmt::Formatter;
 use wasm_bindgen::{JsCast, JsValue};
 
 /// Wrapper type around [`js_sys::Error`]
@@ -24,8 +23,27 @@ impl From<js_sys::Error> for JsError {
     }
 }
 
-/// The [`JsValue`] is not a JsvaScript's `Error`.
-pub struct NotJsError;
+/// The [`JsValue`] is not a JavaScript's `Error`.
+pub struct NotJsError {
+    pub js_value: JsValue,
+    js_to_string: String,
+}
+
+impl fmt::Debug for NotJsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("NotJsError")
+            .field("js_value", &self.js_value)
+            .finish()
+    }
+}
+
+impl fmt::Display for NotJsError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.js_to_string)
+    }
+}
+
+impl std::error::Error for NotJsError {}
 
 impl TryFrom<JsValue> for JsError {
     type Error = NotJsError;
@@ -33,7 +51,13 @@ impl TryFrom<JsValue> for JsError {
     fn try_from(value: JsValue) -> Result<Self, Self::Error> {
         match value.dyn_into::<js_sys::Error>() {
             Ok(error) => Ok(JsError::from(error)),
-            Err(_) => Err(NotJsError),
+            Err(js_value) => {
+                let js_to_string = String::from(js_sys::JsString::from(js_value.clone()));
+                Err(NotJsError {
+                    js_value,
+                    js_to_string,
+                })
+            },
         }
     }
 }
@@ -45,7 +69,7 @@ impl fmt::Display for JsError {
 }
 
 impl fmt::Debug for JsError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("JsError")
             .field("name", &self.name)
             .field("message", &self.message)
