@@ -11,6 +11,7 @@ as [API documentation](https://docs.rs/gloo/).
 4. [`file`](docs/file)
 5. [`storage`](docs/storage)
 6. [`timer`](docs/timer)
+6. [`utils`](docs/utils)
 
 ## Using Gloo
 
