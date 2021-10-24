@@ -3,7 +3,7 @@
 /// See the [stdlib documentation][std::dbg] to learn more. This macro calls `console.log`
 /// instead of `eprintln!`
 #[macro_export]
-macro_rules! dbg {
+macro_rules! console {
     () => {
         $crate::log!(::std::format!("[{}:{}]", ::std::file!(), ::std::line!()));
     };

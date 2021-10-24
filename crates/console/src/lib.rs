@@ -18,7 +18,7 @@
 #![deny(missing_docs, missing_debug_implementations)]
 
 mod counter;
-mod dbg;
+mod console_dbg;
 #[doc(hidden)]
 pub mod externs;
 mod macros;
