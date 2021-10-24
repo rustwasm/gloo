@@ -17,6 +17,7 @@
 
 #![deny(missing_docs, missing_debug_implementations)]
 
+mod console_dbg;
 mod counter;
 #[doc(hidden)]
 pub mod externs;
