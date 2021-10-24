@@ -48,6 +48,10 @@ module.exports = {
               label: 'Timer',
               href: '/docs/timer'
             },
+            {
+              label: 'Utils',
+              href: '/docs/utils'
+            },
           ]
         },
         {to: '/blog', label: 'Blog', position: 'left'},
