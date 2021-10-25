@@ -100,7 +100,7 @@ cargo test -p my-particular-crate
 To (re)format the Gloo source code, run:
 
 ```
-$ cargo fmt --all
+$ cargo fmt
 ```
 
 ### Updating `README.md`s
