@@ -18,6 +18,7 @@ gloo-dialogs = { version = "0.1.0", path = "crates/dialogs" }
 gloo-storage = { version = "0.2.0", path = "crates/storage" }
 gloo-render = { version = "0.1.0", path = "crates/render" }
 gloo-console = { version = "0.2.0", path = "crates/console" }
+gloo-utils = { version = "0.1.0", path = "crates/utils" }
 
 [features]
 default = []
