@@ -1,20 +1,6 @@
-use std::fmt;
+use gloo_utils::errors::JsError;
 use thiserror::Error as ThisError;
-use wasm_bindgen::{JsCast, JsValue};
-
-#[derive(Debug, Clone)]
-#[doc(hidden)]
-pub struct JsError {
-    pub name: String,
-    pub message: String,
-    js_to_string: String,
-}
-
-impl fmt::Display for JsError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.js_to_string)
-    }
-}
+use wasm_bindgen::JsValue;
 
 /// All the errors returned by this crate.
 #[derive(Debug, ThisError)]
@@ -29,9 +15,6 @@ pub enum Error {
         #[from]
         serde_json::Error,
     ),
-    /// Unknown error.
-    #[error("{0}")]
-    Other(anyhow::Error),
 }
 
 pub(crate) fn js_to_error(js_value: JsValue) -> Error {
@@ -39,12 +22,8 @@ pub(crate) fn js_to_error(js_value: JsValue) -> Error {
 }
 
 pub(crate) fn js_to_js_error(js_value: JsValue) -> JsError {
-    match js_value.dyn_into::<js_sys::Error>() {
-        Ok(error) => JsError {
-            name: String::from(error.name()),
-            message: String::from(error.message()),
-            js_to_string: String::from(error.to_string()),
-        },
+    match JsError::try_from(js_value) {
+        Ok(error) => error,
         Err(_) => unreachable!("JsValue passed is not an Error type -- this is a bug"),
     }
 }

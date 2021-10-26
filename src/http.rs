@@ -163,7 +163,7 @@ impl Request {
             Ok(response) => Ok(Response {
                 response: response.unchecked_into(),
             }),
-            Err(_) => Err(Error::Other(anyhow::anyhow!("can't convert to Response"))),
+            Err(e) => panic!("fetch returned {:?}, not `Response` - this is a bug", e),
         }
     }
 

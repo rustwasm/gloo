@@ -6,8 +6,8 @@
 pub mod events;
 pub mod futures;
 
-use crate::JsError;
 use events::{CloseEvent, ErrorEvent};
+use gloo_utils::errors::JsError;
 use std::fmt;
 
 /// Message sent to and received from WebSocket.

@@ -29,14 +29,15 @@
 //! })
 //! # }
 //! ```
+use crate::js_to_js_error;
 use crate::websocket::{
     events::{CloseEvent, ErrorEvent},
     Message, State, WebSocketError,
 };
-use crate::{js_to_js_error, JsError};
 use async_broadcast::Receiver;
 use futures::ready;
 use futures::{Sink, Stream};
+use gloo_utils::errors::JsError;
 use pin_project::{pin_project, pinned_drop};
 use std::cell::RefCell;
 use std::pin::Pin;
