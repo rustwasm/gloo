@@ -44,7 +44,8 @@ use std::rc::Rc;
 use std::task::{Context, Poll, Waker};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::MessageEvent;
+use wasm_bindgen_futures::JsFuture;
+use web_sys::{Blob, MessageEvent};
 
 /// Wrapper around browser's WebSocket API.
 #[allow(missing_debug_implementations)]
@@ -97,9 +98,8 @@ impl WebSocket {
             Closure::wrap(Box::new(move |e: MessageEvent| {
                 let sender = sender.clone();
                 wasm_bindgen_futures::spawn_local(async move {
-                    let _ = sender
-                        .broadcast(StreamMessage::Message(parse_message(e)))
-                        .await;
+                    let msg = parse_message(e).await;
+                    let _ = sender.broadcast(StreamMessage::Message(msg)).await;
                 })
             }) as Box<dyn FnMut(MessageEvent)>)
         };
@@ -208,15 +208,29 @@ enum StreamMessage {
     ConnectionClose,
 }
 
-fn parse_message(event: MessageEvent) -> Message {
+async fn parse_message(event: MessageEvent) -> Message {
     if let Ok(array_buffer) = event.data().dyn_into::<js_sys::ArrayBuffer>() {
         let array = js_sys::Uint8Array::new(&array_buffer);
         Message::Bytes(array.to_vec())
     } else if let Ok(txt) = event.data().dyn_into::<js_sys::JsString>() {
         Message::Text(String::from(&txt))
+    } else if let Ok(blob) = event.data().dyn_into::<web_sys::Blob>() {
+        let vec = blob_into_bytes(blob).await;
+        Message::Bytes(vec)
     } else {
         unreachable!("message event, received Unknown: {:?}", event.data());
     }
+}
+
+// copied verbatim from https://github.com/rustwasm/wasm-bindgen/issues/2551
+async fn blob_into_bytes(blob: Blob) -> Vec<u8> {
+    let array_buffer_promise: JsFuture = blob.array_buffer().into();
+
+    let array_buffer: JsValue = array_buffer_promise
+        .await
+        .expect("Could not get ArrayBuffer from file");
+
+    js_sys::Uint8Array::new(&array_buffer).to_vec()
 }
 
 impl Sink<Message> for WebSocket {
