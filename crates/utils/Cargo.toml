@@ -20,6 +20,7 @@ version = "0.3"
 features = [
     "Document",
     "History",
+    "HtmlElement",
     "Location",
     "Window"
 ]
