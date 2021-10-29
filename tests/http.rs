@@ -1,5 +1,7 @@
+use js_sys::Uint8Array;
 use reqwasm::http::*;
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::JsValue;
 use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
@@ -81,4 +83,21 @@ async fn post_json() {
     let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(resp.status(), 200);
     assert_eq!(json.json.data, "data");
+}
+
+#[wasm_bindgen_test]
+async fn fetch_binary() {
+    #[derive(Deserialize, Debug)]
+    struct HttpBin {
+        data: String,
+    }
+
+    let resp = Request::post(&format!("{}/post", HTTPBIN_URL))
+        .send()
+        .await
+        .unwrap();
+    let json = resp.binary().await.unwrap();
+    assert_eq!(resp.status(), 200);
+    let json: HttpBin = serde_json::from_slice(&json).unwrap();
+    assert_eq!(json.data, ""); // default is empty string
 }

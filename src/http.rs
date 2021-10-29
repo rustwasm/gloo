@@ -14,6 +14,7 @@
 //! ```
 
 use crate::{js_to_error, Error};
+use js_sys::{ArrayBuffer, Uint8Array};
 use serde::de::DeserializeOwned;
 use std::fmt;
 use wasm_bindgen::prelude::*;
@@ -271,6 +272,22 @@ impl Response {
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         let string = js_sys::JsString::from(val);
         Ok(String::from(&string))
+    }
+
+    /// Gets the binary response
+    ///
+    /// This works by obtaining the response as an `ArrayBuffer`, creating a `Uint8Array` from it
+    /// and then converting it to `Vec<u8>`
+    pub async fn binary(&self) -> Result<Vec<u8>, Error> {
+        let promise = self.response.array_buffer().map_err(js_to_error)?;
+        let array_buffer: ArrayBuffer = JsFuture::from(promise)
+            .await
+            .map_err(js_to_error)?
+            .unchecked_into();
+        let typed_buff: Uint8Array = Uint8Array::new(&array_buffer);
+        let mut body = vec![0; typed_buff.length() as usize];
+        typed_buff.copy_to(&mut body);
+        Ok(body)
     }
 }
 
