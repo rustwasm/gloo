@@ -91,7 +91,7 @@ impl TimeoutFuture {
 /// sleep(Duration::from_secs(1)).await;
 /// ```
 pub fn sleep(dur: Duration) -> TimeoutFuture {
-    let millis = u32::try_from(duration.as_millis())
+    let millis = u32::try_from(dur.as_millis())
         .expect_throw("failed to cast the duration into a u32 with Duration::as_millis.");
 
     TimeoutFuture::new(millis)
