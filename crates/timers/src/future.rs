@@ -4,9 +4,11 @@ use crate::callback::{Interval, Timeout};
 
 use futures_channel::{mpsc, oneshot};
 use futures_core::stream::Stream;
+use std::convert::TryFrom;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::time::Duration;
 use wasm_bindgen::prelude::*;
 
 /// A scheduled timeout as a `Future`.
@@ -71,6 +73,28 @@ impl TimeoutFuture {
         });
         TimeoutFuture { inner, rx }
     }
+}
+
+/// Waits until the specified duration has elapsed.
+///
+/// # Panics
+///
+/// This function will panic if the specified [`Duration`] cannot be casted into a u32 in
+/// milliseconds.
+///
+/// # Example
+///
+/// ```no_run
+/// use std::time::Duration;
+/// use gloo_timers::future::sleep;
+///
+/// sleep(Duration::from_secs(1)).await;
+/// ```
+pub fn sleep(dur: Duration) -> TimeoutFuture {
+    let millis = u32::try_from(dur.as_millis())
+        .expect_throw("failed to cast the duration into a u32 with Duration::as_millis.");
+
+    TimeoutFuture::new(millis)
 }
 
 impl Future for TimeoutFuture {
