@@ -289,8 +289,8 @@ impl PinnedDrop for WebSocket {
 mod tests {
     use super::*;
     use futures::{SinkExt, StreamExt};
-    use wasm_bindgen_test::*;
     use wasm_bindgen_futures::spawn_local;
+    use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 
@@ -302,8 +302,14 @@ mod tests {
         let (mut sender, mut receiver) = ws.split();
 
         spawn_local(async move {
-            sender.send(Message::Text(String::from("test 1"))).await.unwrap();
-            sender.send(Message::Text(String::from("test 2"))).await.unwrap();
+            sender
+                .send(Message::Text(String::from("test 1")))
+                .await
+                .unwrap();
+            sender
+                .send(Message::Text(String::from("test 2")))
+                .await
+                .unwrap();
         });
 
         spawn_local(async move {
