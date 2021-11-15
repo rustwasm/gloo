@@ -139,7 +139,7 @@ impl WebSocket {
             }) as Box<dyn FnMut(web_sys::CloseEvent)>)
         };
 
-        ws.set_onerror(Some(close_callback.as_ref().unchecked_ref()));
+        ws.set_onclose(Some(close_callback.as_ref().unchecked_ref()));
 
         Ok(Self {
             ws,
