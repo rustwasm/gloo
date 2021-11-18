@@ -1,7 +1,5 @@
-use js_sys::Uint8Array;
 use reqwasm::http::*;
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::JsValue;
 use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);

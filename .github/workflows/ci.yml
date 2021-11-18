@@ -68,6 +68,30 @@ jobs:
         with:
           command: clippy
           args: --target wasm32-unknown-unknown -- -D warnings
+      
+      - name: Run clippy (no default features)
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --no-default-features --target wasm32-unknown-unknown -- -D warnings
+
+      - name: Run clippy (with json feature)
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --no-default-features --features json --target wasm32-unknown-unknown -- -D warnings
+
+      - name: Run clippy (with websocket feature)
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --no-default-features --features websocket --target wasm32-unknown-unknown -- -D warnings
+      
+      - name: Run clippy (with http feature)
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --no-default-features --features http --target wasm32-unknown-unknown -- -D warnings
 
   test:
     name: Test

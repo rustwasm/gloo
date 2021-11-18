@@ -1,6 +1,5 @@
 use gloo_utils::errors::JsError;
 use thiserror::Error as ThisError;
-use wasm_bindgen::JsValue;
 
 /// All the errors returned by this crate.
 #[derive(Debug, ThisError)]
@@ -9,6 +8,7 @@ pub enum Error {
     #[error("{0}")]
     JsError(JsError),
     /// Error returned by `serde` during deserialization.
+    #[cfg(feature = "json")]
     #[error("{0}")]
     SerdeError(
         #[source]
@@ -17,13 +17,22 @@ pub enum Error {
     ),
 }
 
-pub(crate) fn js_to_error(js_value: JsValue) -> Error {
-    Error::JsError(js_to_js_error(js_value))
-}
+#[cfg(any(feature = "http", feature = "websocket"))]
+pub(crate) use conversion::*;
+#[cfg(any(feature = "http", feature = "websocket"))]
+mod conversion {
+    use gloo_utils::errors::JsError;
+    use wasm_bindgen::JsValue;
 
-pub(crate) fn js_to_js_error(js_value: JsValue) -> JsError {
-    match JsError::try_from(js_value) {
-        Ok(error) => error,
-        Err(_) => unreachable!("JsValue passed is not an Error type -- this is a bug"),
+    #[cfg(feature = "http")]
+    pub(crate) fn js_to_error(js_value: JsValue) -> super::Error {
+        super::Error::JsError(js_to_js_error(js_value))
+    }
+
+    pub(crate) fn js_to_js_error(js_value: JsValue) -> JsError {
+        match JsError::try_from(js_value) {
+            Ok(error) => error,
+            Err(_) => unreachable!("JsValue passed is not an Error type -- this is a bug"),
+        }
     }
 }

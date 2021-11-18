@@ -15,12 +15,15 @@
 
 use crate::{js_to_error, Error};
 use js_sys::{ArrayBuffer, Uint8Array};
-use serde::de::DeserializeOwned;
 use std::fmt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::window;
+
+#[cfg(feature = "json")]
+use serde::de::DeserializeOwned;
+
 pub use web_sys::{
     AbortSignal, FormData, Headers, ObserverCallback, ReadableStream, ReferrerPolicy, RequestCache,
     RequestCredentials, RequestMode, RequestRedirect,
@@ -259,6 +262,7 @@ impl Response {
     }
 
     /// Gets and parses the json.
+    #[cfg(feature = "json")]
     pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
         let promise = self.response.json().map_err(js_to_error)?;
         let json = JsFuture::from(promise).await.map_err(js_to_error)?;

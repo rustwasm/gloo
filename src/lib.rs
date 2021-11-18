@@ -10,7 +10,9 @@
 )]
 
 mod error;
+#[cfg(feature = "http")]
 pub mod http;
+#[cfg(feature = "websocket")]
 pub mod websocket;
 
 pub use error::*;

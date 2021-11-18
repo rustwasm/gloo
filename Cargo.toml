@@ -13,47 +13,66 @@ exclude = [
     ".idea",
 ]
 
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+default = ["json", "websocket", "http"]
+
+# Enables `.json()` on `Response`
+json = ["wasm-bindgen/serde-serialize", "serde", "serde_json"]
+# Enables the WebSocket API
+websocket = [
+    'web-sys/WebSocket',
+    'web-sys/ErrorEvent',
+    'web-sys/FileReader',
+    'web-sys/MessageEvent',
+    'web-sys/ProgressEvent',
+    'web-sys/CloseEvent',
+    'web-sys/BinaryType',
+    'web-sys/Blob',
+    "async-broadcast",
+    "pin-project",
+    "futures-core",
+    "futures-sink",
+]
+# Enables the HTTP API
+http = [
+    'web-sys/Headers',
+    'web-sys/Request',
+    'web-sys/RequestInit',
+    'web-sys/RequestMode',
+    'web-sys/Response',
+    'web-sys/Window',
+    'web-sys/RequestCache',
+    'web-sys/RequestCredentials',
+    'web-sys/ObserverCallback',
+    'web-sys/RequestRedirect',
+    'web-sys/ReferrerPolicy',
+    'web-sys/AbortSignal',
+    'web-sys/ReadableStream',
+    'web-sys/Blob',
+    'web-sys/FormData',
+]
+
 [dependencies]
-wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+wasm-bindgen = "0.2"
+web-sys = "0.3"
 js-sys = "0.3"
-wasm-bindgen-futures = "0.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-thiserror = "1.0"
-futures = "0.3.14"
 gloo-utils = "0.1.0"
 
-async-broadcast = "0.3"
-pin-project = "1"
+wasm-bindgen-futures = "0.4"
+futures-core = { version = "0.3", optional = true }
+futures-sink = { version = "0.3", optional = true }
 
-[dependencies.web-sys]
-version = "0.3.4"
-features = [
-    'Headers',
-    'Request',
-    'RequestInit',
-    'RequestMode',
-    'Response',
-    'Window',
-    'RequestCache',
-    'RequestCredentials',
-    'ObserverCallback',
-    'RequestRedirect',
-    'ReferrerPolicy',
-    'AbortSignal',
-    'ReadableStream',
-    'Blob',
-    'FormData',
-    'FileReader',
-    'CloseEvent',
+thiserror = "1.0"
 
-    'WebSocket',
-    'ErrorEvent',
-    'FileReader',
-    'MessageEvent',
-    'ProgressEvent',
-    'BinaryType',
-]
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+
+async-broadcast = { version = "0.3", optional = true }
+pin-project = { version = "1.0", optional = true }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
+futures = "0.3"
