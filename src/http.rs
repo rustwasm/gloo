@@ -22,6 +22,7 @@ use wasm_bindgen_futures::JsFuture;
 use web_sys::window;
 
 #[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 use serde::de::DeserializeOwned;
 
 pub use web_sys::{
@@ -263,6 +264,7 @@ impl Response {
 
     /// Gets and parses the json.
     #[cfg(feature = "json")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
     pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
         let promise = self.response.json().map_err(js_to_error)?;
         let json = JsFuture::from(promise).await.map_err(js_to_error)?;

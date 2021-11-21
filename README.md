@@ -21,22 +21,23 @@ assert_eq!(resp.status(), 200);
 ### WebSocket
 
 ```rust
-let ws = WebSocket::open("wss://echo.websocket.org").unwrap();
+use reqwasm::websocket::{Message, futures::WebSocket};
+use wasm_bindgen_futures::spawn_local;
+use futures::{SinkExt, StreamExt};
 
-let (mut sender, mut receiver) = (ws.sender, ws.receiver);
+let mut ws = WebSocket::open("wss://echo.websocket.org").unwrap();
+let (mut write, mut read) = ws.split();
 
 spawn_local(async move {
-    while let Some(m) = receiver.next().await {
-        match m {
-            Ok(Message::Text(m)) => console_log!("message", m),
-            Ok(Message::Bytes(m)) => console_log!("message", format!("{:?}", m)),
-            Err(e) => {}
-        }
-    }
+    write.send(Message::Text(String::from("test"))).await.unwrap();
+    write.send(Message::Text(String::from("test 2"))).await.unwrap();
 });
 
 spawn_local(async move {
-    sender.send(Message::Text("test".to_string())).await.unwrap();
+    while let Some(msg) = read.next().await {
+        console_log!(format!("1. {:?}", msg))
+    }
+    console_log!("WebSocket Closed")
 })
 ```
 ## Contributions

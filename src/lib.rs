@@ -8,11 +8,14 @@
     missing_debug_implementations,
     missing_copy_implementations
 )]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod error;
 #[cfg(feature = "http")]
+#[cfg_attr(docsrs, doc(cfg(feature = "http")))]
 pub mod http;
 #[cfg(feature = "websocket")]
+#[cfg_attr(docsrs, doc(cfg(feature = "websocket")))]
 pub mod websocket;
 
 pub use error::*;
