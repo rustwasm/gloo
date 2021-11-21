@@ -65,7 +65,6 @@ mod tests {
         }
     }
 
-
     fn console_dbg_works() {
         #[derive(Debug)]
         struct Value(&'static str);
