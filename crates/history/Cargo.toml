@@ -1,0 +1,44 @@
+[package]
+name = "gloo-history"
+version = "0.1.0"
+description = "Universal Session History"
+authors = ["Rust and WebAssembly Working Group"]
+edition = "2018"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/rustwasm/gloo/tree/master/crates/history"
+homepage = "https://github.com/rustwasm/gloo"
+categories = ["api-bindings", "storage", "wasm"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+gloo-utils = { version = "0.1.0", path = "../utils" }
+gloo-events = { version = "0.1.0", path = "../events" }
+serde = "1"
+serde_urlencoded = "0.7"
+serde-wasm-bindgen = "0.3.1"
+thiserror = "1.0"
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    # "Attr",
+    # "Document",
+    "History",
+    # "HtmlBaseElement",
+    # "Event",
+    # "NamedNodeMap",
+    # "Url",
+    # "UrlSearchParams",
+    "Window",
+]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+serde = { version = "1", features = ["derive"] }
+
+# [dev-dependencies.web-sys]
+# version = "0.3"
+# features = [
+#     "HtmlHeadElement",
+# ]
