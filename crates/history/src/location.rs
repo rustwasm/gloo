@@ -8,7 +8,7 @@ pub trait Location: Clone + PartialEq {
     type History: History<Location = Self> + 'static;
 
     /// Returns the `pathname` on the [`Location`] struct.
-    fn pathname(&self) -> String;
+    fn path(&self) -> String;
 
     /// Returns the queries of current URL in [`String`]
     fn search(&self) -> String;

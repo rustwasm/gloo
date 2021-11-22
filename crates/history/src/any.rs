@@ -126,9 +126,9 @@ impl History for AnyHistory {
 impl Location for AnyLocation {
     type History = AnyHistory;
 
-    fn pathname(&self) -> String {
+    fn path(&self) -> String {
         let Self::Browser(self_) = self;
-        self_.pathname()
+        self_.path()
     }
 
     fn search(&self) -> String {

@@ -283,7 +283,7 @@ impl PartialEq for BrowserLocation {
 impl Location for BrowserLocation {
     type History = BrowserHistory;
 
-    fn pathname(&self) -> String {
+    fn path(&self) -> String {
         self.inner
             .pathname()
             .expect_throw("failed to get pathname.")
