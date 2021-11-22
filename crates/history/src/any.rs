@@ -113,14 +113,6 @@ impl History for AnyHistory {
         let Self::Browser(self_) = self;
         AnyLocation::Browser(self_.location())
     }
-
-    fn state<T>(&self) -> HistoryResult<T>
-    where
-        T: DeserializeOwned + 'static,
-    {
-        let Self::Browser(self_) = self;
-        self_.state()
-    }
 }
 
 impl Location for AnyLocation {
@@ -147,6 +139,14 @@ impl Location for AnyLocation {
     fn hash(&self) -> String {
         let Self::Browser(self_) = self;
         self_.hash()
+    }
+
+    fn state<T>(&self) -> HistoryResult<T>
+    where
+        T: DeserializeOwned + 'static,
+    {
+        let Self::Browser(self_) = self;
+        self_.state()
     }
 }
 

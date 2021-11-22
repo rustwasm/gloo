@@ -172,14 +172,6 @@ impl History for BrowserHistory {
     fn location(&self) -> Self::Location {
         BrowserLocation::new(self.clone())
     }
-
-    fn state<T>(&self) -> HistoryResult<T>
-    where
-        T: DeserializeOwned + 'static,
-    {
-        serde_wasm_bindgen::from_value(self.inner.state().expect_throw("failed to read state."))
-            .map_err(|e| e.into())
-    }
 }
 
 impl Default for BrowserHistory {
@@ -271,12 +263,12 @@ impl BrowserHistory {
 #[derive(Clone)]
 pub struct BrowserLocation {
     inner: web_sys::Location,
-    _history: BrowserHistory,
+    history: BrowserHistory,
 }
 
 impl PartialEq for BrowserLocation {
     fn eq(&self, rhs: &Self) -> bool {
-        self._history == rhs._history
+        self.history == rhs.history
     }
 }
 
@@ -304,13 +296,26 @@ impl Location for BrowserLocation {
     fn hash(&self) -> String {
         self.inner.hash().expect_throw("failed to get hash.")
     }
+
+    fn state<T>(&self) -> HistoryResult<T>
+    where
+        T: DeserializeOwned + 'static,
+    {
+        serde_wasm_bindgen::from_value(
+            self.history
+                .inner
+                .state()
+                .expect_throw("failed to read state."),
+        )
+        .map_err(|e| e.into())
+    }
 }
 
 impl BrowserLocation {
     fn new(history: BrowserHistory) -> Self {
         Self {
             inner: window().location(),
-            _history: history,
+            history,
         }
     }
 

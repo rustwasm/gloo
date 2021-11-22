@@ -20,4 +20,14 @@ pub trait Location: Clone + PartialEq {
 
     /// Returns the hash fragment of current URL.
     fn hash(&self) -> String;
+
+    /// Returns the State.
+    ///
+    /// The implementation differs between [`History`] type.
+    ///
+    /// For [`BrowserHistory`] and [`HashHistory`], state is serialised with [`serde_wasm_bindgen`] where as
+    /// [`MemoryHistory`] uses [`Any`](std::any::Any).
+    fn state<T>(&self) -> HistoryResult<T>
+    where
+        T: DeserializeOwned + 'static;
 }

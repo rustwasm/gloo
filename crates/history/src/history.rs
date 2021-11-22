@@ -100,14 +100,4 @@ pub trait History: Clone + PartialEq {
 
     /// Returns the associated [`Location`] of the current history.
     fn location(&self) -> Self::Location;
-
-    /// Returns the State.
-    ///
-    /// The implementation differs between [`History`] type.
-    ///
-    /// For [`BrowserHistory`] and [`HashHistory`], state is serialised with [`serde_wasm_bindgen`] where as
-    /// [`MemoryHistory`] uses [`Any`](std::any::Any).
-    fn state<T>(&self) -> HistoryResult<T>
-    where
-        T: DeserializeOwned + 'static;
 }
