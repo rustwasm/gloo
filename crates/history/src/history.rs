@@ -1,3 +1,4 @@
+use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::error::HistoryResult;
@@ -106,5 +107,7 @@ pub trait History: Clone + PartialEq {
     ///
     /// For [`BrowserHistory`] and [`HashHistory`], state is serialised with [`serde_wasm_bindgen`] where as
     /// [`MemoryHistory`] uses [`Any`](std::any::Any).
-    fn state<T>(&self) -> HistoryResult<T>;
+    fn state<T>(&self) -> HistoryResult<T>
+    where
+        T: DeserializeOwned + 'static;
 }
