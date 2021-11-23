@@ -7,7 +7,7 @@ use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
 
-/// A [`History`] that is always available under a [`Router`](crate::Router).
+/// A [`History`] that provides a universial API to the underlying history type.
 #[derive(Clone, PartialEq)]
 pub enum AnyHistory {
     Browser(BrowserHistory),
