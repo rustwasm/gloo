@@ -1,7 +1,9 @@
 use std::borrow::Cow;
 
+#[cfg(feature = "serialize")]
 use serde::Serialize;
 
+#[cfg(feature = "serialize")]
 use crate::error::HistoryResult;
 use crate::listener::HistoryListener;
 use crate::location::Location;
@@ -46,6 +48,7 @@ pub trait History: Clone + PartialEq {
     ///
     /// For [`BrowserHistory`] and [`HashHistory`], state is serialised with [`serde_wasm_bindgen`] where as
     /// [`MemoryHistory`] uses [`Any`](std::any::Any).
+    #[cfg(feature = "serialize")]
     fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T) -> HistoryResult<()>
     where
         T: Serialize + 'static;
@@ -56,6 +59,7 @@ pub trait History: Clone + PartialEq {
     ///
     /// For [`BrowserHistory`], it uses [`serde_wasm_bindgen`] where as other types uses
     /// [`Any`](std::any::Any).
+    #[cfg(feature = "serialize")]
     fn replace_with_state<'a, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -65,11 +69,13 @@ pub trait History: Clone + PartialEq {
         T: Serialize + 'static;
 
     /// Same as `.push()` but affix the queries to the end of the route.
+    #[cfg(feature = "serialize")]
     fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
     where
         Q: Serialize;
 
     /// Same as `.replace()` but affix the queries to the end of the route.
+    #[cfg(feature = "serialize")]
     fn replace_with_query<'a, Q>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -79,6 +85,7 @@ pub trait History: Clone + PartialEq {
         Q: Serialize;
 
     /// Same as `.push_with_state()` but affix the queries to the end of the route.
+    #[cfg(feature = "serialize")]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -90,6 +97,7 @@ pub trait History: Clone + PartialEq {
         T: Serialize + 'static;
 
     /// Same as `.replace_with_state()` but affix the queries to the end of the route.
+    #[cfg(feature = "serialize")]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
