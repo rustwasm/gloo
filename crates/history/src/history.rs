@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use serde::Serialize;
 
 use crate::error::HistoryResult;
@@ -33,10 +35,10 @@ pub trait History: Clone + PartialEq {
     fn go(&self, delta: isize);
 
     /// Pushes a route entry with [`None`] being the state.
-    fn push(&self, route: impl Into<String>);
+    fn push<'a>(&self, route: impl Into<Cow<'a, str>>);
 
     /// Replaces the current history entry with provided route and [`None`] state.
-    fn replace(&self, route: impl Into<String>);
+    fn replace<'a>(&self, route: impl Into<Cow<'a, str>>);
 
     /// Pushes a route entry with state.
     ///
@@ -44,7 +46,7 @@ pub trait History: Clone + PartialEq {
     ///
     /// For [`BrowserHistory`] and [`HashHistory`], state is serialised with [`serde_wasm_bindgen`] where as
     /// [`MemoryHistory`] uses [`Any`](std::any::Any).
-    fn push_with_state<T>(&self, route: impl Into<String>, state: T) -> HistoryResult<()>
+    fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T) -> HistoryResult<()>
     where
         T: Serialize + 'static;
 
@@ -54,24 +56,32 @@ pub trait History: Clone + PartialEq {
     ///
     /// For [`BrowserHistory`], it uses [`serde_wasm_bindgen`] where as other types uses
     /// [`Any`](std::any::Any).
-    fn replace_with_state<T>(&self, route: impl Into<String>, state: T) -> HistoryResult<()>
+    fn replace_with_state<'a, T>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        state: T,
+    ) -> HistoryResult<()>
     where
         T: Serialize + 'static;
 
     /// Same as `.push()` but affix the queries to the end of the route.
-    fn push_with_query<Q>(&self, route: impl Into<String>, query: Q) -> HistoryResult<()>
+    fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
     where
         Q: Serialize;
 
     /// Same as `.replace()` but affix the queries to the end of the route.
-    fn replace_with_query<Q>(&self, route: impl Into<String>, query: Q) -> HistoryResult<()>
+    fn replace_with_query<'a, Q>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        query: Q,
+    ) -> HistoryResult<()>
     where
         Q: Serialize;
 
     /// Same as `.push_with_state()` but affix the queries to the end of the route.
-    fn push_with_query_and_state<Q, T>(
+    fn push_with_query_and_state<'a, Q, T>(
         &self,
-        route: impl Into<String>,
+        route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
     ) -> HistoryResult<()>
@@ -80,9 +90,9 @@ pub trait History: Clone + PartialEq {
         T: Serialize + 'static;
 
     /// Same as `.replace_with_state()` but affix the queries to the end of the route.
-    fn replace_with_query_and_state<Q, T>(
+    fn replace_with_query_and_state<'a, Q, T>(
         &self,
-        route: impl Into<String>,
+        route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
     ) -> HistoryResult<()>

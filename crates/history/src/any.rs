@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -36,19 +38,19 @@ impl History for AnyHistory {
         }
     }
 
-    fn push(&self, route: impl Into<String>) {
+    fn push<'a>(&self, route: impl Into<Cow<'a, str>>) {
         match self {
             Self::Browser(m) => m.push(route),
         }
     }
 
-    fn replace(&self, route: impl Into<String>) {
+    fn replace<'a>(&self, route: impl Into<Cow<'a, str>>) {
         match self {
             Self::Browser(m) => m.replace(route),
         }
     }
 
-    fn push_with_state<T>(&self, route: impl Into<String>, state: T) -> HistoryResult<()>
+    fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T) -> HistoryResult<()>
     where
         T: Serialize + 'static,
     {
@@ -57,7 +59,11 @@ impl History for AnyHistory {
         }
     }
 
-    fn replace_with_state<T>(&self, route: impl Into<String>, state: T) -> HistoryResult<()>
+    fn replace_with_state<'a, T>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        state: T,
+    ) -> HistoryResult<()>
     where
         T: Serialize + 'static,
     {
@@ -66,7 +72,7 @@ impl History for AnyHistory {
         }
     }
 
-    fn push_with_query<Q>(&self, route: impl Into<String>, query: Q) -> HistoryResult<()>
+    fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
     where
         Q: Serialize,
     {
@@ -74,7 +80,11 @@ impl History for AnyHistory {
             Self::Browser(m) => m.push_with_query(route, query),
         }
     }
-    fn replace_with_query<Q>(&self, route: impl Into<String>, query: Q) -> HistoryResult<()>
+    fn replace_with_query<'a, Q>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        query: Q,
+    ) -> HistoryResult<()>
     where
         Q: Serialize,
     {
@@ -83,9 +93,9 @@ impl History for AnyHistory {
         }
     }
 
-    fn push_with_query_and_state<Q, T>(
+    fn push_with_query_and_state<'a, Q, T>(
         &self,
-        route: impl Into<String>,
+        route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
     ) -> HistoryResult<()>
@@ -98,9 +108,9 @@ impl History for AnyHistory {
         }
     }
 
-    fn replace_with_query_and_state<Q, T>(
+    fn replace_with_query_and_state<'a, Q, T>(
         &self,
-        route: impl Into<String>,
+        route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
     ) -> HistoryResult<()>

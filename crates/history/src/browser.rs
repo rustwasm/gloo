@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::{Rc, Weak};
@@ -49,7 +50,7 @@ impl History for BrowserHistory {
             .expect_throw("failed to call go.")
     }
 
-    fn push(&self, route: impl Into<String>) {
+    fn push<'a>(&self, route: impl Into<Cow<'a, str>>) {
         let url = route.into();
         self.inner
             .push_state_with_url(&JsValue::NULL, "", Some(&url))
@@ -58,7 +59,7 @@ impl History for BrowserHistory {
         self.notify_callbacks();
     }
 
-    fn replace(&self, route: impl Into<String>) {
+    fn replace<'a>(&self, route: impl Into<Cow<'a, str>>) {
         let url = route.into();
         self.inner
             .replace_state_with_url(&JsValue::NULL, "", Some(&url))
@@ -67,7 +68,7 @@ impl History for BrowserHistory {
         self.notify_callbacks();
     }
 
-    fn push_with_state<T>(&self, route: impl Into<String>, state: T) -> HistoryResult<()>
+    fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T) -> HistoryResult<()>
     where
         T: Serialize + 'static,
     {
@@ -81,7 +82,11 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    fn replace_with_state<T>(&self, route: impl Into<String>, state: T) -> HistoryResult<()>
+    fn replace_with_state<'a, T>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        state: T,
+    ) -> HistoryResult<()>
     where
         T: Serialize + 'static,
     {
@@ -95,7 +100,7 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    fn push_with_query<Q>(&self, route: impl Into<String>, query: Q) -> HistoryResult<()>
+    fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
     where
         Q: Serialize,
     {
@@ -108,7 +113,11 @@ impl History for BrowserHistory {
         self.notify_callbacks();
         Ok(())
     }
-    fn replace_with_query<Q>(&self, route: impl Into<String>, query: Q) -> HistoryResult<()>
+    fn replace_with_query<'a, Q>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        query: Q,
+    ) -> HistoryResult<()>
     where
         Q: Serialize,
     {
@@ -122,9 +131,9 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    fn push_with_query_and_state<Q, T>(
+    fn push_with_query_and_state<'a, Q, T>(
         &self,
-        route: impl Into<String>,
+        route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
     ) -> HistoryResult<()>
@@ -143,9 +152,9 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    fn replace_with_query_and_state<Q, T>(
+    fn replace_with_query_and_state<'a, Q, T>(
         &self,
-        route: impl Into<String>,
+        route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
     ) -> HistoryResult<()>
