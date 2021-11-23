@@ -22,23 +22,12 @@ thiserror = "1.0"
 [dependencies.web-sys]
 version = "0.3"
 features = [
-    # "Attr",
-    # "Document",
     "History",
-    # "HtmlBaseElement",
-    # "Event",
-    # "NamedNodeMap",
-    # "Url",
-    # "UrlSearchParams",
     "Window",
+    "Location",
 ]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 serde = { version = "1", features = ["derive"] }
-
-# [dev-dependencies.web-sys]
-# version = "0.3"
-# features = [
-#     "HtmlHeadElement",
-# ]
+gloo-timers = { version = "0.2.0", features = ["futures"], path = "../timers" }

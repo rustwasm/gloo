@@ -1,4 +1,3 @@
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::error::HistoryResult;

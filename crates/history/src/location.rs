@@ -23,10 +23,10 @@ pub trait Location: Clone + PartialEq {
 
     /// Returns the State.
     ///
-    /// The implementation differs between [`History`] type.
+    /// The implementation differs between [`Location`] type.
     ///
-    /// For [`BrowserHistory`] and [`HashHistory`], state is serialised with [`serde_wasm_bindgen`] where as
-    /// [`MemoryHistory`] uses [`Any`](std::any::Any).
+    /// For [`BrowserLocation`] and [`HashLocation`], state is deserialised with [`serde_wasm_bindgen`] where as
+    /// [`MemoryLocation`] uses [`Any`](std::any::Any).
     fn state<T>(&self) -> HistoryResult<T>
     where
         T: DeserializeOwned + 'static;
