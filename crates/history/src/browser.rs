@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::fmt;
 use std::rc::{Rc, Weak};
 
 use gloo_events::EventListener;
@@ -20,6 +21,12 @@ type WeakCallback = Weak<dyn Fn()>;
 pub struct BrowserHistory {
     inner: web_sys::History,
     callbacks: Rc<RefCell<Vec<WeakCallback>>>,
+}
+
+impl fmt::Debug for BrowserHistory {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BrowserHistory").finish()
+    }
 }
 
 impl PartialEq for BrowserHistory {
@@ -264,6 +271,12 @@ impl BrowserHistory {
 pub struct BrowserLocation {
     inner: web_sys::Location,
     history: BrowserHistory,
+}
+
+impl fmt::Debug for BrowserLocation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("BrowserLocation").finish()
+    }
 }
 
 impl PartialEq for BrowserLocation {

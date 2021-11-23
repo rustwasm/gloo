@@ -6,6 +6,7 @@ use crate::location::Location;
 
 /// A trait to provide [`History`] access.
 pub trait History: Clone + PartialEq {
+    /// The [`Location`] type for current history.
     type Location: Location<History = Self> + 'static;
 
     /// Returns the number of elements in [`History`].

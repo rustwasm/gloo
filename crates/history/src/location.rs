@@ -5,6 +5,7 @@ use crate::history::History;
 
 /// A trait to to provide [`Location`] information.
 pub trait Location: Clone + PartialEq {
+    /// The [`History`] type for current [`Location`].
     type History: History<Location = Self> + 'static;
 
     /// Returns the `pathname` on the [`Location`] struct.

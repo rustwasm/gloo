@@ -1,5 +1,8 @@
 //! A module that provides universal session history and location information.
 
+#![deny(clippy::all)]
+#![deny(missing_docs, missing_debug_implementations)]
+
 mod any;
 mod browser;
 mod error;
