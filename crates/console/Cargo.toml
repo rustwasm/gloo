@@ -1,13 +1,14 @@
 [package]
 name = "gloo-console"
 description = "Convenience crate for working with browser's console"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Rust and WebAssembly Working Group"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/rustwasm/gloo/tree/master/crates/console"
 homepage = "https://github.com/rustwasm/gloo"
+documentation = "https://docs.rs/gloo-console/"
 categories = ["api-bindings", "development-tools::profiling", "wasm"]
 
 [dependencies]

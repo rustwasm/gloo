@@ -1,4 +1,4 @@
-/// A macro similar to [`dbg!`].
+/// A macro similar to [`dbg!`] that logs [`JsValue`][wasm_bindgen::JsValue]s to console.
 ///
 /// See the [stdlib documentation][std::dbg] to learn more. This macro calls `console.log`
 /// instead of `eprintln!` for `JsValue`s. The formatting is done by the browser. If you want
@@ -23,7 +23,7 @@ macro_rules! console {
     };
 }
 
-/// A macro similar to [`dbg!`].
+/// A macro similar to [`dbg!`] to log to browser console.
 ///
 /// See the [stdlib documentation][std::dbg] to learn more. This macro calls `console.log`
 /// instead of `eprintln!`. This macro passing the values to [`console`] after formatting them using
