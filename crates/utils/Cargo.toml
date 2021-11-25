@@ -1,6 +1,6 @@
 [package]
 name = "gloo-utils"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 description = "Convenience crate for common `web_sys` features"
 authors = ["Rust and WebAssembly Working Group"]
