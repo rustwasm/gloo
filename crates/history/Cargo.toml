@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/rustwasm/gloo/tree/master/crates/history"
 homepage = "https://github.com/rustwasm/gloo"
-categories = ["api-bindings", "storage", "wasm"]
+categories = ["api-bindings", "history", "wasm"]
 
 [dependencies]
 wasm-bindgen = "0.2"

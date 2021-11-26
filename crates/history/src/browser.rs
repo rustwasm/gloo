@@ -57,7 +57,7 @@ impl History for BrowserHistory {
         let url = route.into();
         self.inner
             .push_state_with_url(&JsValue::NULL, "", Some(&url))
-            .expect("failed to push state.");
+            .expect_throw("failed to push state.");
 
         self.notify_callbacks();
     }
@@ -66,7 +66,7 @@ impl History for BrowserHistory {
         let url = route.into();
         self.inner
             .replace_state_with_url(&JsValue::NULL, "", Some(&url))
-            .expect("failed to replace history.");
+            .expect_throw("failed to replace history.");
 
         self.notify_callbacks();
     }
@@ -80,7 +80,7 @@ impl History for BrowserHistory {
         let state = serde_wasm_bindgen::to_value(&state)?;
         self.inner
             .push_state_with_url(&state, "", Some(&url))
-            .expect("failed to push state.");
+            .expect_throw("failed to push state.");
 
         self.notify_callbacks();
         Ok(())
@@ -99,7 +99,7 @@ impl History for BrowserHistory {
         let state = serde_wasm_bindgen::to_value(&state)?;
         self.inner
             .replace_state_with_url(&state, "", Some(&url))
-            .expect("failed to replace state.");
+            .expect_throw("failed to replace state.");
 
         self.notify_callbacks();
         Ok(())
@@ -114,7 +114,7 @@ impl History for BrowserHistory {
         let query = serde_urlencoded::to_string(query)?;
         self.inner
             .push_state_with_url(&JsValue::NULL, "", Some(&format!("{}?{}", url, query)))
-            .expect("failed to push history.");
+            .expect_throw("failed to push history.");
 
         self.notify_callbacks();
         Ok(())
@@ -132,7 +132,7 @@ impl History for BrowserHistory {
         let query = serde_urlencoded::to_string(query)?;
         self.inner
             .replace_state_with_url(&JsValue::NULL, "", Some(&format!("{}?{}", url, query)))
-            .expect("failed to replace history.");
+            .expect_throw("failed to replace history.");
 
         self.notify_callbacks();
         Ok(())
@@ -154,7 +154,7 @@ impl History for BrowserHistory {
         let state = serde_wasm_bindgen::to_value(&state)?;
         self.inner
             .push_state_with_url(&state, "", Some(&format!("{}?{}", url, query)))
-            .expect("failed to push history.");
+            .expect_throw("failed to push history.");
 
         self.notify_callbacks();
         Ok(())
@@ -176,7 +176,7 @@ impl History for BrowserHistory {
         let state = serde_wasm_bindgen::to_value(&state)?;
         self.inner
             .replace_state_with_url(&state, "", Some(&format!("{}?{}", url, query)))
-            .expect("failed to replace history.");
+            .expect_throw("failed to replace history.");
 
         self.notify_callbacks();
         Ok(())
