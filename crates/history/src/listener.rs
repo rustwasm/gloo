@@ -5,7 +5,7 @@ use std::rc::Rc;
 ///
 /// This Listener has the same behaviour as the [`EventListener`] from [`gloo`]
 /// that the underlying callback will be unregistered when the listener is dropped.
-#[must_use]
+#[must_use = "the listener is removed when `HistoryListener` is dropped"]
 pub struct HistoryListener {
     pub(crate) _listener: Rc<dyn Fn()>,
 }
