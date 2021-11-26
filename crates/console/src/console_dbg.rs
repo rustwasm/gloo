@@ -6,16 +6,15 @@
 #[macro_export]
 macro_rules! console {
     () => {
-        $crate::log!(::std::format!("[{}:{}]", ::std::file!(), ::std::line!()));
+        $crate::log!(
+            ::std::format!("%c[{}:{}] ", ::std::file!(), ::std::line!()),
+            "font-weight: bold",
+        );
     };
     ($val:expr $(,)?) => {
-        // Use of `match` here is intentional because it affects the lifetimes
-        // of temporaries - https://stackoverflow.com/a/48732525/1063961
-        match $val {
-            tmp => {
-                $crate::log!(::std::format!("[{}:{}] {} =", ::std::file!(), ::std::line!(), ::std::stringify!($val)), &tmp);
-                tmp
-            }
+        {
+            let v = $val;
+            $crate::__console_inner!(v $val)
         }
     };
     ($($val:expr),+ $(,)?) => {
@@ -34,16 +33,29 @@ macro_rules! console_dbg {
         $crate::console!()
     };
     ($val:expr $(,)?) => {
-        match $val {
-            v => {
-                $crate::console!(::std::format!("{:?}", v));
-                v
-            }
+        {
+            let v: $crate::__macro::JsValue = ::std::format!("{:?}", $val).into();
+            $crate::__console_inner!(v $val)
         }
     };
     ($($val:expr),+ $(,)?) => {
         ($($crate::console_dbg!($val)),+,)
     };
+}
+
+/// This is an implementation detail and *should not* be called directly!
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __console_inner {
+    ($js_value:ident $val:expr) => {{
+        $crate::log!(
+            ::std::format!("%c[{}:{}] ", ::std::file!(), ::std::line!()),
+            "font-weight: bold",
+            ::std::format!("{} = ", ::std::stringify!($val)),
+            &$js_value
+        );
+        $js_value
+    }};
 }
 
 #[cfg(test)]
