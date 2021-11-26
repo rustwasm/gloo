@@ -5,9 +5,10 @@ edition = "2018"
 license = "MIT/Apache-2.0"
 name = "gloo"
 readme = "README.md"
-version = "0.4.0"
+version = "0.4.2"
 repository = "https://github.com/rustwasm/gloo"
 homepage = "https://gloo-rs.web.app/"
+documentation = "https://docs.rs/gloo/"
 categories = ["api-bindings", "wasm"]
 
 [dependencies]
@@ -17,8 +18,8 @@ gloo-file = { version = "0.2.0", path = "crates/file" }
 gloo-dialogs = { version = "0.1.0", path = "crates/dialogs" }
 gloo-storage = { version = "0.2.0", path = "crates/storage" }
 gloo-render = { version = "0.1.0", path = "crates/render" }
-gloo-console = { version = "0.2.0", path = "crates/console" }
-gloo-utils = { version = "0.1.0", path = "crates/utils" }
+gloo-console = { version = "0.2.1", path = "crates/console" }
+gloo-utils = { version = "0.1.1", path = "crates/utils" }
 gloo-history = { version = "0.1.0", path = "crates/history" }
 
 [features]
