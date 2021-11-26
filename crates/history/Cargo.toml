@@ -33,5 +33,6 @@ serde = { version = "1", features = ["derive"] }
 gloo-timers = { version = "0.2.0", features = ["futures"], path = "../timers" }
 
 [features]
-serialize = ["serde", "serde_urlencoded", "serde-wasm-bindgen", "thiserror"]
-default = ["serialize"]
+query = ["serde", "thiserror", "serde_urlencoded"]
+state = ["serde", "thiserror", "serde-wasm-bindgen"]
+default = ["query", "state"]

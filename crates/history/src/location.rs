@@ -1,7 +1,7 @@
-#[cfg(feature = "serialize")]
+#[cfg(feature = "serde")]
 use serde::de::DeserializeOwned;
 
-#[cfg(feature = "serialize")]
+#[cfg(feature = "serde")]
 use crate::error::HistoryResult;
 use crate::history::History;
 
@@ -17,7 +17,7 @@ pub trait Location: Clone + PartialEq {
     fn search(&self) -> String;
 
     /// Returns the queries of current URL parsed as `T`.
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "query")]
     fn query<T>(&self) -> HistoryResult<T>
     where
         T: DeserializeOwned;
@@ -31,7 +31,7 @@ pub trait Location: Clone + PartialEq {
     ///
     /// For [`BrowserLocation`] and [`HashLocation`], state is deserialised with [`serde_wasm_bindgen`] where as
     /// [`MemoryLocation`] uses [`Any`](std::any::Any).
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "state")]
     fn state<T>(&self) -> HistoryResult<T>
     where
         T: DeserializeOwned + 'static;

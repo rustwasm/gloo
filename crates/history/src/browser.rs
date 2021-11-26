@@ -5,13 +5,13 @@ use std::rc::{Rc, Weak};
 
 use gloo_events::EventListener;
 use gloo_utils::window;
-#[cfg(feature = "serialize")]
+#[cfg(feature = "serde")]
 use serde::de::DeserializeOwned;
-#[cfg(feature = "serialize")]
+#[cfg(feature = "serde")]
 use serde::Serialize;
 use wasm_bindgen::{JsValue, UnwrapThrowExt};
 
-#[cfg(feature = "serialize")]
+#[cfg(feature = "serde")]
 use crate::error::HistoryResult;
 use crate::history::History;
 use crate::listener::HistoryListener;
@@ -71,7 +71,7 @@ impl History for BrowserHistory {
         self.notify_callbacks();
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "state")]
     fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T) -> HistoryResult<()>
     where
         T: Serialize + 'static,
@@ -86,7 +86,7 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "state")]
     fn replace_with_state<'a, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -105,7 +105,7 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "query")]
     fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
     where
         Q: Serialize,
@@ -119,7 +119,7 @@ impl History for BrowserHistory {
         self.notify_callbacks();
         Ok(())
     }
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "query")]
     fn replace_with_query<'a, Q>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -138,7 +138,7 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(all(feature = "query", feature = "state"))]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -160,7 +160,7 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(all(feature = "query", feature = "state"))]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -318,7 +318,7 @@ impl Location for BrowserLocation {
         self.inner.search().expect_throw("failed to get search.")
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "query")]
     fn query<T>(&self) -> HistoryResult<T>
     where
         T: DeserializeOwned,
@@ -331,7 +331,7 @@ impl Location for BrowserLocation {
         self.inner.hash().expect_throw("failed to get hash.")
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "state")]
     fn state<T>(&self) -> HistoryResult<T>
     where
         T: DeserializeOwned + 'static,

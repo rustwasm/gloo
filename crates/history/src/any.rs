@@ -1,12 +1,12 @@
 use std::borrow::Cow;
 
-#[cfg(feature = "serialize")]
+#[cfg(feature = "serde")]
 use serde::de::DeserializeOwned;
-#[cfg(feature = "serialize")]
+#[cfg(feature = "serde")]
 use serde::Serialize;
 
 use crate::browser::{BrowserHistory, BrowserLocation};
-#[cfg(feature = "serialize")]
+#[cfg(feature = "serde")]
 use crate::error::HistoryResult;
 use crate::history::History;
 use crate::listener::HistoryListener;
@@ -53,7 +53,7 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "state")]
     fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T) -> HistoryResult<()>
     where
         T: Serialize + 'static,
@@ -63,7 +63,7 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "state")]
     fn replace_with_state<'a, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -77,7 +77,7 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "query")]
     fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
     where
         Q: Serialize,
@@ -86,7 +86,7 @@ impl History for AnyHistory {
             Self::Browser(m) => m.push_with_query(route, query),
         }
     }
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "query")]
     fn replace_with_query<'a, Q>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -100,7 +100,7 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(all(feature = "query", feature = "state"))]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -116,7 +116,7 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(all(feature = "query", feature = "state"))]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -163,7 +163,7 @@ impl Location for AnyLocation {
         }
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "query")]
     fn query<T>(&self) -> HistoryResult<T>
     where
         T: DeserializeOwned,
@@ -179,7 +179,7 @@ impl Location for AnyLocation {
         }
     }
 
-    #[cfg(feature = "serialize")]
+    #[cfg(feature = "state")]
     fn state<T>(&self) -> HistoryResult<T>
     where
         T: DeserializeOwned + 'static,
