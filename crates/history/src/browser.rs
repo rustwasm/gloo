@@ -222,16 +222,18 @@ impl Default for BrowserHistory {
 
                     let history = Self { inner, callbacks };
 
-                    let history_clone = history.clone();
+                    {
+                        let history = history.clone();
 
-                    // Listens to popstate.
-                    LISTENER.with(move |m| {
-                        let mut listener = m.borrow_mut();
+                        // Listens to popstate.
+                        LISTENER.with(move |m| {
+                            let mut listener = m.borrow_mut();
 
-                        *listener = Some(EventListener::new(&window, "popstate", move |_| {
-                            history_clone.notify_callbacks();
-                        }));
-                    });
+                            *listener = Some(EventListener::new(&window, "popstate", move |_| {
+                                history.notify_callbacks();
+                            }));
+                        });
+                    }
 
                     history
                 }
