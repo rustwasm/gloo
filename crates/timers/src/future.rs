@@ -84,7 +84,7 @@ impl TimeoutFuture {
 ///
 /// # Example
 ///
-/// ```no_run
+/// ```compile_fail
 /// use std::time::Duration;
 /// use gloo_timers::future::sleep;
 ///
@@ -128,7 +128,7 @@ impl IntervalStream {
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```compile_fail
     /// use futures_util::stream::StreamExt;
     /// use gloo_timers::future::IntervalStream;
     /// use wasm_bindgen_futures::spawn_local;

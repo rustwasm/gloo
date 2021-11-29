@@ -1,0 +1,38 @@
+[package]
+name = "gloo-history"
+version = "0.1.0"
+description = "Universal Session History"
+authors = ["Rust and WebAssembly Working Group"]
+edition = "2018"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/rustwasm/gloo/tree/master/crates/history"
+homepage = "https://github.com/rustwasm/gloo"
+categories = ["api-bindings", "history", "wasm"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+gloo-utils = { version = "0.1.0", path = "../utils" }
+gloo-events = { version = "0.1.0", path = "../events" }
+serde = { version = "1", optional = true }
+serde_urlencoded = { version = "0.7", optional = true }
+serde-wasm-bindgen = { version = "0.3.1", optional = true }
+thiserror = { version = "1.0", optional = true }
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "History",
+    "Window",
+    "Location",
+]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+serde = { version = "1", features = ["derive"] }
+gloo-timers = { version = "0.2.0", features = ["futures"], path = "../timers" }
+
+[features]
+query = ["serde", "thiserror", "serde_urlencoded"]
+state = ["serde", "thiserror", "serde-wasm-bindgen"]
+default = ["query", "state"]
