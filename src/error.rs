@@ -23,6 +23,7 @@ pub(crate) use conversion::*;
 #[cfg(any(feature = "http", feature = "websocket"))]
 mod conversion {
     use gloo_utils::errors::JsError;
+    use std::convert::TryFrom;
     use wasm_bindgen::JsValue;
 
     #[cfg(feature = "http")]

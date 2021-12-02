@@ -2,7 +2,7 @@
 name = "reqwasm"
 version = "0.3.1"
 authors = ["Hamza <muhammadhamza1311@gmail.com>"]
-edition = "2021"
+edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/hamza1311/reqwasm"
 description = "HTTP requests library for WASM Apps"
