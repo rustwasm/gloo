@@ -9,6 +9,7 @@ use gloo_utils::window;
 #[cfg(feature = "query")]
 use serde::Serialize;
 use wasm_bindgen::{JsValue, UnwrapThrowExt};
+use web_sys::Url;
 
 #[cfg(feature = "query")]
 use crate::error::HistoryResult;
@@ -110,14 +111,13 @@ impl History for BrowserHistory {
     where
         Q: Serialize,
     {
-        let url = route.into();
+        let route = route.into();
         let query = serde_urlencoded::to_string(query)?;
+
+        let url = Self::combine_url(&route, &query);
+
         self.inner
-            .push_state_with_url(
-                &Self::create_history_state().1,
-                "",
-                Some(&format!("{}?{}", url, query)),
-            )
+            .push_state_with_url(&Self::create_history_state().1, "", Some(&url))
             .expect_throw("failed to push history.");
 
         self.notify_callbacks();
@@ -133,14 +133,13 @@ impl History for BrowserHistory {
     where
         Q: Serialize,
     {
-        let url = route.into();
+        let route = route.into();
         let query = serde_urlencoded::to_string(query)?;
+
+        let url = Self::combine_url(&route, &query);
+
         self.inner
-            .replace_state_with_url(
-                &Self::create_history_state().1,
-                "",
-                Some(&format!("{}?{}", url, query)),
-            )
+            .replace_state_with_url(&Self::create_history_state().1, "", Some(&url))
             .expect_throw("failed to replace history.");
 
         self.notify_callbacks();
@@ -158,15 +157,18 @@ impl History for BrowserHistory {
         Q: Serialize,
         T: 'static,
     {
-        let url = route.into();
-        let query = serde_urlencoded::to_string(query)?;
-
         let (id, history_state) = Self::create_history_state();
 
         let mut states = self.states.borrow_mut();
         states.insert(id, Rc::new(state) as Rc<dyn Any>);
+
+        let route = route.into();
+        let query = serde_urlencoded::to_string(query)?;
+
+        let url = Self::combine_url(&route, &query);
+
         self.inner
-            .push_state_with_url(&history_state, "", Some(&format!("{}?{}", url, query)))
+            .push_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to push history.");
 
         self.notify_callbacks();
@@ -184,15 +186,17 @@ impl History for BrowserHistory {
         Q: Serialize,
         T: 'static,
     {
-        let url = route.into();
+        let route = route.into();
         let query = serde_urlencoded::to_string(query)?;
+
+        let url = Self::combine_url(&route, &query);
 
         let (id, history_state) = Self::create_history_state();
 
         let mut states = self.states.borrow_mut();
         states.insert(id, Rc::new(state) as Rc<dyn Any>);
         self.inner
-            .replace_state_with_url(&history_state, "", Some(&format!("{}?{}", url, query)))
+            .replace_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to replace history.");
 
         self.notify_callbacks();
@@ -326,5 +330,18 @@ impl BrowserHistory {
             serde_wasm_bindgen::to_value(&history_state)
                 .expect_throw("fails to create history state."),
         )
+    }
+
+    pub(crate) fn combine_url(route: &str, query: &str) -> String {
+        let href = window()
+            .location()
+            .href()
+            .expect_throw("Failed to read location href");
+
+        let url = Url::new_with_base(route, &href).expect_throw("current url is not valid.");
+
+        url.set_search(query);
+
+        url.href()
     }
 }
