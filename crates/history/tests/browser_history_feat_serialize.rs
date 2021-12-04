@@ -56,7 +56,7 @@ mod feat_serialize {
             .unwrap();
 
         assert_eq!(history.location().path(), "/path");
-        assert_eq!(history.location().search(), "?a=something&b=123");
+        assert_eq!(history.location().query_str(), "?a=something&b=123");
         assert_eq!(
             history.location().query::<Query>().unwrap(),
             Query {
