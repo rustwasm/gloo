@@ -11,12 +11,14 @@ mod hash;
 mod history;
 mod listener;
 mod location;
+mod memory;
 mod state;
 mod utils;
 
 pub use any::AnyHistory;
 pub use browser::BrowserHistory;
 pub use hash::HashHistory;
+pub use memory::MemoryHistory;
 
 #[cfg(feature = "query")]
 pub use error::{HistoryError, HistoryResult};

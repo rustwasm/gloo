@@ -5,7 +5,7 @@ use std::fmt;
 use gloo_utils::window;
 #[cfg(feature = "query")]
 use serde::Serialize;
-use wasm_bindgen::{throw_str, UnwrapThrowExt};
+use wasm_bindgen::UnwrapThrowExt;
 use web_sys::Url;
 
 use crate::browser::BrowserHistory;
@@ -14,6 +14,7 @@ use crate::error::HistoryResult;
 use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
+use crate::utils::{assert_absolute_path, assert_no_query};
 
 /// A [`History`] that is implemented with [`web_sys::History`] and stores path in `#`(fragment).
 ///
@@ -43,9 +44,8 @@ impl History for HashHistory {
     fn push<'a>(&self, route: impl Into<Cow<'a, str>>) {
         let route = route.into();
 
-        if !route.starts_with('/') {
-            throw_str("You cannot push relative path in hash history.");
-        }
+        assert_absolute_path(&route);
+        assert_no_query(&route);
 
         let url = Self::get_url();
         url.set_hash(&route);
@@ -56,9 +56,8 @@ impl History for HashHistory {
     fn replace<'a>(&self, route: impl Into<Cow<'a, str>>) {
         let route = route.into();
 
-        if !route.starts_with('/') {
-            throw_str("You cannot push relative path in hash history.");
-        }
+        assert_absolute_path(&route);
+        assert_no_query(&route);
 
         let url = Self::get_url();
         url.set_hash(&route);
@@ -72,9 +71,8 @@ impl History for HashHistory {
     {
         let route = route.into();
 
-        if !route.starts_with('/') {
-            throw_str("You cannot push relative path in hash history.");
-        }
+        assert_absolute_path(&route);
+        assert_no_query(&route);
 
         let url = Self::get_url();
         url.set_hash(&route);
@@ -88,9 +86,8 @@ impl History for HashHistory {
     {
         let route = route.into();
 
-        if !route.starts_with('/') {
-            throw_str("You cannot push relative path in hash history.");
-        }
+        assert_absolute_path(&route);
+        assert_no_query(&route);
 
         let url = Self::get_url();
         url.set_hash(&route);
@@ -106,9 +103,8 @@ impl History for HashHistory {
         let query = serde_urlencoded::to_string(query)?;
         let route = route.into();
 
-        if !route.starts_with('/') {
-            throw_str("You cannot push relative path in hash history.");
-        }
+        assert_absolute_path(&route);
+        assert_no_query(&route);
 
         let url = Self::get_url();
         url.set_hash(&format!("{}?{}", route, query));
@@ -128,9 +124,8 @@ impl History for HashHistory {
         let query = serde_urlencoded::to_string(query)?;
         let route = route.into();
 
-        if !route.starts_with('/') {
-            throw_str("You cannot push relative path in hash history.");
-        }
+        assert_absolute_path(&route);
+        assert_no_query(&route);
 
         let url = Self::get_url();
         url.set_hash(&format!("{}?{}", route, query));
@@ -152,9 +147,8 @@ impl History for HashHistory {
     {
         let route = route.into();
 
-        if !route.starts_with('/') {
-            throw_str("You cannot push relative path in hash history.");
-        }
+        assert_absolute_path(&route);
+        assert_no_query(&route);
 
         let url = Self::get_url();
 
@@ -179,9 +173,8 @@ impl History for HashHistory {
     {
         let route = route.into();
 
-        if !route.starts_with('/') {
-            throw_str("You cannot push relative path in hash history.");
-        }
+        assert_absolute_path(&route);
+        assert_no_query(&route);
 
         let url = Self::get_url();
 
@@ -205,10 +198,7 @@ impl History for HashHistory {
         // We strip # from hash.
         let hash_url = inner_loc.hash().chars().skip(1).collect::<String>();
 
-        assert!(
-            hash_url.starts_with('/'),
-            "hash-based url cannot be relative path."
-        );
+        assert_absolute_path(&hash_url);
 
         let hash_url = Url::new_with_base(
             &hash_url,

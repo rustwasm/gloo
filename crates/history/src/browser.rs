@@ -2,7 +2,7 @@ use std::any::Any;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 
 use gloo_events::EventListener;
 use gloo_utils::window;
@@ -17,8 +17,7 @@ use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
 use crate::state::{HistoryState, StateMap};
-
-type WeakCallback = Weak<dyn Fn()>;
+use crate::utils::WeakCallback;
 
 /// A [`History`] that is implemented with [`web_sys::History`] that provides native browser
 /// history and state access.
@@ -186,15 +185,16 @@ impl History for BrowserHistory {
         Q: Serialize,
         T: 'static,
     {
+        let (id, history_state) = Self::create_history_state();
+
+        let mut states = self.states.borrow_mut();
+        states.insert(id, Rc::new(state) as Rc<dyn Any>);
+
         let route = route.into();
         let query = serde_urlencoded::to_string(query)?;
 
         let url = Self::combine_url(&route, &query);
 
-        let (id, history_state) = Self::create_history_state();
-
-        let mut states = self.states.borrow_mut();
-        states.insert(id, Rc::new(state) as Rc<dyn Any>);
         self.inner
             .replace_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to replace history.");
@@ -296,30 +296,7 @@ impl BrowserHistory {
     }
 
     fn notify_callbacks(&self) {
-        let callables = {
-            let mut callbacks_ref = self.callbacks.borrow_mut();
-
-            // Any gone weak references are removed when called.
-            let (callbacks, callbacks_weak) = callbacks_ref.iter().cloned().fold(
-                (Vec::new(), Vec::new()),
-                |(mut callbacks, mut callbacks_weak), m| {
-                    if let Some(m_strong) = m.clone().upgrade() {
-                        callbacks.push(m_strong);
-                        callbacks_weak.push(m);
-                    }
-
-                    (callbacks, callbacks_weak)
-                },
-            );
-
-            *callbacks_ref = callbacks_weak;
-
-            callbacks
-        };
-
-        for callback in callables {
-            callback()
-        }
+        crate::utils::notify_callbacks(self.callbacks.clone());
     }
 
     fn create_history_state() -> (u32, JsValue) {
