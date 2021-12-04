@@ -10,6 +10,7 @@ use serde::de::DeserializeOwned;
 #[cfg(feature = "serde")]
 use serde::Serialize;
 use wasm_bindgen::{JsValue, UnwrapThrowExt};
+use web_sys::Url;
 
 #[cfg(feature = "serde")]
 use crate::error::HistoryResult;
@@ -53,18 +54,34 @@ impl History for HashHistory {
     }
 
     fn push<'a>(&self, route: impl Into<Cow<'a, str>>) {
-        let url = route.into();
+        let route = route.into();
+        assert!(
+            route.starts_with('/'),
+            "You cannot push relative path in hash history."
+        );
+
+        let url = Self::get_url();
+        url.set_hash(&route);
+
         self.inner
-            .push_state_with_url(&JsValue::NULL, "", Some(&url))
+            .push_state_with_url(&JsValue::NULL, "", Some(&url.href()))
             .expect_throw("failed to push state.");
 
         self.notify_callbacks();
     }
 
     fn replace<'a>(&self, route: impl Into<Cow<'a, str>>) {
-        let url = route.into();
+        let route = route.into();
+        assert!(
+            route.starts_with('/'),
+            "You cannot push relative path in hash history."
+        );
+
+        let url = Self::get_url();
+        url.set_hash(&route);
+
         self.inner
-            .replace_state_with_url(&JsValue::NULL, "", Some(&url))
+            .replace_state_with_url(&JsValue::NULL, "", Some(&url.href()))
             .expect_throw("failed to replace history.");
 
         self.notify_callbacks();
@@ -75,10 +92,18 @@ impl History for HashHistory {
     where
         T: Serialize + 'static,
     {
-        let url = route.into();
+        let route = route.into();
+        assert!(
+            route.starts_with('/'),
+            "You cannot push relative path in hash history."
+        );
+
+        let url = Self::get_url();
+        url.set_hash(&route);
+
         let state = serde_wasm_bindgen::to_value(&state)?;
         self.inner
-            .push_state_with_url(&state, "", Some(&url))
+            .push_state_with_url(&state, "", Some(&url.href()))
             .expect_throw("failed to push state.");
 
         self.notify_callbacks();
@@ -94,10 +119,18 @@ impl History for HashHistory {
     where
         T: Serialize + 'static,
     {
-        let url = route.into();
+        let route = route.into();
+        assert!(
+            route.starts_with('/'),
+            "You cannot push relative path in hash history."
+        );
+
+        let url = Self::get_url();
+        url.set_hash(&route);
+
         let state = serde_wasm_bindgen::to_value(&state)?;
         self.inner
-            .replace_state_with_url(&state, "", Some(&url))
+            .replace_state_with_url(&state, "", Some(&url.href()))
             .expect_throw("failed to replace state.");
 
         self.notify_callbacks();
@@ -109,10 +142,18 @@ impl History for HashHistory {
     where
         Q: Serialize,
     {
-        let url = route.into();
         let query = serde_urlencoded::to_string(query)?;
+        let route = route.into();
+        assert!(
+            route.starts_with('/'),
+            "You cannot push relative path in hash history."
+        );
+
+        let url = Self::get_url();
+        url.set_hash(&format!("{}?{}", route, query));
+
         self.inner
-            .push_state_with_url(&JsValue::NULL, "", Some(&format!("{}?{}", url, query)))
+            .push_state_with_url(&JsValue::NULL, "", Some(&url.href()))
             .expect_throw("failed to push history.");
 
         self.notify_callbacks();
@@ -127,10 +168,18 @@ impl History for HashHistory {
     where
         Q: Serialize,
     {
-        let url = route.into();
         let query = serde_urlencoded::to_string(query)?;
+        let route = route.into();
+        assert!(
+            route.starts_with('/'),
+            "You cannot push relative path in hash history."
+        );
+
+        let url = Self::get_url();
+        url.set_hash(&format!("{}?{}", route, query));
+
         self.inner
-            .replace_state_with_url(&JsValue::NULL, "", Some(&format!("{}?{}", url, query)))
+            .replace_state_with_url(&JsValue::NULL, "", Some(&url.href()))
             .expect_throw("failed to replace history.");
 
         self.notify_callbacks();
@@ -148,11 +197,19 @@ impl History for HashHistory {
         Q: Serialize,
         T: Serialize + 'static,
     {
-        let url = route.into();
+        let route = route.into();
+        assert!(
+            route.starts_with('/'),
+            "You cannot push relative path in hash history."
+        );
         let query = serde_urlencoded::to_string(query)?;
         let state = serde_wasm_bindgen::to_value(&state)?;
+
+        let url = Self::get_url();
+        url.set_hash(&format!("{}?{}", route, query));
+
         self.inner
-            .push_state_with_url(&state, "", Some(&format!("{}?{}", url, query)))
+            .push_state_with_url(&state, "", Some(&url.href()))
             .expect_throw("failed to push history.");
 
         self.notify_callbacks();
@@ -170,11 +227,19 @@ impl History for HashHistory {
         Q: Serialize,
         T: Serialize + 'static,
     {
-        let url = route.into();
+        let route = route.into();
+        assert!(
+            route.starts_with('/'),
+            "You cannot push relative path in hash history."
+        );
         let query = serde_urlencoded::to_string(query)?;
         let state = serde_wasm_bindgen::to_value(&state)?;
+
+        let url = Self::get_url();
+        url.set_hash(&format!("{}?{}", route, query));
+
         self.inner
-            .replace_state_with_url(&state, "", Some(&format!("{}?{}", url, query)))
+            .replace_state_with_url(&state, "", Some(&url.href()))
             .expect_throw("failed to replace history.");
 
         self.notify_callbacks();
@@ -216,7 +281,7 @@ impl Default for HashHistory {
 
                     let inner = window
                         .history()
-                        .expect_throw("Failed to create browser history. Are you using a browser?");
+                        .expect_throw("Failed to create hash history. Are you using a browser?");
                     let callbacks = Rc::default();
 
                     let history = Self { inner, callbacks };
@@ -277,6 +342,15 @@ impl HashHistory {
             callback()
         }
     }
+
+    fn get_url() -> Url {
+        let href = window()
+            .location()
+            .href()
+            .expect_throw("Failed to read location href");
+
+        Url::new(&href).expect_throw("current url is not valid.")
+    }
 }
 
 /// The [`Location`] type for [`HashHistory`].
@@ -302,13 +376,11 @@ impl Location for HashLocation {
     type History = HashHistory;
 
     fn path(&self) -> String {
-        self.inner
-            .pathname()
-            .expect_throw("failed to get pathname.")
+        self.location_url().pathname()
     }
 
     fn search(&self) -> String {
-        self.inner.search().expect_throw("failed to get search.")
+        self.location_url().search()
     }
 
     #[cfg(feature = "query")]
@@ -345,5 +417,17 @@ impl HashLocation {
             inner: window().location(),
             history,
         }
+    }
+
+    fn location_url(&self) -> Url {
+        Url::new_with_base(
+            &self
+                .inner
+                .hash()
+                .map(|mut m| m.split_off(1))
+                .expect_throw("failed to get hash."),
+            &self.inner.href().expect_throw("failed to get current url"),
+        )
+        .expect_throw("failed to get make url")
     }
 }

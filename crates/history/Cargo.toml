@@ -25,6 +25,7 @@ features = [
     "History",
     "Window",
     "Location",
+    "Url",
 ]
 
 [dev-dependencies]
