@@ -8,6 +8,7 @@ use serde::Serialize;
 use crate::browser::{BrowserHistory, BrowserLocation};
 #[cfg(feature = "serde")]
 use crate::error::HistoryResult;
+use crate::hash::{HashHistory, HashLocation};
 use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
@@ -17,6 +18,8 @@ use crate::location::Location;
 pub enum AnyHistory {
     /// A Browser History.
     Browser(BrowserHistory),
+    /// A Hash History
+    Hash(HashHistory),
 }
 
 /// The [`Location`] for [`AnyHistory`]
@@ -24,6 +27,8 @@ pub enum AnyHistory {
 pub enum AnyLocation {
     /// A Browser Location.
     Browser(BrowserLocation),
+    /// A Hash Location.
+    Hash(HashLocation),
 }
 
 impl History for AnyHistory {
@@ -32,24 +37,28 @@ impl History for AnyHistory {
     fn len(&self) -> usize {
         match self {
             Self::Browser(m) => m.len(),
+            Self::Hash(m) => m.len(),
         }
     }
 
     fn go(&self, delta: isize) {
         match self {
             Self::Browser(m) => m.go(delta),
+            Self::Hash(m) => m.go(delta),
         }
     }
 
     fn push<'a>(&self, route: impl Into<Cow<'a, str>>) {
         match self {
             Self::Browser(m) => m.push(route),
+            Self::Hash(m) => m.push(route),
         }
     }
 
     fn replace<'a>(&self, route: impl Into<Cow<'a, str>>) {
         match self {
             Self::Browser(m) => m.replace(route),
+            Self::Hash(m) => m.replace(route),
         }
     }
 
@@ -60,6 +69,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.push_with_state(route, state),
+            Self::Hash(m) => m.push_with_state(route, state),
         }
     }
 
@@ -74,6 +84,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.replace_with_state(route, state),
+            Self::Hash(m) => m.replace_with_state(route, state),
         }
     }
 
@@ -84,6 +95,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.push_with_query(route, query),
+            Self::Hash(m) => m.push_with_query(route, query),
         }
     }
     #[cfg(feature = "query")]
@@ -97,6 +109,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.replace_with_query(route, query),
+            Self::Hash(m) => m.replace_with_query(route, query),
         }
     }
 
@@ -113,6 +126,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.push_with_query_and_state(route, query, state),
+            Self::Hash(m) => m.push_with_query_and_state(route, query, state),
         }
     }
 
@@ -129,6 +143,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.replace_with_query_and_state(route, query, state),
+            Self::Hash(m) => m.replace_with_query_and_state(route, query, state),
         }
     }
 
@@ -138,12 +153,14 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.listen(callback),
+            Self::Hash(m) => m.listen(callback),
         }
     }
 
     fn location(&self) -> Self::Location {
         match self {
             Self::Browser(m) => AnyLocation::Browser(m.location()),
+            Self::Hash(m) => AnyLocation::Hash(m.location()),
         }
     }
 }
@@ -154,12 +171,14 @@ impl Location for AnyLocation {
     fn path(&self) -> String {
         match self {
             Self::Browser(m) => m.path(),
+            Self::Hash(m) => m.path(),
         }
     }
 
     fn search(&self) -> String {
         match self {
             Self::Browser(m) => m.search(),
+            Self::Hash(m) => m.search(),
         }
     }
 
@@ -170,12 +189,14 @@ impl Location for AnyLocation {
     {
         match self {
             Self::Browser(m) => m.query(),
+            Self::Hash(m) => m.query(),
         }
     }
 
     fn hash(&self) -> String {
         match self {
             Self::Browser(m) => m.hash(),
+            Self::Hash(m) => m.hash(),
         }
     }
 
@@ -186,6 +207,7 @@ impl Location for AnyLocation {
     {
         match self {
             Self::Browser(m) => m.state(),
+            Self::Hash(m) => m.state(),
         }
     }
 }
@@ -199,5 +221,17 @@ impl From<BrowserHistory> for AnyHistory {
 impl From<BrowserLocation> for AnyLocation {
     fn from(m: BrowserLocation) -> AnyLocation {
         AnyLocation::Browser(m)
+    }
+}
+
+impl From<HashHistory> for AnyHistory {
+    fn from(m: HashHistory) -> AnyHistory {
+        AnyHistory::Hash(m)
+    }
+}
+
+impl From<HashLocation> for AnyLocation {
+    fn from(m: HashLocation) -> AnyLocation {
+        AnyLocation::Hash(m)
     }
 }

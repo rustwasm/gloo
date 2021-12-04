@@ -7,12 +7,14 @@ mod any;
 mod browser;
 #[cfg(feature = "serde")]
 mod error;
+mod hash;
 mod history;
 mod listener;
 mod location;
 
 pub use any::{AnyHistory, AnyLocation};
 pub use browser::{BrowserHistory, BrowserLocation};
+pub use hash::{HashHistory, HashLocation};
 
 #[cfg(feature = "serde")]
 pub use error::{HistoryError, HistoryResult};
