@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
@@ -5,17 +6,16 @@ use std::rc::{Rc, Weak};
 
 use gloo_events::EventListener;
 use gloo_utils::window;
-#[cfg(feature = "serde")]
-use serde::de::DeserializeOwned;
-#[cfg(feature = "serde")]
+#[cfg(feature = "query")]
 use serde::Serialize;
 use wasm_bindgen::{JsValue, UnwrapThrowExt};
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "query")]
 use crate::error::HistoryResult;
 use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
+use crate::state::{HistoryState, StateMap};
 
 type WeakCallback = Weak<dyn Fn()>;
 
@@ -24,6 +24,7 @@ type WeakCallback = Weak<dyn Fn()>;
 #[derive(Clone)]
 pub struct BrowserHistory {
     inner: web_sys::History,
+    states: Rc<RefCell<StateMap>>,
     callbacks: Rc<RefCell<Vec<WeakCallback>>>,
 }
 
@@ -41,8 +42,6 @@ impl PartialEq for BrowserHistory {
 }
 
 impl History for BrowserHistory {
-    type Location = BrowserLocation;
-
     fn len(&self) -> usize {
         self.inner.length().expect_throw("failed to get length.") as usize
     }
@@ -56,7 +55,7 @@ impl History for BrowserHistory {
     fn push<'a>(&self, route: impl Into<Cow<'a, str>>) {
         let url = route.into();
         self.inner
-            .push_state_with_url(&JsValue::NULL, "", Some(&url))
+            .push_state_with_url(&Self::create_history_state().1, "", Some(&url))
             .expect_throw("failed to push state.");
 
         self.notify_callbacks();
@@ -65,44 +64,45 @@ impl History for BrowserHistory {
     fn replace<'a>(&self, route: impl Into<Cow<'a, str>>) {
         let url = route.into();
         self.inner
-            .replace_state_with_url(&JsValue::NULL, "", Some(&url))
+            .replace_state_with_url(&Self::create_history_state().1, "", Some(&url))
             .expect_throw("failed to replace history.");
 
         self.notify_callbacks();
     }
 
-    #[cfg(feature = "state")]
-    fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T) -> HistoryResult<()>
+    fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T)
     where
-        T: Serialize + 'static,
+        T: 'static,
     {
         let url = route.into();
-        let state = serde_wasm_bindgen::to_value(&state)?;
+
+        let (id, history_state) = Self::create_history_state();
+
+        let mut states = self.states.borrow_mut();
+        states.insert(id, Rc::new(state) as Rc<dyn Any>);
+
         self.inner
-            .push_state_with_url(&state, "", Some(&url))
+            .push_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to push state.");
 
         self.notify_callbacks();
-        Ok(())
     }
 
-    #[cfg(feature = "state")]
-    fn replace_with_state<'a, T>(
-        &self,
-        route: impl Into<Cow<'a, str>>,
-        state: T,
-    ) -> HistoryResult<()>
+    fn replace_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T)
     where
-        T: Serialize + 'static,
+        T: 'static,
     {
         let url = route.into();
-        let state = serde_wasm_bindgen::to_value(&state)?;
+
+        let (id, history_state) = Self::create_history_state();
+
+        let mut states = self.states.borrow_mut();
+        states.insert(id, Rc::new(state) as Rc<dyn Any>);
         self.inner
-            .replace_state_with_url(&state, "", Some(&url))
+            .replace_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to replace state.");
 
         self.notify_callbacks();
-        Ok(())
     }
 
     #[cfg(feature = "query")]
@@ -113,12 +113,17 @@ impl History for BrowserHistory {
         let url = route.into();
         let query = serde_urlencoded::to_string(query)?;
         self.inner
-            .push_state_with_url(&JsValue::NULL, "", Some(&format!("{}?{}", url, query)))
+            .push_state_with_url(
+                &Self::create_history_state().1,
+                "",
+                Some(&format!("{}?{}", url, query)),
+            )
             .expect_throw("failed to push history.");
 
         self.notify_callbacks();
         Ok(())
     }
+
     #[cfg(feature = "query")]
     fn replace_with_query<'a, Q>(
         &self,
@@ -131,14 +136,18 @@ impl History for BrowserHistory {
         let url = route.into();
         let query = serde_urlencoded::to_string(query)?;
         self.inner
-            .replace_state_with_url(&JsValue::NULL, "", Some(&format!("{}?{}", url, query)))
+            .replace_state_with_url(
+                &Self::create_history_state().1,
+                "",
+                Some(&format!("{}?{}", url, query)),
+            )
             .expect_throw("failed to replace history.");
 
         self.notify_callbacks();
         Ok(())
     }
 
-    #[cfg(all(feature = "query", feature = "state"))]
+    #[cfg(all(feature = "query"))]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -147,20 +156,24 @@ impl History for BrowserHistory {
     ) -> HistoryResult<()>
     where
         Q: Serialize,
-        T: Serialize + 'static,
+        T: 'static,
     {
         let url = route.into();
         let query = serde_urlencoded::to_string(query)?;
-        let state = serde_wasm_bindgen::to_value(&state)?;
+
+        let (id, history_state) = Self::create_history_state();
+
+        let mut states = self.states.borrow_mut();
+        states.insert(id, Rc::new(state) as Rc<dyn Any>);
         self.inner
-            .push_state_with_url(&state, "", Some(&format!("{}?{}", url, query)))
+            .push_state_with_url(&history_state, "", Some(&format!("{}?{}", url, query)))
             .expect_throw("failed to push history.");
 
         self.notify_callbacks();
         Ok(())
     }
 
-    #[cfg(all(feature = "query", feature = "state"))]
+    #[cfg(all(feature = "query"))]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -169,13 +182,17 @@ impl History for BrowserHistory {
     ) -> HistoryResult<()>
     where
         Q: Serialize,
-        T: Serialize + 'static,
+        T: 'static,
     {
         let url = route.into();
         let query = serde_urlencoded::to_string(query)?;
-        let state = serde_wasm_bindgen::to_value(&state)?;
+
+        let (id, history_state) = Self::create_history_state();
+
+        let mut states = self.states.borrow_mut();
+        states.insert(id, Rc::new(state) as Rc<dyn Any>);
         self.inner
-            .replace_state_with_url(&state, "", Some(&format!("{}?{}", url, query)))
+            .replace_state_with_url(&history_state, "", Some(&format!("{}?{}", url, query)))
             .expect_throw("failed to replace history.");
 
         self.notify_callbacks();
@@ -194,8 +211,29 @@ impl History for BrowserHistory {
         HistoryListener { _listener: cb }
     }
 
-    fn location(&self) -> Self::Location {
-        BrowserLocation::new(self.clone())
+    fn location(&self) -> Location {
+        let loc = window().location();
+
+        let history_state = self.inner.state().expect_throw("failed to get state");
+        let history_state = serde_wasm_bindgen::from_value::<HistoryState>(history_state).ok();
+
+        let id = history_state.map(|m| m.id());
+
+        let states = self.states.borrow();
+
+        Location {
+            path: loc.pathname().expect_throw("failed to get pathname").into(),
+            query_str: loc
+                .search()
+                .expect_throw("failed to get location query.")
+                .into(),
+            hash: loc
+                .hash()
+                .expect_throw("failed to get location hash.")
+                .into(),
+            state: id.and_then(|m| states.get(&m).cloned()),
+            id,
+        }
     }
 }
 
@@ -210,7 +248,7 @@ impl Default for BrowserHistory {
         BROWSER_HISTORY.with(|m| {
             let mut m = m.borrow_mut();
 
-            let history = match *m {
+            match *m {
                 Some(ref m) => m.clone(),
                 None => {
                     let window = window();
@@ -220,7 +258,11 @@ impl Default for BrowserHistory {
                         .expect_throw("Failed to create browser history. Are you using a browser?");
                     let callbacks = Rc::default();
 
-                    let history = Self { inner, callbacks };
+                    let history = Self {
+                        inner,
+                        callbacks,
+                        states: Rc::default(),
+                    };
 
                     {
                         let history = history.clone();
@@ -235,13 +277,10 @@ impl Default for BrowserHistory {
                         });
                     }
 
+                    *m = Some(history.clone());
                     history
                 }
-            };
-
-            *m = Some(history.clone());
-
-            history
+            }
         })
     }
 }
@@ -278,108 +317,14 @@ impl BrowserHistory {
             callback()
         }
     }
-}
 
-/// The [`Location`] type for [`BrowserHistory`].
-///
-/// Most functionality of this type is provided by [`web_sys::Location`].
-///
-/// This type also provides additional methods that are unique to Browsers and are not available in [`Location`].
-///
-/// This types is read-only as most setters on `window.location` would cause a reload.
-#[derive(Clone)]
-pub struct BrowserLocation {
-    inner: web_sys::Location,
-    history: BrowserHistory,
-}
+    fn create_history_state() -> (u32, JsValue) {
+        let history_state = HistoryState::new();
 
-impl fmt::Debug for BrowserLocation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("BrowserLocation").finish()
-    }
-}
-
-impl PartialEq for BrowserLocation {
-    fn eq(&self, rhs: &Self) -> bool {
-        self.history == rhs.history
-    }
-}
-
-impl Location for BrowserLocation {
-    type History = BrowserHistory;
-
-    fn path(&self) -> String {
-        self.inner
-            .pathname()
-            .expect_throw("failed to get pathname.")
-    }
-
-    fn search(&self) -> String {
-        self.inner.search().expect_throw("failed to get search.")
-    }
-
-    #[cfg(feature = "query")]
-    fn query<T>(&self) -> HistoryResult<T>
-    where
-        T: DeserializeOwned,
-    {
-        let query = self.search();
-        serde_urlencoded::from_str(query.strip_prefix('?').unwrap_or("")).map_err(|e| e.into())
-    }
-
-    fn hash(&self) -> String {
-        self.inner.hash().expect_throw("failed to get hash.")
-    }
-
-    #[cfg(feature = "state")]
-    fn state<T>(&self) -> HistoryResult<T>
-    where
-        T: DeserializeOwned + 'static,
-    {
-        serde_wasm_bindgen::from_value(
-            self.history
-                .inner
-                .state()
-                .expect_throw("failed to read state."),
+        (
+            history_state.id(),
+            serde_wasm_bindgen::to_value(&history_state)
+                .expect_throw("fails to create history state."),
         )
-        .map_err(|e| e.into())
-    }
-}
-
-impl BrowserLocation {
-    fn new(history: BrowserHistory) -> Self {
-        Self {
-            inner: window().location(),
-            history,
-        }
-    }
-
-    /// Returns the `href` of current [`Location`].
-    pub fn href(&self) -> String {
-        self.inner.href().expect_throw("failed to get href.")
-    }
-
-    /// Returns the `origin` of current [`Location`].
-    pub fn origin(&self) -> String {
-        self.inner.origin().expect_throw("failed to get origin.")
-    }
-
-    /// Returns the `protocol` property of current [`Location`].
-    pub fn protocol(&self) -> String {
-        self.inner
-            .protocol()
-            .expect_throw("failed to get protocol.")
-    }
-
-    /// Returns the `host` of current [`Location`].
-    pub fn host(&self) -> String {
-        self.inner.host().expect_throw("failed to get host.")
-    }
-
-    /// Returns the `hostname` of current [`Location`].
-    pub fn hostname(&self) -> String {
-        self.inner
-            .hostname()
-            .expect_throw("failed to get hostname.")
     }
 }

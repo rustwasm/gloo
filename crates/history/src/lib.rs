@@ -5,16 +5,20 @@
 
 mod any;
 mod browser;
-#[cfg(feature = "serde")]
+#[cfg(feature = "query")]
 mod error;
+mod hash;
 mod history;
 mod listener;
 mod location;
+mod state;
+mod utils;
 
-pub use any::{AnyHistory, AnyLocation};
-pub use browser::{BrowserHistory, BrowserLocation};
+pub use any::AnyHistory;
+pub use browser::BrowserHistory;
+pub use hash::HashHistory;
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "query")]
 pub use error::{HistoryError, HistoryResult};
 pub use history::History;
 pub use listener::HistoryListener;

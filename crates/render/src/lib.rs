@@ -13,7 +13,7 @@ use wasm_bindgen::JsCast;
 #[derive(Debug)]
 pub struct AnimationFrame {
     render_id: i32,
-    closure: Closure<dyn Fn(JsValue)>,
+    _closure: Closure<dyn Fn(JsValue)>,
     callback_wrapper: Rc<RefCell<Option<CallbackWrapper>>>,
 }
 
@@ -59,7 +59,7 @@ where
 
     AnimationFrame {
         render_id,
-        closure: callback,
+        _closure: callback,
         callback_wrapper,
     }
 }

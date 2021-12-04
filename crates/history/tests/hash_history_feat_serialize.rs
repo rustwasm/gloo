@@ -11,9 +11,10 @@ mod feat_serialize {
 
     use serde::{Deserialize, Serialize};
 
-    use gloo_history::{BrowserHistory, History};
+    use gloo_history::{HashHistory, History};
 
     use gloo_timers::future::sleep;
+    use gloo_utils::window;
 
     #[derive(Debug, Serialize, Deserialize, PartialEq)]
     struct Query {
@@ -29,22 +30,30 @@ mod feat_serialize {
 
     #[test]
     async fn history_serialize_works() {
-        let history = BrowserHistory::new();
+        let history = HashHistory::new();
         assert_eq!(history.location().path(), "/");
 
         history.push("/path-a");
         assert_eq!(history.location().path(), "/path-a");
+        assert_eq!(window().location().pathname().unwrap(), "/");
+        assert_eq!(window().location().hash().unwrap(), "#/path-a");
 
         history.replace("/path-b");
         assert_eq!(history.location().path(), "/path-b");
+        assert_eq!(window().location().pathname().unwrap(), "/");
+        assert_eq!(window().location().hash().unwrap(), "#/path-b");
 
         history.back();
         sleep(Duration::from_millis(100)).await;
         assert_eq!(history.location().path(), "/");
+        assert_eq!(window().location().pathname().unwrap(), "/");
+        assert_eq!(window().location().hash().unwrap(), "#/");
 
         history.forward();
         sleep(Duration::from_millis(100)).await;
         assert_eq!(history.location().path(), "/path-b");
+        assert_eq!(window().location().pathname().unwrap(), "/");
+        assert_eq!(window().location().hash().unwrap(), "#/path-b");
 
         history
             .push_with_query(
@@ -58,6 +67,11 @@ mod feat_serialize {
 
         assert_eq!(history.location().path(), "/path");
         assert_eq!(history.location().query_str(), "?a=something&b=123");
+        assert_eq!(window().location().pathname().unwrap(), "/");
+        assert_eq!(
+            window().location().hash().unwrap(),
+            "#/path?a=something&b=123"
+        );
         assert_eq!(
             history.location().query::<Query>().unwrap(),
             Query {
@@ -75,6 +89,8 @@ mod feat_serialize {
         );
 
         assert_eq!(history.location().path(), "/path-c");
+        assert_eq!(window().location().pathname().unwrap(), "/");
+        assert_eq!(window().location().hash().unwrap(), "#/path-c");
         assert_eq!(
             history.location().state::<State>().unwrap(),
             Rc::new(State {
