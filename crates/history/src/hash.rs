@@ -443,12 +443,19 @@ impl HashLocation {
     }
 
     fn location_url(&self) -> Url {
+        let hash_url = self
+            .inner
+            .hash()
+            .map(|m| m.chars().skip(1).collect::<String>())
+            .expect_throw("failed to get hash.");
+
+        assert!(
+            hash_url.starts_with('/'),
+            "hash-based url cannot be relative path."
+        );
+
         Url::new_with_base(
-            &self
-                .inner
-                .hash()
-                .map(|m| m.chars().skip(1).collect::<String>())
-                .expect_throw("failed to get hash."),
+            &hash_url,
             &self.inner.href().expect_throw("failed to get current url"),
         )
         .expect_throw("failed to get make url")
