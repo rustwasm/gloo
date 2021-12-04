@@ -14,8 +14,8 @@ pub mod callbacks {
     #[derive(Debug)]
     pub struct FileReader {
         reader: web_sys::FileReader,
-        load_listener: EventListener,
-        error_listener: EventListener,
+        _load_listener: EventListener,
+        _error_listener: EventListener,
     }
 
     impl std::ops::Drop for FileReader {
@@ -135,8 +135,8 @@ pub mod callbacks {
 
         FileReader {
             reader,
-            load_listener,
-            error_listener,
+            _load_listener: load_listener,
+            _error_listener: error_listener,
         }
     }
 }
