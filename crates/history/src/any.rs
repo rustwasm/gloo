@@ -10,6 +10,7 @@ use crate::hash::HashHistory;
 use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
+use crate::memory::MemoryHistory;
 
 /// A [`History`] that provides a universial API to the underlying history type.
 #[derive(Clone, PartialEq, Debug)]
@@ -18,6 +19,8 @@ pub enum AnyHistory {
     Browser(BrowserHistory),
     /// A Hash History
     Hash(HashHistory),
+    /// A Memory History
+    Memory(MemoryHistory),
 }
 
 impl History for AnyHistory {
@@ -25,6 +28,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.len(),
             Self::Hash(m) => m.len(),
+            Self::Memory(m) => m.len(),
         }
     }
 
@@ -32,6 +36,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.go(delta),
             Self::Hash(m) => m.go(delta),
+            Self::Memory(m) => m.go(delta),
         }
     }
 
@@ -39,6 +44,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.push(route),
             Self::Hash(m) => m.push(route),
+            Self::Memory(m) => m.push(route),
         }
     }
 
@@ -46,6 +52,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.replace(route),
             Self::Hash(m) => m.replace(route),
+            Self::Memory(m) => m.replace(route),
         }
     }
 
@@ -56,6 +63,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.push_with_state(route, state),
             Self::Hash(m) => m.push_with_state(route, state),
+            Self::Memory(m) => m.push_with_state(route, state),
         }
     }
 
@@ -66,6 +74,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.replace_with_state(route, state),
             Self::Hash(m) => m.replace_with_state(route, state),
+            Self::Memory(m) => m.replace_with_state(route, state),
         }
     }
 
@@ -77,6 +86,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.push_with_query(route, query),
             Self::Hash(m) => m.push_with_query(route, query),
+            Self::Memory(m) => m.push_with_query(route, query),
         }
     }
     #[cfg(feature = "query")]
@@ -91,6 +101,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.replace_with_query(route, query),
             Self::Hash(m) => m.replace_with_query(route, query),
+            Self::Memory(m) => m.replace_with_query(route, query),
         }
     }
 
@@ -108,6 +119,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.push_with_query_and_state(route, query, state),
             Self::Hash(m) => m.push_with_query_and_state(route, query, state),
+            Self::Memory(m) => m.push_with_query_and_state(route, query, state),
         }
     }
 
@@ -125,6 +137,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.replace_with_query_and_state(route, query, state),
             Self::Hash(m) => m.replace_with_query_and_state(route, query, state),
+            Self::Memory(m) => m.replace_with_query_and_state(route, query, state),
         }
     }
 
@@ -135,6 +148,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.listen(callback),
             Self::Hash(m) => m.listen(callback),
+            Self::Memory(m) => m.listen(callback),
         }
     }
 
@@ -142,6 +156,7 @@ impl History for AnyHistory {
         match self {
             Self::Browser(m) => m.location(),
             Self::Hash(m) => m.location(),
+            Self::Memory(m) => m.location(),
         }
     }
 }
@@ -155,5 +170,11 @@ impl From<BrowserHistory> for AnyHistory {
 impl From<HashHistory> for AnyHistory {
     fn from(m: HashHistory) -> AnyHistory {
         AnyHistory::Hash(m)
+    }
+}
+
+impl From<MemoryHistory> for AnyHistory {
+    fn from(m: MemoryHistory) -> AnyHistory {
+        AnyHistory::Memory(m)
     }
 }
