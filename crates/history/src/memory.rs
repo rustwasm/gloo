@@ -9,6 +9,7 @@ use std::rc::Rc;
 #[cfg(feature = "query")]
 use serde::Serialize;
 
+#[cfg(feature = "query")]
 use crate::error::HistoryResult;
 use crate::history::History;
 use crate::listener::HistoryListener;

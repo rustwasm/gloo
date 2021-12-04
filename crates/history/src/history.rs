@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+#[cfg(feature = "query")]
 use serde::Serialize;
 
 #[cfg(feature = "query")]
