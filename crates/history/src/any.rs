@@ -175,21 +175,10 @@ impl Location for AnyLocation {
         }
     }
 
-    fn search(&self) -> String {
+    fn query_str(&self) -> String {
         match self {
-            Self::Browser(m) => m.search(),
-            Self::Hash(m) => m.search(),
-        }
-    }
-
-    #[cfg(feature = "query")]
-    fn query<T>(&self) -> HistoryResult<T>
-    where
-        T: DeserializeOwned,
-    {
-        match self {
-            Self::Browser(m) => m.query(),
-            Self::Hash(m) => m.query(),
+            Self::Browser(m) => m.query_str(),
+            Self::Hash(m) => m.query_str(),
         }
     }
 

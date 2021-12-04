@@ -14,13 +14,17 @@ pub trait Location: Clone + PartialEq {
     fn path(&self) -> String;
 
     /// Returns the queries of current URL in [`String`]
-    fn search(&self) -> String;
+    fn query_str(&self) -> String;
 
     /// Returns the queries of current URL parsed as `T`.
     #[cfg(feature = "query")]
     fn query<T>(&self) -> HistoryResult<T>
     where
-        T: DeserializeOwned;
+        T: DeserializeOwned,
+    {
+        let query = self.query_str();
+        serde_urlencoded::from_str(query.strip_prefix('?').unwrap_or("")).map_err(|e| e.into())
+    }
 
     /// Returns the hash fragment of current URL.
     fn hash(&self) -> String;

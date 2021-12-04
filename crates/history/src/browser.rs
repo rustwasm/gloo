@@ -314,17 +314,8 @@ impl Location for BrowserLocation {
             .expect_throw("failed to get pathname.")
     }
 
-    fn search(&self) -> String {
+    fn query_str(&self) -> String {
         self.inner.search().expect_throw("failed to get search.")
-    }
-
-    #[cfg(feature = "query")]
-    fn query<T>(&self) -> HistoryResult<T>
-    where
-        T: DeserializeOwned,
-    {
-        let query = self.search();
-        serde_urlencoded::from_str(query.strip_prefix('?').unwrap_or("")).map_err(|e| e.into())
     }
 
     fn hash(&self) -> String {

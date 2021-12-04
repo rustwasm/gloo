@@ -283,17 +283,8 @@ impl Location for HashLocation {
         self.location_url().pathname()
     }
 
-    fn search(&self) -> String {
+    fn query_str(&self) -> String {
         self.location_url().search()
-    }
-
-    #[cfg(feature = "query")]
-    fn query<T>(&self) -> HistoryResult<T>
-    where
-        T: DeserializeOwned,
-    {
-        let query = self.search();
-        serde_urlencoded::from_str(query.strip_prefix('?').unwrap_or("")).map_err(|e| e.into())
     }
 
     fn hash(&self) -> String {
