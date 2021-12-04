@@ -57,7 +57,7 @@ pub trait History: Clone + PartialEq {
     ///
     /// The implementation of state serialization differs between [`History`] types.
     ///
-    /// For [`BrowserHistory`], it uses [`serde_wasm_bindgen`] where as other types uses
+    /// For [`BrowserHistory`] and [`HashHistory`], it uses [`serde_wasm_bindgen`] where as other types uses
     /// [`Any`](std::any::Any).
     #[cfg(feature = "state")]
     fn replace_with_state<'a, T>(

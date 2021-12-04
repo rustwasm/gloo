@@ -1,34 +1,30 @@
 use std::borrow::Cow;
 use std::cell::RefCell;
 use std::fmt;
-use std::rc::{Rc, Weak};
 
-use gloo_events::EventListener;
 use gloo_utils::window;
 #[cfg(feature = "serde")]
 use serde::de::DeserializeOwned;
 #[cfg(feature = "serde")]
 use serde::Serialize;
-use wasm_bindgen::{throw_str, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{throw_str, UnwrapThrowExt};
 use web_sys::Url;
 
+use crate::browser::{BrowserHistory, BrowserLocation};
 #[cfg(feature = "serde")]
 use crate::error::HistoryResult;
 use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
 
-type WeakCallback = Weak<dyn Fn()>;
-
 /// A [`History`] that is implemented with [`web_sys::History`] and stores path in `#`(fragment).
 ///
 /// # Panics
 ///
 /// HashHistory does not support relative paths and will panic if routes are not starting with `/`.
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct HashHistory {
-    inner: web_sys::History,
-    callbacks: Rc<RefCell<Vec<WeakCallback>>>,
+    inner: BrowserHistory,
 }
 
 impl fmt::Debug for HashHistory {
@@ -37,24 +33,15 @@ impl fmt::Debug for HashHistory {
     }
 }
 
-impl PartialEq for HashHistory {
-    fn eq(&self, _rhs: &Self) -> bool {
-        // All hash histories are created equal.
-        true
-    }
-}
-
 impl History for HashHistory {
     type Location = HashLocation;
 
     fn len(&self) -> usize {
-        self.inner.length().expect_throw("failed to get length.") as usize
+        self.inner.len()
     }
 
     fn go(&self, delta: isize) {
-        self.inner
-            .go_with_delta(delta as i32)
-            .expect_throw("failed to call go.")
+        self.inner.go(delta)
     }
 
     fn push<'a>(&self, route: impl Into<Cow<'a, str>>) {
@@ -67,11 +54,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&route);
 
-        self.inner
-            .push_state_with_url(&JsValue::NULL, "", Some(&url.href()))
-            .expect_throw("failed to push state.");
-
-        self.notify_callbacks();
+        self.inner.push(&url.href());
     }
 
     fn replace<'a>(&self, route: impl Into<Cow<'a, str>>) {
@@ -84,11 +67,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&route);
 
-        self.inner
-            .replace_state_with_url(&JsValue::NULL, "", Some(&url.href()))
-            .expect_throw("failed to replace history.");
-
-        self.notify_callbacks();
+        self.inner.replace(&url.href());
     }
 
     #[cfg(feature = "state")]
@@ -105,13 +84,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&route);
 
-        let state = serde_wasm_bindgen::to_value(&state)?;
-        self.inner
-            .push_state_with_url(&state, "", Some(&url.href()))
-            .expect_throw("failed to push state.");
-
-        self.notify_callbacks();
-        Ok(())
+        self.inner.push_with_state(&url.href(), state)
     }
 
     #[cfg(feature = "state")]
@@ -132,13 +105,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&route);
 
-        let state = serde_wasm_bindgen::to_value(&state)?;
-        self.inner
-            .replace_state_with_url(&state, "", Some(&url.href()))
-            .expect_throw("failed to replace state.");
-
-        self.notify_callbacks();
-        Ok(())
+        self.inner.replace_with_state(&url.href(), state)
     }
 
     #[cfg(feature = "query")]
@@ -156,11 +123,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&format!("{}?{}", route, query));
 
-        self.inner
-            .push_state_with_url(&JsValue::NULL, "", Some(&url.href()))
-            .expect_throw("failed to push history.");
-
-        self.notify_callbacks();
+        self.inner.push(&url.href());
         Ok(())
     }
     #[cfg(feature = "query")]
@@ -182,11 +145,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&format!("{}?{}", route, query));
 
-        self.inner
-            .replace_state_with_url(&JsValue::NULL, "", Some(&url.href()))
-            .expect_throw("failed to replace history.");
-
-        self.notify_callbacks();
+        self.inner.replace(&url.href());
         Ok(())
     }
 
@@ -207,18 +166,12 @@ impl History for HashHistory {
             throw_str("You cannot push relative path in hash history.");
         }
 
-        let query = serde_urlencoded::to_string(query)?;
-        let state = serde_wasm_bindgen::to_value(&state)?;
-
         let url = Self::get_url();
+
+        let query = serde_urlencoded::to_string(query)?;
         url.set_hash(&format!("{}?{}", route, query));
 
-        self.inner
-            .push_state_with_url(&state, "", Some(&url.href()))
-            .expect_throw("failed to push history.");
-
-        self.notify_callbacks();
-        Ok(())
+        self.inner.push_with_state(&url.href(), state)
     }
 
     #[cfg(all(feature = "query", feature = "state"))]
@@ -238,30 +191,19 @@ impl History for HashHistory {
             throw_str("You cannot push relative path in hash history.");
         }
 
-        let query = serde_urlencoded::to_string(query)?;
-        let state = serde_wasm_bindgen::to_value(&state)?;
-
         let url = Self::get_url();
+
+        let query = serde_urlencoded::to_string(query)?;
         url.set_hash(&format!("{}?{}", route, query));
 
-        self.inner
-            .replace_state_with_url(&state, "", Some(&url.href()))
-            .expect_throw("failed to replace history.");
-
-        self.notify_callbacks();
-        Ok(())
+        self.inner.replace_with_state(&url.href(), state)
     }
 
     fn listen<CB>(&self, callback: CB) -> HistoryListener
     where
         CB: Fn() + 'static,
     {
-        // Callbacks do not receive a copy of [`History`] to prevent reference cycle.
-        let cb = Rc::new(callback) as Rc<dyn Fn()>;
-
-        self.callbacks.borrow_mut().push(Rc::downgrade(&cb));
-
-        HistoryListener { _listener: cb }
+        self.inner.listen(callback)
     }
 
     fn location(&self) -> Self::Location {
@@ -269,101 +211,10 @@ impl History for HashHistory {
     }
 }
 
-impl Default for HashHistory {
-    fn default() -> Self {
-        // We create browser history only once.
-        thread_local! {
-            static HASH_HISTORY: RefCell<Option<HashHistory>> = RefCell::default();
-            static LISTENER: RefCell<Option<EventListener>> = RefCell::default();
-        }
-
-        HASH_HISTORY.with(|m| {
-            let mut m = m.borrow_mut();
-
-            let history = match *m {
-                Some(ref m) => m.clone(),
-                None => {
-                    let window = window();
-
-                    let inner = window
-                        .history()
-                        .expect_throw("Failed to create hash history. Are you using a browser?");
-
-                    let current_hash = window.location().hash().expect_throw("failed to get hash.");
-
-                    // Hash needs to start with #/.
-                    if current_hash.is_empty() || !current_hash.starts_with("#/") {
-                        let url = Self::get_url();
-                        url.set_hash("#/");
-
-                        inner
-                            .replace_state_with_url(
-                                &inner.state().expect_throw("failed to get state."),
-                                "",
-                                Some(&url.href()),
-                            )
-                            .expect_throw("failed to replace history");
-                    }
-
-                    let callbacks = Rc::default();
-
-                    let history = Self { inner, callbacks };
-
-                    {
-                        let history = history.clone();
-
-                        // Listens to popstate.
-                        LISTENER.with(move |m| {
-                            let mut listener = m.borrow_mut();
-
-                            *listener = Some(EventListener::new(&window, "popstate", move |_| {
-                                history.notify_callbacks();
-                            }));
-                        });
-                    }
-
-                    history
-                }
-            };
-
-            *m = Some(history.clone());
-
-            history
-        })
-    }
-}
-
 impl HashHistory {
     /// Creates a new [`HashHistory`]
     pub fn new() -> Self {
         Self::default()
-    }
-
-    fn notify_callbacks(&self) {
-        let callables = {
-            let mut callbacks_ref = self.callbacks.borrow_mut();
-
-            // Any gone weak references are removed when called.
-            let (callbacks, callbacks_weak) = callbacks_ref.iter().cloned().fold(
-                (Vec::new(), Vec::new()),
-                |(mut callbacks, mut callbacks_weak), m| {
-                    if let Some(m_strong) = m.clone().upgrade() {
-                        callbacks.push(m_strong);
-                        callbacks_weak.push(m);
-                    }
-
-                    (callbacks, callbacks_weak)
-                },
-            );
-
-            *callbacks_ref = callbacks_weak;
-
-            callbacks
-        };
-
-        for callback in callables {
-            callback()
-        }
     }
 
     fn get_url() -> Url {
@@ -376,22 +227,52 @@ impl HashHistory {
     }
 }
 
+impl Default for HashHistory {
+    fn default() -> Self {
+        thread_local! {
+            static HASH_HISTORY: RefCell<Option<HashHistory>> = RefCell::default();
+        }
+
+        HASH_HISTORY.with(|m| {
+            let mut m = m.borrow_mut();
+
+            match *m {
+                Some(ref m) => m.clone(),
+                None => {
+                    let browser_history = BrowserHistory::new();
+
+                    let current_hash = browser_history.location().hash();
+
+                    // Hash needs to start with #/.
+                    if current_hash.is_empty() || !current_hash.starts_with("#/") {
+                        let url = Self::get_url();
+                        url.set_hash("#/");
+
+                        browser_history.replace(url.href());
+                    }
+
+                    let history = Self {
+                        inner: browser_history,
+                    };
+
+                    *m = Some(history.clone());
+                    history
+                }
+            }
+        })
+    }
+}
+
 /// The [`Location`] type for [`HashHistory`].
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct HashLocation {
-    inner: web_sys::Location,
     history: HashHistory,
+    inner: BrowserLocation,
 }
 
 impl fmt::Debug for HashLocation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("HashLocation").finish()
-    }
-}
-
-impl PartialEq for HashLocation {
-    fn eq(&self, rhs: &Self) -> bool {
-        self.history == rhs.history
     }
 }
 
@@ -416,7 +297,7 @@ impl Location for HashLocation {
     }
 
     fn hash(&self) -> String {
-        self.inner.hash().expect_throw("failed to get hash.")
+        self.location_url().hash()
     }
 
     #[cfg(feature = "state")]
@@ -424,40 +305,27 @@ impl Location for HashLocation {
     where
         T: DeserializeOwned + 'static,
     {
-        serde_wasm_bindgen::from_value(
-            self.history
-                .inner
-                .state()
-                .expect_throw("failed to read state."),
-        )
-        .map_err(|e| e.into())
+        self.inner.state()
     }
 }
 
 impl HashLocation {
     fn new(history: HashHistory) -> Self {
         Self {
-            inner: window().location(),
+            inner: history.inner.location(),
             history,
         }
     }
 
     fn location_url(&self) -> Url {
-        let hash_url = self
-            .inner
-            .hash()
-            .map(|m| m.chars().skip(1).collect::<String>())
-            .expect_throw("failed to get hash.");
+        let hash_url = self.inner.hash().chars().skip(1).collect::<String>();
 
         assert!(
             hash_url.starts_with('/'),
             "hash-based url cannot be relative path."
         );
 
-        Url::new_with_base(
-            &hash_url,
-            &self.inner.href().expect_throw("failed to get current url"),
-        )
-        .expect_throw("failed to get make url")
+        Url::new_with_base(&hash_url, &self.history.inner.location().href())
+            .expect_throw("failed to get make url")
     }
 }
