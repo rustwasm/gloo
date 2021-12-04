@@ -1,18 +1,14 @@
 use std::borrow::Cow;
 
-#[cfg(feature = "serde")]
 use serde::Serialize;
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "query")]
 use crate::error::HistoryResult;
 use crate::listener::HistoryListener;
 use crate::location::Location;
 
 /// A trait to provide [`History`] access.
 pub trait History: Clone + PartialEq {
-    /// The [`Location`] type for current history.
-    type Location: Location<History = Self> + 'static;
-
     /// Returns the number of elements in [`History`].
     fn len(&self) -> usize;
 
@@ -43,30 +39,14 @@ pub trait History: Clone + PartialEq {
     fn replace<'a>(&self, route: impl Into<Cow<'a, str>>);
 
     /// Pushes a route entry with state.
-    ///
-    /// The implementation of state serialization differs between [`History`] types.
-    ///
-    /// For [`BrowserHistory`] and [`HashHistory`], state is serialised with [`serde_wasm_bindgen`] where as
-    /// [`MemoryHistory`] uses [`Any`](std::any::Any).
-    #[cfg(feature = "state")]
-    fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T) -> HistoryResult<()>
+    fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T)
     where
-        T: Serialize + 'static;
+        T: 'static;
 
     /// Replaces the current history entry with provided route and state.
-    ///
-    /// The implementation of state serialization differs between [`History`] types.
-    ///
-    /// For [`BrowserHistory`] and [`HashHistory`], it uses [`serde_wasm_bindgen`] where as other types uses
-    /// [`Any`](std::any::Any).
-    #[cfg(feature = "state")]
-    fn replace_with_state<'a, T>(
-        &self,
-        route: impl Into<Cow<'a, str>>,
-        state: T,
-    ) -> HistoryResult<()>
+    fn replace_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T)
     where
-        T: Serialize + 'static;
+        T: 'static;
 
     /// Same as `.push()` but affix the queries to the end of the route.
     #[cfg(feature = "query")]
@@ -85,7 +65,7 @@ pub trait History: Clone + PartialEq {
         Q: Serialize;
 
     /// Same as `.push_with_state()` but affix the queries to the end of the route.
-    #[cfg(all(feature = "query", feature = "state"))]
+    #[cfg(all(feature = "query"))]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -97,7 +77,7 @@ pub trait History: Clone + PartialEq {
         T: Serialize + 'static;
 
     /// Same as `.replace_with_state()` but affix the queries to the end of the route.
-    #[cfg(all(feature = "query", feature = "state"))]
+    #[cfg(all(feature = "query"))]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -116,6 +96,6 @@ pub trait History: Clone + PartialEq {
     where
         CB: Fn() + 'static;
 
-    /// Returns the associated [`Location`] of the current history.
-    fn location(&self) -> Self::Location;
+    /// Returns current [`Location`].
+    fn location(&self) -> Location;
 }

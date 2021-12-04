@@ -1,14 +1,12 @@
 use std::borrow::Cow;
 
-#[cfg(feature = "serde")]
-use serde::de::DeserializeOwned;
-#[cfg(feature = "serde")]
+#[cfg(feature = "query")]
 use serde::Serialize;
 
-use crate::browser::{BrowserHistory, BrowserLocation};
-#[cfg(feature = "serde")]
+use crate::browser::BrowserHistory;
+#[cfg(feature = "query")]
 use crate::error::HistoryResult;
-use crate::hash::{HashHistory, HashLocation};
+use crate::hash::HashHistory;
 use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
@@ -22,18 +20,7 @@ pub enum AnyHistory {
     Hash(HashHistory),
 }
 
-/// The [`Location`] for [`AnyHistory`]
-#[derive(Clone, PartialEq, Debug)]
-pub enum AnyLocation {
-    /// A Browser Location.
-    Browser(BrowserLocation),
-    /// A Hash Location.
-    Hash(HashLocation),
-}
-
 impl History for AnyHistory {
-    type Location = AnyLocation;
-
     fn len(&self) -> usize {
         match self {
             Self::Browser(m) => m.len(),
@@ -62,10 +49,9 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(feature = "state")]
-    fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T) -> HistoryResult<()>
+    fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T)
     where
-        T: Serialize + 'static,
+        T: 'static,
     {
         match self {
             Self::Browser(m) => m.push_with_state(route, state),
@@ -73,14 +59,9 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(feature = "state")]
-    fn replace_with_state<'a, T>(
-        &self,
-        route: impl Into<Cow<'a, str>>,
-        state: T,
-    ) -> HistoryResult<()>
+    fn replace_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T)
     where
-        T: Serialize + 'static,
+        T: 'static,
     {
         match self {
             Self::Browser(m) => m.replace_with_state(route, state),
@@ -113,7 +94,7 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(all(feature = "query", feature = "state"))]
+    #[cfg(all(feature = "query"))]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -130,7 +111,7 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(all(feature = "query", feature = "state"))]
+    #[cfg(all(feature = "query"))]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -157,46 +138,10 @@ impl History for AnyHistory {
         }
     }
 
-    fn location(&self) -> Self::Location {
+    fn location(&self) -> Location {
         match self {
-            Self::Browser(m) => AnyLocation::Browser(m.location()),
-            Self::Hash(m) => AnyLocation::Hash(m.location()),
-        }
-    }
-}
-
-impl Location for AnyLocation {
-    type History = AnyHistory;
-
-    fn path(&self) -> String {
-        match self {
-            Self::Browser(m) => m.path(),
-            Self::Hash(m) => m.path(),
-        }
-    }
-
-    fn query_str(&self) -> String {
-        match self {
-            Self::Browser(m) => m.query_str(),
-            Self::Hash(m) => m.query_str(),
-        }
-    }
-
-    fn hash(&self) -> String {
-        match self {
-            Self::Browser(m) => m.hash(),
-            Self::Hash(m) => m.hash(),
-        }
-    }
-
-    #[cfg(feature = "state")]
-    fn state<T>(&self) -> HistoryResult<T>
-    where
-        T: DeserializeOwned + 'static,
-    {
-        match self {
-            Self::Browser(m) => m.state(),
-            Self::Hash(m) => m.state(),
+            Self::Browser(m) => m.location(),
+            Self::Hash(m) => m.location(),
         }
     }
 }
@@ -207,20 +152,8 @@ impl From<BrowserHistory> for AnyHistory {
     }
 }
 
-impl From<BrowserLocation> for AnyLocation {
-    fn from(m: BrowserLocation) -> AnyLocation {
-        AnyLocation::Browser(m)
-    }
-}
-
 impl From<HashHistory> for AnyHistory {
     fn from(m: HashHistory) -> AnyHistory {
         AnyHistory::Hash(m)
-    }
-}
-
-impl From<HashLocation> for AnyLocation {
-    fn from(m: HashLocation) -> AnyLocation {
-        AnyLocation::Hash(m)
     }
 }

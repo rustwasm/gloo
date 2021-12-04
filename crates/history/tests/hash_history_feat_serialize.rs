@@ -2,15 +2,16 @@ use wasm_bindgen_test::wasm_bindgen_test_configure;
 
 wasm_bindgen_test_configure!(run_in_browser);
 
-#[cfg(all(feature = "query", feature = "state"))]
+#[cfg(all(feature = "query"))]
 mod feat_serialize {
     use wasm_bindgen_test::wasm_bindgen_test as test;
 
+    use std::rc::Rc;
     use std::time::Duration;
 
     use serde::{Deserialize, Serialize};
 
-    use gloo_history::{HashHistory, History, Location};
+    use gloo_history::{HashHistory, History};
 
     use gloo_timers::future::sleep;
     use gloo_utils::window;
@@ -79,25 +80,23 @@ mod feat_serialize {
             }
         );
 
-        history
-            .push_with_state(
-                "/path-c",
-                State {
-                    i: "something".to_string(),
-                    ii: 123,
-                },
-            )
-            .unwrap();
+        history.push_with_state(
+            "/path-c",
+            State {
+                i: "something".to_string(),
+                ii: 123,
+            },
+        );
 
         assert_eq!(history.location().path(), "/path-c");
         assert_eq!(window().location().pathname().unwrap(), "/");
         assert_eq!(window().location().hash().unwrap(), "#/path-c");
         assert_eq!(
             history.location().state::<State>().unwrap(),
-            State {
+            Rc::new(State {
                 i: "something".to_string(),
                 ii: 123,
-            }
+            })
         );
     }
 }

@@ -3,15 +3,13 @@ use std::cell::RefCell;
 use std::fmt;
 
 use gloo_utils::window;
-#[cfg(feature = "serde")]
-use serde::de::DeserializeOwned;
-#[cfg(feature = "serde")]
+#[cfg(feature = "query")]
 use serde::Serialize;
 use wasm_bindgen::{throw_str, UnwrapThrowExt};
 use web_sys::Url;
 
-use crate::browser::{BrowserHistory, BrowserLocation};
-#[cfg(feature = "serde")]
+use crate::browser::BrowserHistory;
+#[cfg(feature = "query")]
 use crate::error::HistoryResult;
 use crate::history::History;
 use crate::listener::HistoryListener;
@@ -34,8 +32,6 @@ impl fmt::Debug for HashHistory {
 }
 
 impl History for HashHistory {
-    type Location = HashLocation;
-
     fn len(&self) -> usize {
         self.inner.len()
     }
@@ -70,10 +66,9 @@ impl History for HashHistory {
         self.inner.replace(&url.href());
     }
 
-    #[cfg(feature = "state")]
-    fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T) -> HistoryResult<()>
+    fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T)
     where
-        T: Serialize + 'static,
+        T: 'static,
     {
         let route = route.into();
 
@@ -87,14 +82,9 @@ impl History for HashHistory {
         self.inner.push_with_state(&url.href(), state)
     }
 
-    #[cfg(feature = "state")]
-    fn replace_with_state<'a, T>(
-        &self,
-        route: impl Into<Cow<'a, str>>,
-        state: T,
-    ) -> HistoryResult<()>
+    fn replace_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T)
     where
-        T: Serialize + 'static,
+        T: 'static,
     {
         let route = route.into();
 
@@ -149,7 +139,7 @@ impl History for HashHistory {
         Ok(())
     }
 
-    #[cfg(all(feature = "query", feature = "state"))]
+    #[cfg(all(feature = "query"))]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -158,7 +148,7 @@ impl History for HashHistory {
     ) -> HistoryResult<()>
     where
         Q: Serialize,
-        T: Serialize + 'static,
+        T: 'static,
     {
         let route = route.into();
 
@@ -171,10 +161,12 @@ impl History for HashHistory {
         let query = serde_urlencoded::to_string(query)?;
         url.set_hash(&format!("{}?{}", route, query));
 
-        self.inner.push_with_state(&url.href(), state)
+        self.inner.push_with_state(&url.href(), state);
+
+        Ok(())
     }
 
-    #[cfg(all(feature = "query", feature = "state"))]
+    #[cfg(all(feature = "query"))]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -183,7 +175,7 @@ impl History for HashHistory {
     ) -> HistoryResult<()>
     where
         Q: Serialize,
-        T: Serialize + 'static,
+        T: 'static,
     {
         let route = route.into();
 
@@ -196,7 +188,9 @@ impl History for HashHistory {
         let query = serde_urlencoded::to_string(query)?;
         url.set_hash(&format!("{}?{}", route, query));
 
-        self.inner.replace_with_state(&url.href(), state)
+        self.inner.replace_with_state(&url.href(), state);
+
+        Ok(())
     }
 
     fn listen<CB>(&self, callback: CB) -> HistoryListener
@@ -206,8 +200,31 @@ impl History for HashHistory {
         self.inner.listen(callback)
     }
 
-    fn location(&self) -> Self::Location {
-        HashLocation::new(self.clone())
+    fn location(&self) -> Location {
+        let inner_loc = self.inner.location();
+        let hash_url = inner_loc.hash().chars().skip(1).collect::<String>();
+
+        assert!(
+            hash_url.starts_with('/'),
+            "hash-based url cannot be relative path."
+        );
+
+        let hash_url = Url::new_with_base(
+            &hash_url,
+            &window()
+                .location()
+                .href()
+                .expect_throw("failed to get location href."),
+        )
+        .expect_throw("failed to get make url");
+
+        Location {
+            path: hash_url.pathname().into(),
+            query_str: hash_url.search().into(),
+            hash: hash_url.hash().into(),
+            id: inner_loc.id,
+            state: inner_loc.state,
+        }
     }
 }
 
@@ -240,8 +257,9 @@ impl Default for HashHistory {
                 Some(ref m) => m.clone(),
                 None => {
                     let browser_history = BrowserHistory::new();
+                    let browser_location = browser_history.location();
 
-                    let current_hash = browser_history.location().hash();
+                    let current_hash = browser_location.hash();
 
                     // Hash needs to start with #/.
                     if current_hash.is_empty() || !current_hash.starts_with("#/") {
@@ -260,63 +278,5 @@ impl Default for HashHistory {
                 }
             }
         })
-    }
-}
-
-/// The [`Location`] type for [`HashHistory`].
-#[derive(Clone, PartialEq)]
-pub struct HashLocation {
-    history: HashHistory,
-    inner: BrowserLocation,
-}
-
-impl fmt::Debug for HashLocation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("HashLocation").finish()
-    }
-}
-
-impl Location for HashLocation {
-    type History = HashHistory;
-
-    fn path(&self) -> String {
-        self.location_url().pathname()
-    }
-
-    fn query_str(&self) -> String {
-        self.location_url().search()
-    }
-
-    fn hash(&self) -> String {
-        self.location_url().hash()
-    }
-
-    #[cfg(feature = "state")]
-    fn state<T>(&self) -> HistoryResult<T>
-    where
-        T: DeserializeOwned + 'static,
-    {
-        self.inner.state()
-    }
-}
-
-impl HashLocation {
-    fn new(history: HashHistory) -> Self {
-        Self {
-            inner: history.inner.location(),
-            history,
-        }
-    }
-
-    fn location_url(&self) -> Url {
-        let hash_url = self.inner.hash().chars().skip(1).collect::<String>();
-
-        assert!(
-            hash_url.starts_with('/'),
-            "hash-based url cannot be relative path."
-        );
-
-        Url::new_with_base(&hash_url, &self.history.inner.location().href())
-            .expect_throw("failed to get make url")
     }
 }
