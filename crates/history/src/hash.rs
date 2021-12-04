@@ -202,6 +202,7 @@ impl History for HashHistory {
 
     fn location(&self) -> Location {
         let inner_loc = self.inner.location();
+        // We strip # from hash.
         let hash_url = inner_loc.hash().chars().skip(1).collect::<String>();
 
         assert!(

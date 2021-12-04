@@ -123,6 +123,7 @@ impl History for BrowserHistory {
         self.notify_callbacks();
         Ok(())
     }
+
     #[cfg(feature = "query")]
     fn replace_with_query<'a, Q>(
         &self,
@@ -247,7 +248,7 @@ impl Default for BrowserHistory {
         BROWSER_HISTORY.with(|m| {
             let mut m = m.borrow_mut();
 
-            let history = match *m {
+            match *m {
                 Some(ref m) => m.clone(),
                 None => {
                     let window = window();
@@ -276,13 +277,10 @@ impl Default for BrowserHistory {
                         });
                     }
 
+                    *m = Some(history.clone());
                     history
                 }
-            };
-
-            *m = Some(history.clone());
-
-            history
+            }
         })
     }
 }

@@ -8,6 +8,11 @@ use crate::listener::HistoryListener;
 use crate::location::Location;
 
 /// A trait to provide [`History`] access.
+///
+/// # Warning
+///
+/// The behaviour of this trait is not well-defined when you mix multiple history kinds in the same application
+/// or use `window().history()` to update session history.
 pub trait History: Clone + PartialEq {
     /// Returns the number of elements in [`History`].
     fn len(&self) -> usize;

@@ -20,19 +20,23 @@ pub struct Location {
 }
 
 impl Location {
-    /// A unique id of current location
+    /// Returns a unique id of current location.
     ///
     /// Returns [`None`] if current location is not created by `gloo::history`.
+    ///
+    /// # Warning
+    ///
+    /// Depending on the sitation, the id may or may not be sequential / incremental.
     pub fn id(&self) -> Option<u32> {
         self.id
     }
 
-    /// Returns the `pathname` on the [`Location`] struct.
+    /// Returns the `pathname` of current location.
     pub fn path(&self) -> &str {
         &self.path
     }
 
-    /// Returns the queries of current URL in [`String`]
+    /// Returns the queries of current URL in [`&str`].
     pub fn query_str(&self) -> &str {
         &self.query_str
     }
