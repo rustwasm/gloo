@@ -114,7 +114,7 @@ impl History for AnyHistory {
     ) -> HistoryResult<()>
     where
         Q: Serialize,
-        T: Serialize + 'static,
+        T: 'static,
     {
         match self {
             Self::Browser(m) => m.push_with_query_and_state(route, query, state),
@@ -132,7 +132,7 @@ impl History for AnyHistory {
     ) -> HistoryResult<()>
     where
         Q: Serialize,
-        T: Serialize + 'static,
+        T: 'static,
     {
         match self {
             Self::Browser(m) => m.replace_with_query_and_state(route, query, state),
