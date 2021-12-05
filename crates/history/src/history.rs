@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+#[cfg(feature = "query")]
 use serde::Serialize;
 
 #[cfg(feature = "query")]
@@ -79,7 +80,7 @@ pub trait History: Clone + PartialEq {
     ) -> HistoryResult<()>
     where
         Q: Serialize,
-        T: Serialize + 'static;
+        T: 'static;
 
     /// Same as `.replace_with_state()` but affix the queries to the end of the route.
     #[cfg(all(feature = "query"))]
@@ -91,7 +92,7 @@ pub trait History: Clone + PartialEq {
     ) -> HistoryResult<()>
     where
         Q: Serialize,
-        T: Serialize + 'static;
+        T: 'static;
 
     /// Creates a Listener that will be notified when current state changes.
     ///
