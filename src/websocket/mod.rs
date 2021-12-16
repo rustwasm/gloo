@@ -6,7 +6,7 @@
 pub mod events;
 pub mod futures;
 
-use events::{CloseEvent, ErrorEvent};
+use events::CloseEvent;
 use gloo_utils::errors::JsError;
 use std::fmt;
 
@@ -41,7 +41,7 @@ pub enum State {
 #[non_exhaustive]
 pub enum WebSocketError {
     /// The `error` event
-    ConnectionError(ErrorEvent),
+    ConnectionError,
     /// The `close` event
     ConnectionClose(CloseEvent),
     /// Message failed to send.
@@ -51,7 +51,7 @@ pub enum WebSocketError {
 impl fmt::Display for WebSocketError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            WebSocketError::ConnectionError(e) => write!(f, "{}", e.message),
+            WebSocketError::ConnectionError => write!(f, "WebSocket connection failed"),
             WebSocketError::ConnectionClose(e) => write!(
                 f,
                 "WebSocket Closed: code: {}, reason: {}",

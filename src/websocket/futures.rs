@@ -28,10 +28,7 @@
 //! # }
 //! ```
 use crate::js_to_js_error;
-use crate::websocket::{
-    events::{CloseEvent, ErrorEvent},
-    Message, State, WebSocketError,
-};
+use crate::websocket::{events::CloseEvent, Message, State, WebSocketError};
 use async_broadcast::Receiver;
 use futures_core::{ready, Stream};
 use futures_sink::Sink;
@@ -105,14 +102,10 @@ impl WebSocket {
 
         let error_callback: Closure<dyn FnMut(web_sys::Event)> = {
             let sender = sender.clone();
-            Closure::wrap(Box::new(move |e: web_sys::Event| {
+            Closure::wrap(Box::new(move |_e: web_sys::Event| {
                 let sender = sender.clone();
                 wasm_bindgen_futures::spawn_local(async move {
-                    let _ = sender
-                        .broadcast(StreamMessage::ErrorEvent(ErrorEvent {
-                            message: String::from(js_sys::JsString::from(JsValue::from(e))),
-                        }))
-                        .await;
+                    let _ = sender.broadcast(StreamMessage::ErrorEvent).await;
                 })
             }) as Box<dyn FnMut(web_sys::Event)>)
         };
@@ -193,7 +186,7 @@ impl WebSocket {
 
 #[derive(Clone)]
 enum StreamMessage {
-    ErrorEvent(ErrorEvent),
+    ErrorEvent,
     CloseEvent(CloseEvent),
     Message(Message),
     ConnectionClose,
@@ -264,8 +257,8 @@ impl Stream for WebSocket {
         let msg = ready!(self.project().message_receiver.poll_next(cx));
         match msg {
             Some(StreamMessage::Message(msg)) => Poll::Ready(Some(Ok(msg))),
-            Some(StreamMessage::ErrorEvent(err)) => {
-                Poll::Ready(Some(Err(WebSocketError::ConnectionError(err))))
+            Some(StreamMessage::ErrorEvent) => {
+                Poll::Ready(Some(Err(WebSocketError::ConnectionError)))
             }
             Some(StreamMessage::CloseEvent(e)) => {
                 Poll::Ready(Some(Err(WebSocketError::ConnectionClose(e))))
