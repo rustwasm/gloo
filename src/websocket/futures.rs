@@ -58,7 +58,7 @@ pub struct WebSocket {
     closures: Rc<(
         Closure<dyn FnMut()>,
         Closure<dyn FnMut(MessageEvent)>,
-        Closure<dyn FnMut(web_sys::ErrorEvent)>,
+        Closure<dyn FnMut(web_sys::Event)>,
         Closure<dyn FnMut(web_sys::CloseEvent)>,
     )>,
 }
@@ -103,18 +103,18 @@ impl WebSocket {
 
         ws.set_onmessage(Some(message_callback.as_ref().unchecked_ref()));
 
-        let error_callback: Closure<dyn FnMut(web_sys::ErrorEvent)> = {
+        let error_callback: Closure<dyn FnMut(web_sys::Event)> = {
             let sender = sender.clone();
-            Closure::wrap(Box::new(move |e: web_sys::ErrorEvent| {
+            Closure::wrap(Box::new(move |e: web_sys::Event| {
                 let sender = sender.clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     let _ = sender
                         .broadcast(StreamMessage::ErrorEvent(ErrorEvent {
-                            message: e.message(),
+                            message: String::from(js_sys::JsString::from(JsValue::from(e))),
                         }))
                         .await;
                 })
-            }) as Box<dyn FnMut(web_sys::ErrorEvent)>)
+            }) as Box<dyn FnMut(web_sys::Event)>)
         };
 
         ws.set_onerror(Some(error_callback.as_ref().unchecked_ref()));
