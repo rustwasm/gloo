@@ -6,6 +6,11 @@ pub fn window() -> web_sys::Window {
     web_sys::window().expect_throw("Can't find the global Window")
 }
 
+/// Convenience function to access the head lement.
+pub fn head() -> web_sys::HtmlHeadElement{
+    document().head().expect_throw("Can't find the head element")
+}
+
 /// Convenience function to access the web_sys DOM document.
 pub fn document() -> web_sys::Document {
     window().document().expect_throw("Can't find document")

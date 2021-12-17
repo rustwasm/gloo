@@ -22,5 +22,6 @@ features = [
     "History",
     "HtmlElement",
     "Location",
-    "Window"
+    "Window",
+    "HtmlHeadElement"
 ]
