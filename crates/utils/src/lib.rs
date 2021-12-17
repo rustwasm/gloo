@@ -7,8 +7,10 @@ pub fn window() -> web_sys::Window {
 }
 
 /// Convenience function to access the head lement.
-pub fn head() -> web_sys::HtmlHeadElement{
-    document().head().expect_throw("Can't find the head element")
+pub fn head() -> web_sys::HtmlHeadElement {
+    document()
+        .head()
+        .expect_throw("Can't find the head element")
 }
 
 /// Convenience function to access the web_sys DOM document.
