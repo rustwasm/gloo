@@ -39,10 +39,7 @@ pub mod __macro {
         columns: impl IntoIterator<Item = &'a str>,
     ) {
         let data = JsValue::from_serde(&data).unwrap_throw();
-        let columns = columns
-            .into_iter()
-            .map(|it| JsValue::from_str(it))
-            .collect();
+        let columns = columns.into_iter().map(JsValue::from_str).collect();
 
         crate::externs::table_with_data_and_columns(data, columns);
     }

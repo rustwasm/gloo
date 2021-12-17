@@ -43,7 +43,7 @@ use wasm_bindgen::prelude::*;
 #[derive(Debug)]
 #[must_use = "futures do nothing unless polled or spawned"]
 pub struct TimeoutFuture {
-    inner: Timeout,
+    _inner: Timeout,
     rx: oneshot::Receiver<()>,
 }
 
@@ -71,7 +71,7 @@ impl TimeoutFuture {
             // if the receiver was dropped we do nothing.
             tx.send(()).unwrap_throw();
         });
-        TimeoutFuture { inner, rx }
+        TimeoutFuture { _inner: inner, rx }
     }
 }
 
@@ -84,7 +84,7 @@ impl TimeoutFuture {
 ///
 /// # Example
 ///
-/// ```no_run
+/// ```compile_fail
 /// use std::time::Duration;
 /// use gloo_timers::future::sleep;
 ///
@@ -116,7 +116,7 @@ impl Future for TimeoutFuture {
 #[must_use = "streams do nothing unless polled or spawned"]
 pub struct IntervalStream {
     receiver: mpsc::UnboundedReceiver<()>,
-    inner: Interval,
+    _inner: Interval,
 }
 
 impl IntervalStream {
@@ -128,7 +128,7 @@ impl IntervalStream {
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```compile_fail
     /// use futures_util::stream::StreamExt;
     /// use gloo_timers::future::IntervalStream;
     /// use wasm_bindgen_futures::spawn_local;
@@ -146,7 +146,10 @@ impl IntervalStream {
             sender.unbounded_send(()).unwrap_throw();
         });
 
-        IntervalStream { receiver, inner }
+        IntervalStream {
+            receiver,
+            _inner: inner,
+        }
     }
 }
 
