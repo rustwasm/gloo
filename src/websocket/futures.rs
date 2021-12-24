@@ -29,7 +29,7 @@
 //! ```
 use crate::js_to_js_error;
 use crate::websocket::{events::CloseEvent, Message, State, WebSocketError};
-use async_broadcast::Receiver;
+use futures_channel::mpsc;
 use futures_core::{ready, Stream};
 use futures_sink::Sink;
 use gloo_utils::errors::JsError;
@@ -50,7 +50,7 @@ pub struct WebSocket {
     ws: web_sys::WebSocket,
     sink_waker: Rc<RefCell<Option<Waker>>>,
     #[pin]
-    message_receiver: Receiver<StreamMessage>,
+    message_receiver: mpsc::UnboundedReceiver<StreamMessage>,
     #[allow(clippy::type_complexity)]
     closures: Rc<(
         Closure<dyn FnMut()>,
@@ -74,7 +74,7 @@ impl WebSocket {
         let waker: Rc<RefCell<Option<Waker>>> = Rc::new(RefCell::new(None));
         let ws = web_sys::WebSocket::new(url).map_err(js_to_js_error)?;
 
-        let (sender, receiver) = async_broadcast::broadcast(10);
+        let (sender, receiver) = mpsc::unbounded();
 
         let open_callback: Closure<dyn FnMut()> = {
             let waker = Rc::clone(&waker);
@@ -93,7 +93,7 @@ impl WebSocket {
                 let sender = sender.clone();
                 wasm_bindgen_futures::spawn_local(async move {
                     let msg = parse_message(e).await;
-                    let _ = sender.broadcast(StreamMessage::Message(msg)).await;
+                    let _ = sender.unbounded_send(StreamMessage::Message(msg));
                 })
             }) as Box<dyn FnMut(MessageEvent)>)
         };
@@ -105,7 +105,7 @@ impl WebSocket {
             Closure::wrap(Box::new(move |_e: web_sys::Event| {
                 let sender = sender.clone();
                 wasm_bindgen_futures::spawn_local(async move {
-                    let _ = sender.broadcast(StreamMessage::ErrorEvent).await;
+                    let _ = sender.unbounded_send(StreamMessage::ErrorEvent);
                 })
             }) as Box<dyn FnMut(web_sys::Event)>)
         };
@@ -122,10 +122,8 @@ impl WebSocket {
                         was_clean: e.was_clean(),
                     };
 
-                    let _ = sender
-                        .broadcast(StreamMessage::CloseEvent(close_event))
-                        .await;
-                    let _ = sender.broadcast(StreamMessage::ConnectionClose).await;
+                    let _ = sender.unbounded_send(StreamMessage::CloseEvent(close_event));
+                    let _ = sender.unbounded_send(StreamMessage::ConnectionClose);
                 })
             }) as Box<dyn FnMut(web_sys::CloseEvent)>)
         };
