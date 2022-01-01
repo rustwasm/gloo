@@ -21,6 +21,7 @@ gloo-render = { version = "0.1.0", path = "crates/render" }
 gloo-console = { version = "0.2.1", path = "crates/console" }
 gloo-utils = { version = "0.1.1", path = "crates/utils" }
 gloo-history = { version = "0.1.0", path = "crates/history" }
+gloo-worker = { path = "crates/worker" }
 
 [features]
 default = []
@@ -39,4 +40,5 @@ members = [
     "crates/console",
     "crates/utils",
     "crates/history",
+    "crates/worker",
 ]

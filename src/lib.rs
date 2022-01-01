@@ -13,3 +13,4 @@ pub use gloo_render as render;
 pub use gloo_storage as storage;
 pub use gloo_timers as timers;
 pub use gloo_utils as utils;
+pub use gloo_worker as worker;
