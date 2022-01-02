@@ -1,5 +1,5 @@
 use crate::Shared;
-use crate::{Worker, HandlerId};
+use crate::{HandlerId, Worker};
 use std::cell::RefCell;
 use std::fmt;
 #[cfg(feature = "futures")]

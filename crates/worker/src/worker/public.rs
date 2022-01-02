@@ -1,7 +1,7 @@
 use crate::worker::*;
 use crate::{
-    locate_callback_and_respond, Worker, WorkerLifecycleEvent, WorkerLink, WorkerScope, Bridge,
-    Callback, Discoverer, Dispatchable, HandlerId, Last, Shared, SharedOutputSlab,
+    locate_callback_and_respond, Bridge, Callback, Discoverer, Dispatchable, HandlerId, Last,
+    Shared, SharedOutputSlab, Worker, WorkerLifecycleEvent, WorkerLink, WorkerScope,
 };
 use anymap2::{self, AnyMap};
 use queue::Queue;

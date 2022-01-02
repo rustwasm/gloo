@@ -1,6 +1,6 @@
 use crate::worker::*;
 use crate::{
-    Worker, WorkerLifecycleEvent, WorkerLink, WorkerScope, Bridge, Callback, Discoverer, HandlerId,
+    Bridge, Callback, Discoverer, HandlerId, Worker, WorkerLifecycleEvent, WorkerLink, WorkerScope,
 };
 use queue::Queue;
 use serde::{Deserialize, Serialize};

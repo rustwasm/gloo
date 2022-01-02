@@ -5,7 +5,7 @@ mod queue;
 pub use private::{Private, PrivateWorker};
 pub use public::{Public, PublicWorker};
 
-use crate::{Worker, HandlerId, Responder};
+use crate::{HandlerId, Responder, Worker};
 use js_sys::{Array, Reflect, Uint8Array};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{closure::Closure, JsCast, JsValue, UnwrapThrowExt};
@@ -77,7 +77,11 @@ where
     let msg = msg.pack();
     worker.post_message_vec(msg);
 }
-fn worker_new(name_of_resource: &str, resource_is_relative: bool, is_module: bool) -> web_sys::Worker {
+fn worker_new(
+    name_of_resource: &str,
+    resource_is_relative: bool,
+    is_module: bool,
+) -> web_sys::Worker {
     let origin = gloo_utils::document()
         .location()
         .unwrap_throw()
