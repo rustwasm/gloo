@@ -46,15 +46,15 @@ where
         let handler = move |data: Vec<u8>| {
             let msg = ToWorker::<AGN::Input>::unpack(&data);
             match msg {
-                ToWorker::Connected(_id) => {
+                ToWorker::Connected(_) => {
                     let upd = AgentLifecycleEvent::Connected(SINGLETON_ID);
                     scope.send(upd);
                 }
-                ToWorker::ProcessInput(_id, value) => {
+                ToWorker::ProcessInput(_, value) => {
                     let upd = AgentLifecycleEvent::Input(value, SINGLETON_ID);
                     scope.send(upd);
                 }
-                ToWorker::Disconnected(_id) => {
+                ToWorker::Disconnected(_) => {
                     let upd = AgentLifecycleEvent::Disconnected(SINGLETON_ID);
                     scope.send(upd);
                 }
