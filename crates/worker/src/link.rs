@@ -1,5 +1,5 @@
 use crate::Shared;
-use crate::{Agent, HandlerId};
+use crate::{Worker, HandlerId};
 use std::cell::RefCell;
 use std::fmt;
 #[cfg(feature = "futures")]
@@ -7,68 +7,68 @@ use std::future::Future;
 use std::rc::Rc;
 
 /// Defines communication from Worker to Consumers
-pub(crate) trait Responder<AGN: Agent> {
+pub(crate) trait Responder<W: Worker> {
     /// Implementation for communication channel from Worker to Consumers
-    fn respond(&self, id: HandlerId, output: AGN::Output);
+    fn respond(&self, id: HandlerId, output: W::Output);
 }
 
-/// Link to agent's scope for creating callbacks.
-pub struct AgentLink<AGN: Agent> {
-    scope: AgentScope<AGN>,
-    responder: Rc<dyn Responder<AGN>>,
+/// Link to worker's scope for creating callbacks.
+pub struct WorkerLink<W: Worker> {
+    scope: WorkerScope<W>,
+    responder: Rc<dyn Responder<W>>,
 }
 
-impl<AGN: Agent> AgentLink<AGN> {
+impl<W: Worker> WorkerLink<W> {
     /// Create link for a scope.
-    pub(crate) fn connect<T>(scope: &AgentScope<AGN>, responder: T) -> Self
+    pub(crate) fn connect<T>(scope: &WorkerScope<W>, responder: T) -> Self
     where
-        T: Responder<AGN> + 'static,
+        T: Responder<W> + 'static,
     {
-        AgentLink {
+        WorkerLink {
             scope: scope.clone(),
             responder: Rc::new(responder),
         }
     }
 
-    /// Send response to an agent.
-    pub fn respond(&self, id: HandlerId, output: AGN::Output) {
+    /// Send response to an worker.
+    pub fn respond(&self, id: HandlerId, output: W::Output) {
         self.responder.respond(id, output);
     }
 
-    /// Send a message to the agent
+    /// Send a message to the worker
     pub fn send_message<T>(&self, msg: T)
     where
-        T: Into<AGN::Message>,
+        T: Into<W::Message>,
     {
-        self.scope.send(AgentLifecycleEvent::Message(msg.into()));
+        self.scope.send(WorkerLifecycleEvent::Message(msg.into()));
     }
 
     /// Send an input to self
     pub fn send_input<T>(&self, input: T)
     where
-        T: Into<AGN::Input>,
+        T: Into<W::Input>,
     {
         let handler_id = HandlerId::new(0, false);
         self.scope
-            .send(AgentLifecycleEvent::Input(input.into(), handler_id));
+            .send(WorkerLifecycleEvent::Input(input.into(), handler_id));
     }
 
-    /// Create a callback which will send a message to the agent when invoked.
+    /// Create a callback which will send a message to the worker when invoked.
     pub fn callback<F, IN, M>(&self, function: F) -> Rc<dyn Fn(IN)>
     where
-        M: Into<AGN::Message>,
+        M: Into<W::Message>,
         F: Fn(IN) -> M + 'static,
     {
         let scope = self.scope.clone();
         let closure = move |input| {
             let output = function(input).into();
-            scope.send(AgentLifecycleEvent::Message(output));
+            scope.send(WorkerLifecycleEvent::Message(output));
         };
         Rc::new(closure)
     }
 
     /// This method creates a callback which returns a Future which
-    /// returns a message to be sent back to the agent
+    /// returns a message to be sent back to the worker
     ///
     /// # Panics
     /// If the future panics, then the promise will not resolve, and
@@ -77,7 +77,7 @@ impl<AGN: Agent> AgentLink<AGN> {
     #[cfg_attr(docsrs, doc(cfg(feature = "futures")))]
     pub fn callback_future<FN, FU, IN, M>(&self, function: FN) -> Rc<dyn Fn(IN)>
     where
-        M: Into<AGN::Message>,
+        M: Into<W::Message>,
         FU: Future<Output = M> + 'static,
         FN: Fn(IN) -> FU + 'static,
     {
@@ -91,7 +91,7 @@ impl<AGN: Agent> AgentLink<AGN> {
         Rc::new(closure)
     }
 
-    /// This method processes a Future that returns a message and sends it back to the agent.
+    /// This method processes a Future that returns a message and sends it back to the worker.
     ///
     /// # Panics
     /// If the future panics, then the promise will not resolve, and will leak.
@@ -99,62 +99,62 @@ impl<AGN: Agent> AgentLink<AGN> {
     #[cfg_attr(docsrs, doc(cfg(feature = "futures")))]
     pub fn send_future<F, M>(&self, future: F)
     where
-        M: Into<AGN::Message>,
+        M: Into<W::Message>,
         F: Future<Output = M> + 'static,
     {
-        let link: AgentLink<AGN> = self.clone();
+        let link: WorkerLink<W> = self.clone();
         let js_future = async move {
-            let message: AGN::Message = future.await.into();
-            let cb = link.callback(|m: AGN::Message| m);
+            let message: W::Message = future.await.into();
+            let cb = link.callback(|m: W::Message| m);
             (*cb)(message);
         };
         wasm_bindgen_futures::spawn_local(js_future);
     }
 }
 
-impl<AGN: Agent> fmt::Debug for AgentLink<AGN> {
+impl<W: Worker> fmt::Debug for WorkerLink<W> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("AgentLink<_>")
+        f.write_str("WorkerLink<_>")
     }
 }
 
-impl<AGN: Agent> Clone for AgentLink<AGN> {
+impl<W: Worker> Clone for WorkerLink<W> {
     fn clone(&self) -> Self {
-        AgentLink {
+        WorkerLink {
             scope: self.scope.clone(),
             responder: self.responder.clone(),
         }
     }
 }
 /// This struct holds a reference to a component and to a global scheduler.
-pub(crate) struct AgentScope<AGN: Agent> {
-    state: Shared<AgentState<AGN>>,
+pub(crate) struct WorkerScope<W: Worker> {
+    state: Shared<WorkerState<W>>,
 }
 
-impl<AGN: Agent> fmt::Debug for AgentScope<AGN> {
+impl<W: Worker> fmt::Debug for WorkerScope<W> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("AgentScope<_>")
+        f.write_str("WorkerScope<_>")
     }
 }
 
-impl<AGN: Agent> Clone for AgentScope<AGN> {
+impl<W: Worker> Clone for WorkerScope<W> {
     fn clone(&self) -> Self {
-        AgentScope {
+        WorkerScope {
             state: self.state.clone(),
         }
     }
 }
 
-impl<AGN: Agent> AgentScope<AGN> {
-    /// Create agent scope
+impl<W: Worker> WorkerScope<W> {
+    /// Create worker scope
     pub fn new() -> Self {
-        let state = Rc::new(RefCell::new(AgentState::new()));
-        AgentScope { state }
+        let state = Rc::new(RefCell::new(WorkerState::new()));
+        WorkerScope { state }
     }
 
-    /// Schedule message for sending to agent
-    pub fn send(&self, event: AgentLifecycleEvent<AGN>) {
-        let runnable = Box::new(AgentRunnable {
+    /// Schedule message for sending to worker
+    pub fn send(&self, event: WorkerLifecycleEvent<W>) {
+        let runnable = Box::new(WorkerRunnable {
             state: self.state.clone(),
             event,
         });
@@ -162,52 +162,52 @@ impl<AGN: Agent> AgentScope<AGN> {
     }
 }
 
-impl<AGN: Agent> Default for AgentScope<AGN> {
+impl<W: Worker> Default for WorkerScope<W> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-struct AgentState<AGN> {
-    agent: Option<AGN>,
-    // TODO(#939): Use agent field to control create message this flag
+struct WorkerState<W> {
+    worker: Option<W>,
+    // TODO: Use worker field to control create message this flag
     destroyed: bool,
 }
 
-impl<AGN> AgentState<AGN> {
+impl<W> WorkerState<W> {
     fn new() -> Self {
-        AgentState {
-            agent: None,
+        WorkerState {
+            worker: None,
             destroyed: false,
         }
     }
 }
 
-/// Internal Agent lifecycle events
+/// Internal Worker lifecycle events
 #[derive(Debug)]
-pub(crate) enum AgentLifecycleEvent<AGN: Agent> {
+pub(crate) enum WorkerLifecycleEvent<W: Worker> {
     /// Request to create link
-    Create(AgentLink<AGN>),
-    /// Internal Agent message
-    Message(AGN::Message),
+    Create(WorkerLink<W>),
+    /// Internal Worker message
+    Message(W::Message),
     /// Client connected
     Connected(HandlerId),
     /// Received message from Client
-    Input(AGN::Input, HandlerId),
+    Input(W::Input, HandlerId),
     /// Client disconnected
     Disconnected(HandlerId),
-    /// Request to destroy agent
+    /// Request to destroy worker
     Destroy,
 }
 
-struct AgentRunnable<AGN: Agent> {
-    state: Shared<AgentState<AGN>>,
-    event: AgentLifecycleEvent<AGN>,
+struct WorkerRunnable<W: Worker> {
+    state: Shared<WorkerState<W>>,
+    event: WorkerLifecycleEvent<W>,
 }
 
-impl<AGN> AgentRunnable<AGN>
+impl<W> WorkerRunnable<W>
 where
-    AGN: Agent,
+    W: Worker,
 {
     fn run(self) {
         let mut state = self.state.borrow_mut();
@@ -215,43 +215,43 @@ where
             return;
         }
         match self.event {
-            AgentLifecycleEvent::Create(link) => {
-                state.agent = Some(AGN::create(link));
+            WorkerLifecycleEvent::Create(link) => {
+                state.worker = Some(W::create(link));
             }
-            AgentLifecycleEvent::Message(msg) => {
+            WorkerLifecycleEvent::Message(msg) => {
                 state
-                    .agent
+                    .worker
                     .as_mut()
-                    .expect("agent was not created to process messages")
+                    .expect("worker was not created to process messages")
                     .update(msg);
             }
-            AgentLifecycleEvent::Connected(id) => {
+            WorkerLifecycleEvent::Connected(id) => {
                 state
-                    .agent
+                    .worker
                     .as_mut()
-                    .expect("agent was not created to send a connected message")
+                    .expect("worker was not created to send a connected message")
                     .connected(id);
             }
-            AgentLifecycleEvent::Input(inp, id) => {
+            WorkerLifecycleEvent::Input(inp, id) => {
                 state
-                    .agent
+                    .worker
                     .as_mut()
-                    .expect("agent was not created to process inputs")
+                    .expect("worker was not created to process inputs")
                     .handle_input(inp, id);
             }
-            AgentLifecycleEvent::Disconnected(id) => {
+            WorkerLifecycleEvent::Disconnected(id) => {
                 state
-                    .agent
+                    .worker
                     .as_mut()
-                    .expect("agent was not created to send a disconnected message")
+                    .expect("worker was not created to send a disconnected message")
                     .disconnected(id);
             }
-            AgentLifecycleEvent::Destroy => {
-                let mut agent = state
-                    .agent
+            WorkerLifecycleEvent::Destroy => {
+                let mut worker = state
+                    .worker
                     .take()
-                    .expect("trying to destroy not existent agent");
-                agent.destroy();
+                    .expect("trying to destroy not existent worker");
+                worker.destroy();
                 state.destroyed = true;
             }
         }

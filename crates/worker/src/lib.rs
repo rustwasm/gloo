@@ -1,34 +1,34 @@
 //! Workers are a way to offload tasks to web workers. These are run concurrently using
 //! [web-workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers).
 //!
-//! # Types of Agents
+//! # Types of Workers
 //!
 //! ## Reaches
 //!
-//! * Public - There will exist at most one instance of a Public Agent at any given time.
-//!   Bridges will spawn or connect to an already spawned agent in a web worker.
-//!   When no bridges are connected to this agent, the agent will disappear.
+//! * Public - There will exist at most one instance of a Public Worker at any given time.
+//!   Bridges will spawn or connect to an already spawned worker in a web worker.
+//!   When no bridges are connected to this worker, the worker will disappear.
 //!
-//! * Private - Spawn a new agent in a web worker for every new bridge. This is good for
+//! * Private - Spawn a new worker in a web worker for every new bridge. This is good for
 //!   moving shared but independent behavior that communicates with the browser out of components.
-//!   When the the connected bridge is dropped, the agent will disappear.
+//!   When the the connected bridge is dropped, the worker will disappear.
 //!
 //! # Communicating with workers
 //!
 //! ## Bridges
 //!
-//! A bridge allows bi-directional communication between an agent and a component.
-//! Bridges also allow agents to communicate with one another.
+//! A bridge allows bi-directional communication between an worker and a component.
+//! Bridges also allow workers to communicate with one another.
 //!
 //! ## Dispatchers
 //!
-//! A dispatcher allows uni-directional communication between a component and an agent.
-//! A dispatcher allows a component to send messages to an agent.
+//! A dispatcher allows uni-directional communication between a component and an worker.
+//! A dispatcher allows a component to send messages to an worker.
 //!
 //! # Overhead
 //!
-//! Agents use web workers (i.e. Private and Public). They incur a serialization overhead on the
-//! messages they send and receive. Agents use [bincode](https://!github.com/servo/bincode)
+//! Workers use web workers (i.e. Private and Public). They incur a serialization overhead on the
+//! messages they send and receive. Workers use [bincode](https://!github.com/servo/bincode)
 //! to communicate with other browser worker, so the cost is substantially higher
 //! than just calling a function.
 
@@ -38,12 +38,12 @@ mod link;
 mod pool;
 mod worker;
 
-pub use link::AgentLink;
+pub use link::WorkerLink;
 pub(crate) use link::*;
 pub(crate) use pool::*;
 pub use pool::{Dispatched, Dispatcher};
 use std::cell::RefCell;
-pub use worker::{Private, PrivateAgent, Public, PublicAgent};
+pub use worker::{Private, PrivateWorker, Public, PublicWorker};
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -56,10 +56,10 @@ pub type Shared<T> = Rc<RefCell<T>>;
 /// Alias for `Rc<dyn Fn(IN)>`
 pub type Callback<IN> = Rc<dyn Fn(IN)>;
 
-/// Declares the behavior of the agent.
-pub trait Agent: Sized + 'static {
-    /// Reach capability of the agent.
-    type Reach: Discoverer<Agent = Self>;
+/// Declares the behavior of the worker.
+pub trait Worker: Sized + 'static {
+    /// Reach capability of the worker.
+    type Reach: Discoverer<Worker = Self>;
     /// Type of an input message.
     type Message;
     /// Incoming message type.
@@ -67,8 +67,8 @@ pub trait Agent: Sized + 'static {
     /// Outgoing message type.
     type Output;
 
-    /// Creates an instance of an agent.
-    fn create(link: AgentLink<Self>) -> Self;
+    /// Creates an instance of an worker.
+    fn create(link: WorkerLink<Self>) -> Self;
 
     /// This method called on every update message.
     fn update(&mut self, msg: Self::Message);
@@ -82,7 +82,7 @@ pub trait Agent: Sized + 'static {
     /// This method called on when a new bridge destroyed.
     fn disconnected(&mut self, _id: HandlerId) {}
 
-    /// This method called when the agent is destroyed.
+    /// This method called when the worker is destroyed.
     fn destroy(&mut self) {}
 
     /// Represents the name of loading resource for remote workers which
@@ -118,39 +118,39 @@ impl HandlerId {
     fn raw_id(self) -> usize {
         self.0
     }
-    /// Indicates if a handler id corresponds to callback in the Agent runtime.
+    /// Indicates if a handler id corresponds to callback in the Worker runtime.
     pub fn is_respondable(self) -> bool {
         self.1
     }
 }
 
-/// Determine a visibility of an agent.
+/// Determine a visibility of an worker.
 #[doc(hidden)]
 pub trait Discoverer {
-    type Agent: Agent;
+    type Worker: Worker;
 
-    /// Spawns an agent and returns `Bridge` implementation.
+    /// Spawns an worker and returns `Bridge` implementation.
     fn spawn_or_join(
-        _callback: Option<Callback<<Self::Agent as Agent>::Output>>,
-    ) -> Box<dyn Bridge<Self::Agent>>;
+        _callback: Option<Callback<<Self::Worker as Worker>::Output>>,
+    ) -> Box<dyn Bridge<Self::Worker>>;
 }
 
 /// Bridge to a specific kind of worker.
-pub trait Bridge<AGN: Agent> {
-    /// Send a message to an agent.
-    fn send(&mut self, msg: AGN::Input);
+pub trait Bridge<W: Worker> {
+    /// Send a message to an worker.
+    fn send(&mut self, msg: W::Input);
 }
 
 /// This trait allows registering or getting the address of a worker.
-pub trait Bridged: Agent + Sized + 'static {
+pub trait Bridged: Worker + Sized + 'static {
     /// Creates a messaging bridge between a worker and the component.
     fn bridge(callback: Callback<Self::Output>) -> Box<dyn Bridge<Self>>;
 }
 
 impl<T> Bridged for T
 where
-    T: Agent,
-    <T as Agent>::Reach: Discoverer<Agent = T>,
+    T: Worker,
+    <T as Worker>::Reach: Discoverer<Worker = T>,
 {
     fn bridge(callback: Callback<Self::Output>) -> Box<dyn Bridge<Self>> {
         Self::Reach::spawn_or_join(Some(callback))

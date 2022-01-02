@@ -4,14 +4,14 @@ use std::hash::Hash;
 
 /// Thread-local instance used to queue worker messages
 pub struct Queue<T: Eq + Hash> {
-    loaded_agents: RefCell<HashSet<T>>,
+    loaded_workers: RefCell<HashSet<T>>,
     msg_queue: RefCell<HashMap<T, Vec<Vec<u8>>>>,
 }
 
 impl<T: Eq + Hash> Queue<T> {
     pub fn new() -> Queue<T> {
         Queue {
-            loaded_agents: RefCell::new(HashSet::new()),
+            loaded_workers: RefCell::new(HashSet::new()),
             msg_queue: RefCell::new(HashMap::new()),
         }
     }
@@ -22,13 +22,13 @@ impl<T: Eq + Hash> Queue<T> {
     }
 
     #[inline]
-    pub fn insert_loaded_agent(&self, id: T) {
-        self.loaded_agents.borrow_mut().insert(id);
+    pub fn insert_loaded_worker(&self, id: T) {
+        self.loaded_workers.borrow_mut().insert(id);
     }
 
     #[inline]
     pub fn is_worker_loaded(&self, id: &T) -> bool {
-        self.loaded_agents.borrow().contains(id)
+        self.loaded_workers.borrow().contains(id)
     }
 
     pub fn add_msg_to_queue(&self, msg: Vec<u8>, id: T) {
@@ -45,8 +45,8 @@ impl<T: Eq + Hash> Queue<T> {
 
     /// This is called by a worker's `Drop` implementation in order to remove the worker from the list
     /// of loaded workers.
-    pub fn remove_agent(&self, id: &T) {
-        self.loaded_agents.borrow_mut().remove(id);
+    pub fn remove_worker(&self, id: &T) {
+        self.loaded_workers.borrow_mut().remove(id);
         self.msg_queue.borrow_mut().remove(id);
     }
 }

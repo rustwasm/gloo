@@ -2,26 +2,26 @@ mod private;
 mod public;
 mod queue;
 
-pub use private::{Private, PrivateAgent};
-pub use public::{Public, PublicAgent};
+pub use private::{Private, PrivateWorker};
+pub use public::{Public, PublicWorker};
 
-use crate::{Agent, HandlerId, Responder};
+use crate::{Worker, HandlerId, Responder};
 use js_sys::{Array, Reflect, Uint8Array};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{closure::Closure, JsCast, JsValue, UnwrapThrowExt};
 use web_sys::{
-    Blob, BlobPropertyBag, DedicatedWorkerGlobalScope, MessageEvent, Url, Worker, WorkerOptions,
+    Blob, BlobPropertyBag, DedicatedWorkerGlobalScope, MessageEvent, Url, WorkerOptions,
 };
 
 pub(crate) struct WorkerResponder;
 
-impl<AGN> Responder<AGN> for WorkerResponder
+impl<W> Responder<W> for WorkerResponder
 where
-    AGN: Agent,
-    <AGN as Agent>::Input: Serialize + for<'de> Deserialize<'de>,
-    <AGN as Agent>::Output: Serialize + for<'de> Deserialize<'de>,
+    W: Worker,
+    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
 {
-    fn respond(&self, id: HandlerId, output: AGN::Output) {
+    fn respond(&self, id: HandlerId, output: W::Output) {
         let msg = FromWorker::ProcessOutput(id, output);
         let data = msg.pack();
         worker_self().post_message_vec(data);
@@ -38,11 +38,11 @@ pub trait Packed {
 
 impl<T: Serialize + for<'de> Deserialize<'de>> Packed for T {
     fn pack(&self) -> Vec<u8> {
-        bincode::serialize(&self).expect("can't serialize an agent message")
+        bincode::serialize(&self).expect("can't serialize an worker message")
     }
 
     fn unpack(data: &[u8]) -> Self {
-        bincode::deserialize(data).expect("can't deserialize an agent message")
+        bincode::deserialize(data).expect("can't deserialize an worker message")
     }
 }
 
@@ -68,16 +68,16 @@ enum FromWorker<T> {
     ProcessOutput(HandlerId, T),
 }
 
-fn send_to_remote<AGN>(worker: &Worker, msg: ToWorker<AGN::Input>)
+fn send_to_remote<W>(worker: &web_sys::Worker, msg: ToWorker<W::Input>)
 where
-    AGN: Agent,
-    <AGN as Agent>::Input: Serialize + for<'de> Deserialize<'de>,
-    <AGN as Agent>::Output: Serialize + for<'de> Deserialize<'de>,
+    W: Worker,
+    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
 {
     let msg = msg.pack();
     worker.post_message_vec(msg);
 }
-fn worker_new(name_of_resource: &str, resource_is_relative: bool, is_module: bool) -> Worker {
+fn worker_new(name_of_resource: &str, resource_is_relative: bool, is_module: bool) -> web_sys::Worker {
     let origin = gloo_utils::document()
         .location()
         .unwrap_throw()
@@ -123,9 +123,9 @@ fn worker_new(name_of_resource: &str, resource_is_relative: bool, is_module: boo
             &JsValue::from_str("module"),
         )
         .unwrap();
-        Worker::new_with_options(&url, &options).expect("failed to spawn worker")
+        web_sys::Worker::new_with_options(&url, &options).expect("failed to spawn worker")
     } else {
-        Worker::new(&url).expect("failed to spawn worker")
+        web_sys::Worker::new(&url).expect("failed to spawn worker")
     }
 }
 
@@ -140,7 +140,7 @@ trait WorkerExt {
 }
 
 macro_rules! worker_ext_impl {
-    ($($type:ident),+) => {$(
+    ($($type:path),+) => {$(
         impl WorkerExt for $type {
             fn set_onmessage_closure(&self, handler: impl 'static + Fn(Vec<u8>)) {
                 let handler = move |message: MessageEvent| {
@@ -161,5 +161,5 @@ macro_rules! worker_ext_impl {
 }
 
 worker_ext_impl! {
-    Worker, DedicatedWorkerGlobalScope
+    web_sys::Worker, DedicatedWorkerGlobalScope
 }

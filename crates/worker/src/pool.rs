@@ -5,15 +5,15 @@ use slab::Slab;
 
 pub(crate) type Last = bool;
 
-/// Type alias to a sharable Slab that owns optional callbacks that emit messages of the type of the specified Agent.
-pub(crate) type SharedOutputSlab<AGN> = Shared<Slab<Option<Callback<<AGN as Agent>::Output>>>>;
+/// Type alias to a sharable Slab that owns optional callbacks that emit messages of the type of the specified Worker.
+pub(crate) type SharedOutputSlab<W> = Shared<Slab<Option<Callback<<W as Worker>::Output>>>>;
 
 /// The slab contains the callback, the id is used to look up the callback,
 /// and the output is the message that will be sent via the callback.
-pub(crate) fn locate_callback_and_respond<AGN: Agent>(
-    slab: &SharedOutputSlab<AGN>,
+pub(crate) fn locate_callback_and_respond<W: Worker>(
+    slab: &SharedOutputSlab<W>,
     id: HandlerId,
-    output: AGN::Output,
+    output: W::Output,
 ) {
     let callback = {
         let slab = slab.borrow();
@@ -56,19 +56,19 @@ impl<T> DerefMut for Dispatcher<T> {
     }
 }
 
-/// This trait allows the creation of a dispatcher to an existing agent that will not send replies when messages are sent.
-pub trait Dispatched: Agent + Sized + 'static {
-    /// Creates a dispatcher to the agent that will not send messages back.
+/// This trait allows the creation of a dispatcher to an existing worker that will not send replies when messages are sent.
+pub trait Dispatched: Worker + Sized + 'static {
+    /// Creates a dispatcher to the worker that will not send messages back.
     ///
     /// # Note
-    /// Dispatchers don't have `HandlerId`s and therefore `Agent::handle` will be supplied `None`
+    /// Dispatchers don't have `HandlerId`s and therefore `Worker::handle` will be supplied `None`
     /// for the `id` parameter, and `connected` and `disconnected` will not be called.
     ///
     /// # Important
-    /// Because the Agents using Context or Public reaches use the number of existing bridges to
-    /// keep track of if the agent itself should exist, creating dispatchers will not guarantee that
-    /// an Agent will exist to service requests sent from Dispatchers. You **must** keep at least one
-    /// bridge around if you wish to use a dispatcher. If you are using agents in a write-only manner,
+    /// Because the Workers using Context or Public reaches use the number of existing bridges to
+    /// keep track of if the worker itself should exist, creating dispatchers will not guarantee that
+    /// an Worker will exist to service requests sent from Dispatchers. You **must** keep at least one
+    /// bridge around if you wish to use a dispatcher. If you are using workers in a write-only manner,
     /// then it is suggested that you create a bridge that handles no-op responses as high up in the
     /// component hierarchy as possible - oftentimes the root component for simplicity's sake.
     fn dispatcher() -> Dispatcher<Self>;
@@ -79,9 +79,9 @@ pub trait Dispatchable {}
 
 impl<T> Dispatched for T
 where
-    T: Agent,
-    <T as Agent>::Reach: Discoverer<Agent = T>,
-    <T as Agent>::Reach: Dispatchable,
+    T: Worker,
+    <T as Worker>::Reach: Discoverer<Worker = T>,
+    <T as Worker>::Reach: Dispatchable,
 {
     fn dispatcher() -> Dispatcher<T> {
         Dispatcher(Self::Reach::spawn_or_join(None))

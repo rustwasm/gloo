@@ -1,6 +1,6 @@
 use crate::worker::*;
 use crate::{
-    Agent, AgentLifecycleEvent, AgentLink, AgentScope, Bridge, Callback, Discoverer, HandlerId,
+    Worker, WorkerLifecycleEvent, WorkerLink, WorkerScope, Bridge, Callback, Discoverer, HandlerId,
 };
 use queue::Queue;
 use serde::{Deserialize, Serialize};
@@ -9,7 +9,6 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use web_sys::Worker;
 
 thread_local! {
     static QUEUE: Queue<usize> = Queue::new();
@@ -20,53 +19,53 @@ const SINGLETON_ID: HandlerId = HandlerId(0, true);
 
 /// Create a new instance for every bridge.
 #[allow(missing_debug_implementations)]
-pub struct Private<AGN> {
-    _agent: PhantomData<AGN>,
+pub struct Private<W> {
+    _worker: PhantomData<W>,
 }
 
-/// A trait to enable private agents being registered in a web worker.
-pub trait PrivateAgent {
-    /// Executes an agent in the current environment.
+/// A trait to enable private workers being registered in a web worker.
+pub trait PrivateWorker {
+    /// Executes an worker in the current environment.
     /// Uses in `main` function of a worker.
     fn register();
 }
 
-impl<AGN> PrivateAgent for AGN
+impl<W> PrivateWorker for W
 where
-    AGN: Agent<Reach = Private<AGN>>,
-    <AGN as Agent>::Input: Serialize + for<'de> Deserialize<'de>,
-    <AGN as Agent>::Output: Serialize + for<'de> Deserialize<'de>,
+    W: Worker<Reach = Private<W>>,
+    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
 {
     fn register() {
-        let scope = AgentScope::<AGN>::new();
+        let scope = WorkerScope::<W>::new();
         let responder = WorkerResponder;
-        let link = AgentLink::connect(&scope, responder);
-        let upd = AgentLifecycleEvent::Create(link);
+        let link = WorkerLink::connect(&scope, responder);
+        let upd = WorkerLifecycleEvent::Create(link);
         scope.send(upd);
         let handler = move |data: Vec<u8>| {
-            let msg = ToWorker::<AGN::Input>::unpack(&data);
+            let msg = ToWorker::<W::Input>::unpack(&data);
             match msg {
                 ToWorker::Connected(_) => {
-                    let upd = AgentLifecycleEvent::Connected(SINGLETON_ID);
+                    let upd = WorkerLifecycleEvent::Connected(SINGLETON_ID);
                     scope.send(upd);
                 }
                 ToWorker::ProcessInput(_, value) => {
-                    let upd = AgentLifecycleEvent::Input(value, SINGLETON_ID);
+                    let upd = WorkerLifecycleEvent::Input(value, SINGLETON_ID);
                     scope.send(upd);
                 }
                 ToWorker::Disconnected(_) => {
-                    let upd = AgentLifecycleEvent::Disconnected(SINGLETON_ID);
+                    let upd = WorkerLifecycleEvent::Disconnected(SINGLETON_ID);
                     scope.send(upd);
                 }
                 ToWorker::Destroy => {
-                    let upd = AgentLifecycleEvent::Destroy;
+                    let upd = WorkerLifecycleEvent::Destroy;
                     scope.send(upd);
                     // Terminates web worker
                     worker_self().close();
                 }
             }
         };
-        let loaded: FromWorker<AGN::Output> = FromWorker::WorkerLoaded;
+        let loaded: FromWorker<W::Output> = FromWorker::WorkerLoaded;
         let loaded = loaded.pack();
         let worker = worker_self();
         worker.set_onmessage_closure(handler);
@@ -74,23 +73,23 @@ where
     }
 }
 
-impl<AGN> Discoverer for Private<AGN>
+impl<W> Discoverer for Private<W>
 where
-    AGN: Agent,
-    <AGN as Agent>::Input: Serialize + for<'de> Deserialize<'de>,
-    <AGN as Agent>::Output: Serialize + for<'de> Deserialize<'de>,
+    W: Worker,
+    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
 {
-    type Agent = AGN;
+    type Worker = W;
 
-    fn spawn_or_join(callback: Option<Callback<AGN::Output>>) -> Box<dyn Bridge<AGN>> {
+    fn spawn_or_join(callback: Option<Callback<W::Output>>) -> Box<dyn Bridge<W>> {
         let id = PRIVATE_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
-        let callback = callback.expect("Callback required for Private agents");
-        let handler = move |data: Vec<u8>, worker: &Worker| {
-            let msg = FromWorker::<AGN::Output>::unpack(&data);
+        let callback = callback.expect("Callback required for Private workers");
+        let handler = move |data: Vec<u8>, worker: &web_sys::Worker| {
+            let msg = FromWorker::<W::Output>::unpack(&data);
             match msg {
                 FromWorker::WorkerLoaded => {
                     QUEUE.with(|queue| {
-                        queue.insert_loaded_agent(id);
+                        queue.insert_loaded_worker(id);
 
                         if let Some(msgs) = queue.remove_msg_queue(&id) {
                             for msg in msgs {
@@ -106,13 +105,13 @@ where
             }
         };
 
-        let name_of_resource = AGN::name_of_resource();
-        let is_relative = AGN::resource_path_is_relative();
+        let name_of_resource = W::name_of_resource();
+        let is_relative = W::resource_path_is_relative();
         let handler_cell = Rc::new(RefCell::new(Some(handler)));
 
         let worker = {
             let handler_cell = handler_cell.clone();
-            let worker = worker_new(name_of_resource, is_relative, AGN::is_module());
+            let worker = worker_new(name_of_resource, is_relative, W::is_module());
             let worker_clone = worker.clone();
             worker.set_onmessage_closure(move |data: Vec<u8>| {
                 if let Some(handler) = handler_cell.borrow().as_ref() {
@@ -124,7 +123,7 @@ where
         let bridge = PrivateBridge {
             handler_cell,
             worker,
-            _agent: PhantomData,
+            _worker: PhantomData,
             id,
         };
         bridge.send_message(ToWorker::Connected(SINGLETON_ID));
@@ -133,31 +132,31 @@ where
 }
 
 /// A connection manager for components interaction with workers.
-pub struct PrivateBridge<AGN, HNDL>
+pub struct PrivateBridge<W, HNDL>
 where
-    AGN: Agent,
-    <AGN as Agent>::Input: Serialize + for<'de> Deserialize<'de>,
-    <AGN as Agent>::Output: Serialize + for<'de> Deserialize<'de>,
-    HNDL: Fn(Vec<u8>, &Worker),
+    W: Worker,
+    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     handler_cell: Rc<RefCell<Option<HNDL>>>,
-    worker: Worker,
-    _agent: PhantomData<AGN>,
+    worker: web_sys::Worker,
+    _worker: PhantomData<W>,
     id: usize,
 }
 
-impl<AGN, HNDL> PrivateBridge<AGN, HNDL>
+impl<W, HNDL> PrivateBridge<W, HNDL>
 where
-    AGN: Agent,
-    <AGN as Agent>::Input: Serialize + for<'de> Deserialize<'de>,
-    <AGN as Agent>::Output: Serialize + for<'de> Deserialize<'de>,
-    HNDL: Fn(Vec<u8>, &Worker),
+    W: Worker,
+    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     /// Send a message to the worker, queuing the message if necessary
-    fn send_message(&self, msg: ToWorker<AGN::Input>) {
+    fn send_message(&self, msg: ToWorker<W::Input>) {
         QUEUE.with(|queue| {
             if queue.is_worker_loaded(&self.id) {
-                send_to_remote::<AGN>(&self.worker, msg);
+                send_to_remote::<W>(&self.worker, msg);
             } else {
                 queue.add_msg_to_queue(msg.pack(), self.id);
             }
@@ -165,49 +164,49 @@ where
     }
 }
 
-impl<AGN, HNDL> fmt::Debug for PrivateBridge<AGN, HNDL>
+impl<W, HNDL> fmt::Debug for PrivateBridge<W, HNDL>
 where
-    AGN: Agent,
-    <AGN as Agent>::Input: Serialize + for<'de> Deserialize<'de>,
-    <AGN as Agent>::Output: Serialize + for<'de> Deserialize<'de>,
-    HNDL: Fn(Vec<u8>, &Worker),
+    W: Worker,
+    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("PrivateBridge<_>")
     }
 }
 
-impl<AGN, HNDL> Bridge<AGN> for PrivateBridge<AGN, HNDL>
+impl<W, HNDL> Bridge<W> for PrivateBridge<W, HNDL>
 where
-    AGN: Agent,
-    <AGN as Agent>::Input: Serialize + for<'de> Deserialize<'de>,
-    <AGN as Agent>::Output: Serialize + for<'de> Deserialize<'de>,
-    HNDL: Fn(Vec<u8>, &Worker),
+    W: Worker,
+    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
-    fn send(&mut self, msg: AGN::Input) {
+    fn send(&mut self, msg: W::Input) {
         let msg = ToWorker::ProcessInput(SINGLETON_ID, msg);
         self.send_message(msg);
     }
 }
 
-impl<AGN, HNDL> Drop for PrivateBridge<AGN, HNDL>
+impl<W, HNDL> Drop for PrivateBridge<W, HNDL>
 where
-    AGN: Agent,
-    <AGN as Agent>::Input: Serialize + for<'de> Deserialize<'de>,
-    <AGN as Agent>::Output: Serialize + for<'de> Deserialize<'de>,
-    HNDL: Fn(Vec<u8>, &Worker),
+    W: Worker,
+    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     fn drop(&mut self) {
         let disconnected = ToWorker::Disconnected(SINGLETON_ID);
-        send_to_remote::<AGN>(&self.worker, disconnected);
+        send_to_remote::<W>(&self.worker, disconnected);
 
         let destroy = ToWorker::Destroy;
-        send_to_remote::<AGN>(&self.worker, destroy);
+        send_to_remote::<W>(&self.worker, destroy);
 
         self.handler_cell.borrow_mut().take();
 
         QUEUE.with(|queue| {
-            queue.remove_agent(&self.id);
+            queue.remove_worker(&self.id);
         });
     }
 }
