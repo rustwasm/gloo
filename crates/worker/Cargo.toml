@@ -10,16 +10,22 @@ homepage = "https://github.com/rustwasm/gloo"
 license = "MIT OR Apache-2.0"
 categories = ["api-bindings", "asynchronous", "wasm"]
 
+[package.metadata.docs.rs]
+all-features = true
+
+rustdoc-args = ["--cfg", "docsrs"]
+
+
 [dependencies]
 anymap2 = "0.13"
 bincode = "1"
-gloo-console = "0.2"
-gloo-utils = "0.1"
+gloo-console = { path = "../console", version = "0.2" }
+gloo-utils = { path = "../utils", version = "0.1" }
 js-sys = "0.3"
 serde = { version = "1", features = ["derive"] }
 slab = "0.4"
 wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
+wasm-bindgen-futures = { version = "0.4", optional = true }
 
 [dependencies.web-sys]
 version = "0.3"
@@ -32,3 +38,7 @@ features = [
     "Worker",
     "WorkerOptions",
 ]
+
+[features]
+default = []
+futures = ["wasm-bindgen-futures"]

@@ -1,10 +1,10 @@
-use super::*;
+use crate::Shared;
+use crate::{Agent, HandlerId};
 use std::cell::RefCell;
 use std::fmt;
+#[cfg(feature = "futures")]
 use std::future::Future;
 use std::rc::Rc;
-use wasm_bindgen_futures::spawn_local;
-use crate::{Shared};
 
 /// Defines communication from Worker to Consumers
 pub(crate) trait Responder<AGN: Agent> {
@@ -67,12 +67,14 @@ impl<AGN: Agent> AgentLink<AGN> {
         Rc::new(closure)
     }
 
-    /// This method creates a [`Callback`] which returns a Future which
+    /// This method creates a callback which returns a Future which
     /// returns a message to be sent back to the agent
     ///
     /// # Panics
     /// If the future panics, then the promise will not resolve, and
     /// will leak.
+    #[cfg(feature = "futures")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "futures")))]
     pub fn callback_future<FN, FU, IN, M>(&self, function: FN) -> Rc<dyn Fn(IN)>
     where
         M: Into<AGN::Message>,
@@ -93,6 +95,8 @@ impl<AGN: Agent> AgentLink<AGN> {
     ///
     /// # Panics
     /// If the future panics, then the promise will not resolve, and will leak.
+    #[cfg(feature = "futures")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "futures")))]
     pub fn send_future<F, M>(&self, future: F)
     where
         M: Into<AGN::Message>,
@@ -104,7 +108,7 @@ impl<AGN: Agent> AgentLink<AGN> {
             let cb = link.callback(|m: AGN::Message| m);
             (*cb)(message);
         };
-        spawn_local(js_future);
+        wasm_bindgen_futures::spawn_local(js_future);
     }
 }
 
@@ -205,7 +209,7 @@ impl<AGN> AgentRunnable<AGN>
 where
     AGN: Agent,
 {
-    fn run(self: Box<Self>) {
+    fn run(self) {
         let mut state = self.state.borrow_mut();
         if state.destroyed {
             return;

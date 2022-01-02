@@ -1,12 +1,15 @@
-use super::*;
+use crate::worker::*;
+use crate::{
+    Agent, AgentLifecycleEvent, AgentLink, AgentScope, Bridge, Callback, Discoverer, HandlerId,
+};
 use queue::Queue;
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::fmt;
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use web_sys::Worker;
-use crate::Callback;
 
 thread_local! {
     static QUEUE: Queue<usize> = Queue::new();
@@ -36,7 +39,7 @@ where
 {
     fn register() {
         let scope = AgentScope::<AGN>::new();
-        let responder = WorkerResponder {};
+        let responder = WorkerResponder;
         let link = AgentLink::connect(&scope, responder);
         let upd = AgentLifecycleEvent::Create(link);
         scope.send(upd);

@@ -1,16 +1,48 @@
-//! This module contains Yew's web worker implementation.
+//! Workers are a way to offload tasks to web workers. These are run concurrently using
+//! [web-workers](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers).
+//!
+//! # Types of Agents
+//!
+//! ## Reaches
+//!
+//! * Public - There will exist at most one instance of a Public Agent at any given time.
+//!   Bridges will spawn or connect to an already spawned agent in a web worker.
+//!   When no bridges are connected to this agent, the agent will disappear.
+//!
+//! * Private - Spawn a new agent in a web worker for every new bridge. This is good for
+//!   moving shared but independent behavior that communicates with the browser out of components.
+//!   When the the connected bridge is dropped, the agent will disappear.
+//!
+//! # Communicating with workers
+//!
+//! ## Bridges
+//!
+//! A bridge allows bi-directional communication between an agent and a component.
+//! Bridges also allow agents to communicate with one another.
+//!
+//! ## Dispatchers
+//!
+//! A dispatcher allows uni-directional communication between a component and an agent.
+//! A dispatcher allows a component to send messages to an agent.
+//!
+//! # Overhead
+//!
+//! Agents use web workers (i.e. Private and Public). They incur a serialization overhead on the
+//! messages they send and receive. Agents use [bincode](https://!github.com/servo/bincode)
+//! to communicate with other browser worker, so the cost is substantially higher
+//! than just calling a function.
 
-// mod hooks;
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 mod link;
 mod pool;
 mod worker;
 
-use std::cell::RefCell;
-// pub use hooks::{use_bridge, UseBridgeHandle};
 pub use link::AgentLink;
 pub(crate) use link::*;
 pub(crate) use pool::*;
 pub use pool::{Dispatched, Dispatcher};
+use std::cell::RefCell;
 pub use worker::{Private, PrivateAgent, Public, PublicAgent};
 
 use serde::{Deserialize, Serialize};
@@ -18,8 +50,10 @@ use std::fmt;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
-/// Alias for Rc<RefCell<T>>
+/// Alias for `Rc<RefCell<T>>`
 pub type Shared<T> = Rc<RefCell<T>>;
+
+/// Alias for `Rc<dyn Fn(IN)>`
 pub type Callback<IN> = Rc<dyn Fn(IN)>;
 
 /// Declares the behavior of the agent.
@@ -51,7 +85,7 @@ pub trait Agent: Sized + 'static {
     /// This method called when the agent is destroyed.
     fn destroy(&mut self) {}
 
-    /// Represents the name of loading resorce for remote workers which
+    /// Represents the name of loading resource for remote workers which
     /// have to live in a separate files.
     fn name_of_resource() -> &'static str {
         "main.js"

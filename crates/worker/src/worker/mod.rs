@@ -5,7 +5,7 @@ mod queue;
 pub use private::{Private, PrivateAgent};
 pub use public::{Public, PublicAgent};
 
-use super::*;
+use crate::{Agent, HandlerId, Responder};
 use js_sys::{Array, Reflect, Uint8Array};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{closure::Closure, JsCast, JsValue, UnwrapThrowExt};
@@ -13,7 +13,7 @@ use web_sys::{
     Blob, BlobPropertyBag, DedicatedWorkerGlobalScope, MessageEvent, Url, Worker, WorkerOptions,
 };
 
-pub(crate) struct WorkerResponder {}
+pub(crate) struct WorkerResponder;
 
 impl<AGN> Responder<AGN> for WorkerResponder
 where

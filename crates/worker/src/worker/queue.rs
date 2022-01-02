@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::collections::{hash_map, HashMap, HashSet};
+use std::collections::{hash_map::Entry, HashMap, HashSet};
 use std::hash::Hash;
 
 /// Thread-local instance used to queue worker messages
@@ -34,10 +34,10 @@ impl<T: Eq + Hash> Queue<T> {
     pub fn add_msg_to_queue(&self, msg: Vec<u8>, id: T) {
         let mut queue = self.msg_queue.borrow_mut();
         match queue.entry(id) {
-            hash_map::Entry::Vacant(record) => {
+            Entry::Vacant(record) => {
                 record.insert(vec![msg]);
             }
-            hash_map::Entry::Occupied(ref mut record) => {
+            Entry::Occupied(ref mut record) => {
                 record.get_mut().push(msg);
             }
         }

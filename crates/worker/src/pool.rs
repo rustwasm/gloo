@@ -1,7 +1,7 @@
 use super::*;
+use crate::Shared;
 use gloo_console as console;
 use slab::Slab;
-use crate::Shared;
 
 pub(crate) type Last = bool;
 
