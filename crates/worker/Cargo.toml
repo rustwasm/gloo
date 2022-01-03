@@ -1,0 +1,44 @@
+[package]
+name = "gloo-worker"
+version = "0.1.0"
+authors = ["Rust and WebAssembly Working Group"]
+edition = "2018"
+readme = "README.md"
+description = "Convenience crate for working with Web Workers"
+repository = "https://github.com/rustwasm/gloo/tree/master/crates/worker"
+homepage = "https://github.com/rustwasm/gloo"
+license = "MIT OR Apache-2.0"
+categories = ["api-bindings", "asynchronous", "wasm"]
+
+[package.metadata.docs.rs]
+all-features = true
+
+rustdoc-args = ["--cfg", "docsrs"]
+
+
+[dependencies]
+anymap2 = "0.13"
+bincode = "1"
+gloo-console = { path = "../console", version = "0.2" }
+gloo-utils = { path = "../utils", version = "0.1" }
+js-sys = "0.3"
+serde = { version = "1", features = ["derive"] }
+slab = "0.4"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = { version = "0.4", optional = true }
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "Blob",
+    "BlobPropertyBag",
+    "DedicatedWorkerGlobalScope",
+    "MessageEvent",
+    "Url",
+    "Worker",
+    "WorkerOptions",
+]
+
+[features]
+default = []
+futures = ["wasm-bindgen-futures"]
