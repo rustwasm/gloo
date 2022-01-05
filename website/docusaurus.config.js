@@ -20,40 +20,6 @@ module.exports = {
         src: 'img/logo.svg',
       },
       items: [
-        {
-          position: 'left',
-          label: 'Crates',
-          items: [
-            {
-              label: 'Console',
-              href: '/docs/console'
-            },
-            {
-              label: 'Dialog',
-              href: '/docs/dialog'
-            },
-            {
-              label: 'Events',
-              href: '/docs/event'
-            },
-            {
-              label: 'File',
-              href: '/docs/file'
-            },
-            {
-              label: 'Storage',
-              href: '/docs/storage'
-            },
-            {
-              label: 'Timer',
-              href: '/docs/timer'
-            },
-            {
-              label: 'Utils',
-              href: '/docs/utils'
-            },
-          ]
-        },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
           href: 'https://docs.rs/gloo',
