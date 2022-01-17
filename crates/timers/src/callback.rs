@@ -6,15 +6,37 @@ use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{Window, WorkerGlobalScope};
 
 thread_local! {
-    static GLOBAL: WindowOrWorker = WindowOrWorker::new();
+    static GLOBAL: WindowOrWorkerOrNode = WindowOrWorkerOrNode::new();
 }
 
-enum WindowOrWorker {
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_name = "setTimeout", catch)]
+    fn set_timeout_with_callback_and_timeout_and_arguments_0(
+        handler: &Function,
+        timeout: i32,
+    ) -> Result<i32, JsValue>;
+
+    #[wasm_bindgen(js_name = "setInterval", catch)]
+    fn set_interval_with_callback_and_timeout_and_arguments_0(
+        handler: &Function,
+        timeout: i32,
+    ) -> Result<i32, JsValue>;
+
+    #[wasm_bindgen(js_name = "clearTimeout")]
+    fn clear_timeout_with_handle(handle: i32);
+
+    #[wasm_bindgen(js_name = "clearInterval")]
+    fn clear_interval_with_handle(handle: i32);
+}
+
+enum WindowOrWorkerOrNode {
     Window(Window),
     Worker(WorkerGlobalScope),
+    NodeJS,
 }
 
-impl WindowOrWorker {
+impl WindowOrWorkerOrNode {
     fn new() -> Self {
         #[wasm_bindgen]
         extern "C" {
@@ -25,6 +47,9 @@ impl WindowOrWorker {
 
             #[wasm_bindgen(method, getter, js_name = WorkerGlobalScope)]
             fn worker(this: &Global) -> JsValue;
+
+            #[wasm_bindgen(method, getter)]
+            fn process(this: &Global) -> JsValue;
         }
 
         let global: Global = js_sys::global().unchecked_into();
@@ -33,20 +58,23 @@ impl WindowOrWorker {
             Self::Window(global.unchecked_into())
         } else if !global.worker().is_undefined() {
             Self::Worker(global.unchecked_into())
+        } else if !global.process().is_undefined() {
+            Self::NodeJS
         } else {
-            panic!("Only supported in a browser or web worker");
+            panic!("Only supported in a browser, web worker or node.js");
         }
     }
 }
 
 macro_rules! impl_window_or_worker {
     ($(fn $name:ident($($par_name:ident: $par_type:ty),*)$( -> $return:ty)?;)+) => {
-        impl WindowOrWorker {
+        impl WindowOrWorkerOrNode {
             $(
                 fn $name(&self, $($par_name: $par_type),*)$( -> $return)? {
                     match self {
                         Self::Window(window) => window.$name($($par_name),*),
                         Self::Worker(worker) => worker.$name($($par_name),*),
+                        Self::NodeJS => $name($($par_name),*),
                     }
                 }
             )+
