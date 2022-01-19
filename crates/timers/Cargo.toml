@@ -19,13 +19,6 @@ js-sys = "0.3.31"
 futures-core = { version = "0.3", optional = true }
 futures-channel = { version = "0.3", optional = true }
 
-[dependencies.web-sys]
-version = "0.3.19"
-features = [
-    "Window",
-    "WorkerGlobalScope",
-]
-
 [features]
 default = []
 futures = ["futures-core", "futures-channel"]
