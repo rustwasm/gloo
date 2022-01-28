@@ -66,7 +66,7 @@ impl BlobContents for Blob {
 ///
 /// `Blob`s can be created directly from `&str`, `&[u8]`, and `js_sys::ArrayBuffer`s using the
 /// `Blob::new` or `Blob::new_with_options` functions.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Blob {
     inner: web_sys::Blob,
 }
@@ -163,7 +163,7 @@ impl AsRef<JsValue> for Blob {
 }
 
 /// A [`File`](https://developer.mozilla.org/en-US/docs/Web/API/File).
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct File {
     // the trick here is that we know the contents of `inner` are a file, even though that type
     // information is not stored. It is the same trick as is used in `web_sys`.

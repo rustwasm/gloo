@@ -2,6 +2,7 @@ use crate::blob::File;
 use wasm_bindgen::prelude::*;
 
 /// A list of files, for example from an `<input type="file">`.
+#[derive(Debug, Clone, PartialEq)]
 pub struct FileList {
     inner: Vec<File>,
 }
