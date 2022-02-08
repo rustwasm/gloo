@@ -14,6 +14,7 @@ categories = ["api-bindings", "wasm"]
 [dependencies]
 gloo-timers = { version = "0.2.0", path = "crates/timers" }
 gloo-events = { version = "0.1.0", path = "crates/events" }
+gloo-fetch = { version = "0.1.0", path = "crates/fetch" }
 gloo-file = { version = "0.2.0", path = "crates/file" }
 gloo-dialogs = { version = "0.1.0", path = "crates/dialogs" }
 gloo-storage = { version = "0.2.0", path = "crates/storage" }
@@ -34,6 +35,7 @@ features = ["futures"]
 members = [
     "crates/timers",
     "crates/events",
+    "crates/fetch",
     "crates/file",
     "crates/dialogs",
     "crates/storage",
