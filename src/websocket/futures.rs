@@ -40,8 +40,7 @@ use std::rc::Rc;
 use std::task::{Context, Poll, Waker};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use wasm_bindgen_futures::JsFuture;
-use web_sys::{Blob, MessageEvent};
+use web_sys::{BinaryType, MessageEvent};
 
 /// Wrapper around browser's WebSocket API.
 #[allow(missing_debug_implementations)]
@@ -74,6 +73,11 @@ impl WebSocket {
         let waker: Rc<RefCell<Option<Waker>>> = Rc::new(RefCell::new(None));
         let ws = web_sys::WebSocket::new(url).map_err(js_to_js_error)?;
 
+        // We rely on this because the other type Blob can be converted to Vec<u8> only through a
+        // promise which makes it awkward to use in our event callbacks where we want to guarantee
+        // the order of the events stays the same.
+        ws.set_binary_type(BinaryType::Arraybuffer);
+
         let (sender, receiver) = mpsc::unbounded();
 
         let open_callback: Closure<dyn FnMut()> = {
@@ -91,10 +95,8 @@ impl WebSocket {
             let sender = sender.clone();
             Closure::wrap(Box::new(move |e: MessageEvent| {
                 let sender = sender.clone();
-                wasm_bindgen_futures::spawn_local(async move {
-                    let msg = parse_message(e).await;
-                    let _ = sender.unbounded_send(StreamMessage::Message(msg));
-                })
+                let msg = parse_message(e);
+                let _ = sender.unbounded_send(StreamMessage::Message(msg));
             }) as Box<dyn FnMut(MessageEvent)>)
         };
 
@@ -104,9 +106,7 @@ impl WebSocket {
             let sender = sender.clone();
             Closure::wrap(Box::new(move |_e: web_sys::Event| {
                 let sender = sender.clone();
-                wasm_bindgen_futures::spawn_local(async move {
-                    let _ = sender.unbounded_send(StreamMessage::ErrorEvent);
-                })
+                let _ = sender.unbounded_send(StreamMessage::ErrorEvent);
             }) as Box<dyn FnMut(web_sys::Event)>)
         };
 
@@ -115,16 +115,13 @@ impl WebSocket {
         let close_callback: Closure<dyn FnMut(web_sys::CloseEvent)> = {
             Closure::wrap(Box::new(move |e: web_sys::CloseEvent| {
                 let sender = sender.clone();
-                wasm_bindgen_futures::spawn_local(async move {
-                    let close_event = CloseEvent {
-                        code: e.code(),
-                        reason: e.reason(),
-                        was_clean: e.was_clean(),
-                    };
-
-                    let _ = sender.unbounded_send(StreamMessage::CloseEvent(close_event));
-                    let _ = sender.unbounded_send(StreamMessage::ConnectionClose);
-                })
+                let close_event = CloseEvent {
+                    code: e.code(),
+                    reason: e.reason(),
+                    was_clean: e.was_clean(),
+                };
+                let _ = sender.unbounded_send(StreamMessage::CloseEvent(close_event));
+                let _ = sender.unbounded_send(StreamMessage::ConnectionClose);
             }) as Box<dyn FnMut(web_sys::CloseEvent)>)
         };
 
@@ -190,29 +187,15 @@ enum StreamMessage {
     ConnectionClose,
 }
 
-async fn parse_message(event: MessageEvent) -> Message {
+fn parse_message(event: MessageEvent) -> Message {
     if let Ok(array_buffer) = event.data().dyn_into::<js_sys::ArrayBuffer>() {
         let array = js_sys::Uint8Array::new(&array_buffer);
         Message::Bytes(array.to_vec())
     } else if let Ok(txt) = event.data().dyn_into::<js_sys::JsString>() {
         Message::Text(String::from(&txt))
-    } else if let Ok(blob) = event.data().dyn_into::<web_sys::Blob>() {
-        let vec = blob_into_bytes(blob).await;
-        Message::Bytes(vec)
     } else {
         unreachable!("message event, received Unknown: {:?}", event.data());
     }
-}
-
-// copied verbatim from https://github.com/rustwasm/wasm-bindgen/issues/2551
-async fn blob_into_bytes(blob: Blob) -> Vec<u8> {
-    let array_buffer_promise: JsFuture = blob.array_buffer().into();
-
-    let array_buffer: JsValue = array_buffer_promise
-        .await
-        .expect("Could not get ArrayBuffer from file");
-
-    js_sys::Uint8Array::new(&array_buffer).to_vec()
 }
 
 impl Sink<Message> for WebSocket {
