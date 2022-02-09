@@ -10,21 +10,30 @@ repository = "https://github.com/rustwasm/gloo/tree/master/crates/events"
 homepage = "https://github.com/rustwasm/gloo"
 categories = ["api-bindings", "asynchronous", "web-programming", "wasm"]
 
+[features]
+default = ["futures"]
+futures = ["wasm-bindgen-futures"]
+
 [dependencies]
-http = "0.2.6"
+http = { version = "0.2.6", optional = true }
+js-sys = "0.3"
 wasm-bindgen = "0.2.55"
-wasm-bindgen-test = "0.3.5"
+wasm-bindgen-futures = { version = "0.4", optional = true }
 
 [dependencies.web-sys]
 version = "0.3.32"
 features = [
+    "FormData",
     "Headers",
+    "ReadableStream",
+    "ReferrerPolicy",
     "Request",
-    "Window",
     "RequestInit",
     "RequestMode",
     "RequestCache",
     "RequestCredentials",
     "RequestRedirect",
-    "ReferrerPolicy",
+    "Response",
+    "ResponseType",
+    "Window",
 ]

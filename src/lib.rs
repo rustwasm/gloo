@@ -7,6 +7,7 @@
 pub use gloo_console as console;
 pub use gloo_dialogs as dialogs;
 pub use gloo_events as events;
+pub use gloo_fetch as fetch;
 pub use gloo_file as file;
 pub use gloo_history as history;
 pub use gloo_render as render;
