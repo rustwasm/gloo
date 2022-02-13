@@ -9,7 +9,8 @@ use crate::error::HistoryResult;
 
 /// A history location.
 ///
-/// This struct provides location information at the time [`History::location`] is called.
+/// This struct provides location information at the time
+/// [`History::location`][crate::History::location] is called.
 #[derive(Clone, Debug)]
 pub struct Location {
     pub(crate) path: Rc<String>,
