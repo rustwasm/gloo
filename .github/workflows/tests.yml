@@ -32,7 +32,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all
+          args: --workspace --exclude gloo-net
 
   browser_tests:
     name: Browser Tests
@@ -64,7 +64,7 @@ jobs:
         run: |
           for x in $(ls crates); do
             # gloo-net is tested separately
-            if [[ "$example" == "gloo-net" ]]; then
+            if [[ "$x" == "net" ]]; then
               continue
             fi
             wasm-pack test --headless --firefox --chrome crates/$x --all-features
