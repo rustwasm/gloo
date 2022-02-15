@@ -41,4 +41,5 @@ members = [
     "crates/utils",
     "crates/history",
     "crates/worker",
+    "crates/net",
 ]

@@ -1,8 +1,23 @@
-# Reqwasm
+<div align="center">
 
-[![crates.io](https://img.shields.io/crates/v/reqwasm.svg?style=flat)](https://crates.io/crates/reqwasm)
-[![docs.rs](https://img.shields.io/docsrs/reqwasm)](https://docs.rs/reqwasm/)
-![licence](https://img.shields.io/crates/l/reqwasm)
+  <h1><code>gloo-net</code></h1>
+
+  <p>
+    <a href="https://crates.io/crates/gloo-net"><img src="https://img.shields.io/crates/v/gloo-net.svg?style=flat-square" alt="Crates.io version" /></a>
+    <a href="https://crates.io/crates/gloo-net"><img src="https://img.shields.io/crates/d/gloo-net.svg?style=flat-square" alt="Download" /></a>
+    <a href="https://docs.rs/gloo-net"><img src="https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square" alt="docs.rs docs" /></a>
+  </p>
+
+  <h3>
+    <a href="https://docs.rs/gloo-net">API Docs</a>
+    <span> | </span>
+    <a href="https://github.com/rustwasm/gloo/blob/master/CONTRIBUTING.md">Contributing</a>
+    <span> | </span>
+    <a href="https://discordapp.com/channels/442252698964721669/443151097398296587">Chat</a>
+  </h3>
+
+<sub>Built with 🦀🕸 by <a href="https://rustwasm.github.io/">The Rust and WebAssembly Working Group</a></sub>
+</div>
 
 HTTP requests library for WASM Apps. It provides idiomatic Rust bindings for the `web_sys` `fetch` and `WebSocket` API
 
@@ -40,6 +55,3 @@ spawn_local(async move {
     console_log!("WebSocket Closed")
 })
 ```
-## Contributions
-
-Your PRs and Issues are welcome. Note that all the contribution submitted by you, shall be licensed as MIT or APACHE 2.0 at your choice, without any additional terms or conditions.

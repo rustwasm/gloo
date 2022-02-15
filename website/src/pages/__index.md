@@ -9,11 +9,13 @@ as [API documentation](https://docs.rs/gloo/).
 2. [`dialog`](https://crates.io/crates/gloo-dialog)
 3. [`event`](https://crates.io/crates/gloo-event)
 4. [`file`](https://crates.io/crates/gloo-file)
-4. [`history`](https://crates.io/crates/gloo-history)
-5. [`storage`](https://crates.io/crates/gloo-storage)
-6. [`timer`](https://crates.io/crates/gloo-timer)
-6. [`utils`](https://crates.io/crates/gloo-utils)
-6. [`worker`](https://crates.io/crates/gloo-worker)
+5. [`history`](https://crates.io/crates/gloo-history)
+6. [`net`](https://crates.io/crates/gloo-net)
+7. [`render`](https://crates.io/crates/gloo-render)
+8. [`storage`](https://crates.io/crates/gloo-storage)
+9. [`timer`](https://crates.io/crates/gloo-timer)
+10. [`utils`](https://crates.io/crates/gloo-utils)
+11. [`worker`](https://crates.io/crates/gloo-worker)
 
 ## Using Gloo
 
