@@ -32,7 +32,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all
+          args: --workspace --exclude gloo-net
 
   browser_tests:
     name: Browser Tests
@@ -63,6 +63,59 @@ jobs:
       - name: Run tests
         run: |
           for x in $(ls crates); do
+            # gloo-net is tested separately
+            if [[ "$x" == "net" ]]; then
+              continue
+            fi
             wasm-pack test --headless --firefox --chrome crates/$x --all-features
             wasm-pack test --headless --firefox --chrome crates/$x --no-default-features
           done
+
+  test-net:
+    name: Test gloo-net
+    runs-on: ubuntu-latest
+    services:
+      httpbin:
+        image: kennethreitz/httpbin@sha256:599fe5e5073102dbb0ee3dbb65f049dab44fa9fc251f6835c9990f8fb196a72b
+        ports:
+          - 8080:80
+      echo_server:
+        image: jmalloc/echo-server@sha256:c461e7e54d947a8777413aaf9c624b4ad1f1bac5d8272475da859ae82c1abd7d
+        ports:
+          - 8081:8080
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: clippy
+          target: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-test-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-test-
+            cargo-${{ runner.os }}-
+      - name: Run browser tests
+        env:
+          HTTPBIN_URL: "http://localhost:8080"
+          ECHO_SERVER_URL: "ws://localhost:8081"
+        run: wasm-pack test --chrome --firefox --headless
+
+      - name: Run browser tests
+        env:
+          HTTPBIN_URL: "http://localhost:8080"
+          ECHO_SERVER_URL: "ws://localhost:8081"
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
