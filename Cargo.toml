@@ -35,6 +35,7 @@ features = ["futures"]
 members = [
     "crates/timers",
     "crates/events",
+    "crates/net",
     "crates/file",
     "crates/dialogs",
     "crates/storage",

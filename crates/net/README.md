@@ -36,7 +36,7 @@ assert_eq!(resp.status(), 200);
 ### WebSocket
 
 ```rust
-use reqwasm::websocket::{Message, futures::WebSocket};
+use gloo_net::websocket::{Message, futures::WebSocket};
 use wasm_bindgen_futures::spawn_local;
 use futures::{SinkExt, StreamExt};
 

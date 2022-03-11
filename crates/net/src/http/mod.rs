@@ -3,7 +3,7 @@
 //! # Example
 //!
 //! ```
-//! # use reqwasm::http::Request;
+//! # use gloo_net::http::Request;
 //! # async fn no_run() {
 //! let resp = Request::get("/path")
 //!     .send()
@@ -13,21 +13,23 @@
 //! # }
 //! ```
 
+mod headers;
+
 use crate::{js_to_error, Error};
 use js_sys::{ArrayBuffer, Uint8Array};
 use std::fmt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::window;
 
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 use serde::de::DeserializeOwned;
 
+pub use headers::Headers;
 pub use web_sys::{
-    AbortSignal, FormData, Headers, ObserverCallback, ReadableStream, ReferrerPolicy, RequestCache,
-    RequestCredentials, RequestMode, RequestRedirect,
+    AbortSignal, FormData, ObserverCallback, ReadableStream, ReferrerPolicy, RequestCache,
+    RequestCredentials, RequestMode, RequestRedirect, ResponseType,
 };
 
 #[allow(
@@ -66,60 +68,72 @@ impl fmt::Display for Method {
     }
 }
 
-/// A request.
+/// A wrapper round `web_sys::Request`: an http request to be used with the `fetch` API.
 pub struct Request {
     options: web_sys::RequestInit,
-    headers: web_sys::Headers,
+    headers: Headers,
     url: String,
 }
 
 impl Request {
-    /// Creates a new request with a url.
+    /// Creates a new request that will be sent to `url`.
+    ///
+    /// Uses `GET` by default. `url` can be a `String`, a `&str`, or a `Cow<'a, str>`.
     pub fn new(url: &str) -> Self {
         Self {
             options: web_sys::RequestInit::new(),
-            headers: web_sys::Headers::new().expect("headers"),
+            headers: Headers::new(),
             url: url.into(),
         }
     }
 
-    /// Sets the body.
+    /// Set the body for this request.
     pub fn body(mut self, body: impl Into<JsValue>) -> Self {
         self.options.body(Some(&body.into()));
         self
     }
 
-    /// Sets the request cache.
+    /// A string indicating how the request will interact with the browser’s HTTP cache.
     pub fn cache(mut self, cache: RequestCache) -> Self {
         self.options.cache(cache);
         self
     }
 
-    /// Sets the request credentials.
+    /// Controls what browsers do with credentials (cookies, HTTP authentication entries, and TLS
+    /// client certificates).
     pub fn credentials(mut self, credentials: RequestCredentials) -> Self {
         self.options.credentials(credentials);
         self
     }
 
-    /// Sets a header.
-    pub fn header(self, key: &str, value: &str) -> Self {
-        self.headers.set(key, value).expect("set header");
+    /// Replace _all_ the headers.
+    pub fn headers(mut self, headers: Headers) -> Self {
+        self.headers = headers;
         self
     }
 
-    /// Sets the request integrity.
+    /// Sets a header.
+    pub fn header(self, key: &str, value: &str) -> Self {
+        self.headers.set(key, value);
+        self
+    }
+
+    /// The subresource integrity value of the request (e.g.,
+    /// `sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE=`).
     pub fn integrity(mut self, integrity: &str) -> Self {
         self.options.integrity(integrity);
         self
     }
 
-    /// Sets the request method.
+    /// The request method, e.g., GET, POST.
+    ///
+    /// Note that the Origin header is not set on Fetch requests with a method of HEAD or GET.
     pub fn method(mut self, method: Method) -> Self {
         self.options.method(&method.to_string());
         self
     }
 
-    /// Sets the request mode.
+    /// The mode you want to use for the request.
     pub fn mode(mut self, mode: RequestMode) -> Self {
         self.options.mode(mode);
         self
@@ -131,19 +145,29 @@ impl Request {
         self
     }
 
-    /// Sets the request redirect.
+    /// How to handle a redirect response:
+    ///
+    /// - *follow*: Automatically follow redirects. Unless otherwise stated the redirect mode is
+    ///   set to follow
+    /// - *error*: Abort with an error if a redirect occurs.
+    /// - *manual*: Caller intends to process the response in another context. See [WHATWG fetch
+    ///   standard](https://fetch.spec.whatwg.org/#requests) for more information.
     pub fn redirect(mut self, redirect: RequestRedirect) -> Self {
         self.options.redirect(redirect);
         self
     }
 
-    /// Sets the request referrer.
+    /// The referrer of the request.
+    ///
+    /// This can be a same-origin URL, `about:client`, or an empty string.
     pub fn referrer(mut self, referrer: &str) -> Self {
         self.options.referrer(referrer);
         self
     }
 
-    /// Sets the request referrer policy.
+    /// Specifies the
+    /// [referrer policy](https://w3c.github.io/webappsec-referrer-policy/#referrer-policies) to
+    /// use for the request.
     pub fn referrer_policy(mut self, referrer_policy: ReferrerPolicy) -> Self {
         self.options.referrer_policy(referrer_policy);
         self
@@ -157,12 +181,12 @@ impl Request {
 
     /// Executes the request.
     pub async fn send(mut self) -> Result<Response, Error> {
-        self.options.headers(&self.headers);
+        self.options.headers(&self.headers.into_raw());
 
         let request = web_sys::Request::new_with_str_and_init(&self.url, &self.options)
             .map_err(js_to_error)?;
 
-        let promise = window().unwrap().fetch_with_request(&request);
+        let promise = gloo_utils::window().fetch_with_request(&request);
         let response = JsFuture::from(promise).await.map_err(js_to_error)?;
         match response.dyn_into::<web_sys::Response>() {
             Ok(response) => Ok(Response {
@@ -210,37 +234,71 @@ pub struct Response {
 }
 
 impl Response {
-    /// Gets the url.
+    /// Build a [Response] from [web_sys::Response].
+    pub fn from_raw(raw: web_sys::Response) -> Self {
+        Self { response: raw }
+    }
+
+    /// The type read-only property of the Response interface contains the type of the response.
+    ///
+    /// It can be one of the following:
+    ///
+    ///  - basic: Normal, same origin response, with all headers exposed except “Set-Cookie” and
+    ///    “Set-Cookie2″.
+    ///  - cors: Response was received from a valid cross-origin request. Certain headers and the
+    ///    body may be accessed.
+    ///  - error: Network error. No useful information describing the error is available. The
+    ///    Response’s status is 0, headers are empty and immutable. This is the type for a Response
+    ///    obtained from Response.error().
+    ///  - opaque: Response for “no-cors” request to cross-origin resource. Severely restricted.
+    ///  - opaqueredirect: The fetch request was made with redirect: "manual". The Response's
+    ///    status is 0, headers are empty, body is null and trailer is empty.
+    pub fn type_(&self) -> ResponseType {
+        self.response.type_()
+    }
+
+    /// The URL of the response.
+    ///
+    /// The returned value will be the final URL obtained after any redirects.
     pub fn url(&self) -> String {
         self.response.url()
     }
 
-    /// Whether the request was redirected.
+    /// Whether or not this response is the result of a request you made which was redirected.
     pub fn redirected(&self) -> bool {
         self.response.redirected()
     }
 
-    /// Gets the status.
+    /// the [HTTP status code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of the
+    /// response.
     pub fn status(&self) -> u16 {
         self.response.status()
     }
 
-    /// Whether the response was `ok`.
+    /// Whether the [HTTP status code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
+    /// was a success code (in the range `200 - 299`).
     pub fn ok(&self) -> bool {
         self.response.ok()
     }
 
-    /// Gets the status text.
+    /// The status message corresponding to the
+    /// [HTTP status code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) from
+    /// `Response::status`.
+    ///
+    /// For example, this would be 'OK' for a status code 200, 'Continue' for 100, or 'Not Found'
+    /// for 404.
     pub fn status_text(&self) -> String {
         self.response.status_text()
     }
 
     /// Gets the headers.
     pub fn headers(&self) -> Headers {
-        self.response.headers()
+        Headers::from_raw(self.response.headers())
     }
 
-    /// Whether the body was used.
+    /// Has the response body been consumed?
+    ///
+    /// If true, then any future attempts to consume the body will error.
     pub fn body_used(&self) -> bool {
         self.response.body_used()
     }
@@ -255,14 +313,14 @@ impl Response {
         &self.response
     }
 
-    /// Gets the form data.
+    /// Reads the response to completion, returning it as `FormData`.
     pub async fn form_data(&self) -> Result<FormData, Error> {
         let promise = self.response.form_data().map_err(js_to_error)?;
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         Ok(FormData::from(val))
     }
 
-    /// Gets and parses the json.
+    /// Reads the response to completion, parsing it as JSON.
     #[cfg(feature = "json")]
     #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
     pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
@@ -272,7 +330,7 @@ impl Response {
         Ok(json.into_serde()?)
     }
 
-    /// Gets the response text.
+    /// Reads the response as a String.
     pub async fn text(&self) -> Result<String, Error> {
         let promise = self.response.text().unwrap();
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;

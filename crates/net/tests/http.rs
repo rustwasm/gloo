@@ -1,4 +1,4 @@
-use reqwasm::http::*;
+use gloo_net::http::*;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen_test::*;
 
