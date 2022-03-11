@@ -106,16 +106,19 @@ jobs:
           restore-keys: |
             cargo-${{ runner.os }}-test-
             cargo-${{ runner.os }}-
-      - name: Run browser tests
-        env:
-          HTTPBIN_URL: "http://localhost:8080"
-          ECHO_SERVER_URL: "ws://localhost:8081"
-        run: wasm-pack test --chrome --firefox --headless
 
       - name: Run browser tests
         env:
           HTTPBIN_URL: "http://localhost:8080"
           ECHO_SERVER_URL: "ws://localhost:8081"
+        run: |
+          cd crates/net
+          wasm-pack test --chrome --firefox --headless --all-features
+
+      - name: Run native tests
+        env:
+          HTTPBIN_URL: "http://localhost:8080"
+          ECHO_SERVER_URL: "ws://localhost:8081"
         uses: actions-rs/cargo@v1
         with:
-          command: test
+          command: test -p gloo-net --all-features
