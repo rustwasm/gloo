@@ -5,7 +5,7 @@ edition = "2018"
 license = "MIT/Apache-2.0"
 name = "gloo"
 readme = "README.md"
-version = "0.6.0"
+version = "0.6.1"
 repository = "https://github.com/rustwasm/gloo"
 homepage = "https://gloo-rs.web.app/"
 documentation = "https://docs.rs/gloo/"
@@ -22,7 +22,7 @@ gloo-console = { version = "0.2.1", path = "crates/console" }
 gloo-utils = { version = "0.1.1", path = "crates/utils" }
 gloo-history = { version = "0.1.0", path = "crates/history" }
 gloo-worker = { version = "0.1.0", path = "crates/worker" }
-gloo-net = { path = "crates/net" }
+gloo-net = { version = "0.1.0", path = "crates/net" }
 
 [features]
 default = []
