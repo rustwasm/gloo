@@ -62,6 +62,7 @@ http = [
     'web-sys/RequestInit',
     'web-sys/RequestMode',
     'web-sys/Response',
+    'web-sys/ResponseType',
     'web-sys/Window',
     'web-sys/RequestCache',
     'web-sys/RequestCredentials',

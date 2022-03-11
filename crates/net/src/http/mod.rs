@@ -3,7 +3,7 @@
 //! # Example
 //!
 //! ```
-//! # use reqwasm::http::Request;
+//! # use gloo_net::http::Request;
 //! # async fn no_run() {
 //! let resp = Request::get("/path")
 //!     .send()
@@ -13,21 +13,23 @@
 //! # }
 //! ```
 
+mod headers;
+
 use crate::{js_to_error, Error};
 use js_sys::{ArrayBuffer, Uint8Array};
 use std::fmt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::window;
 
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 use serde::de::DeserializeOwned;
 
+pub use headers::Headers;
 pub use web_sys::{
     AbortSignal, FormData, ObserverCallback, ReadableStream, ReferrerPolicy, RequestCache,
-    RequestCredentials, RequestMode, RequestRedirect,
+    RequestCredentials, RequestMode, RequestRedirect, ResponseType,
 };
 
 #[allow(
@@ -69,7 +71,7 @@ impl fmt::Display for Method {
 /// A wrapper round `web_sys::Request`: an http request to be used with the `fetch` API.
 pub struct Request {
     options: web_sys::RequestInit,
-    headers: web_sys::Headers,
+    headers: Headers,
     url: String,
 }
 
@@ -80,7 +82,7 @@ impl Request {
     pub fn new(url: &str) -> Self {
         Self {
             options: web_sys::RequestInit::new(),
-            headers: web_sys::Headers::new().expect("headers"),
+            headers: Headers::new(),
             url: url.into(),
         }
     }
@@ -104,9 +106,15 @@ impl Request {
         self
     }
 
+    /// Replace _all_ the headers.
+    pub fn headers(mut self, headers: Headers) -> Self {
+        self.headers = headers;
+        self
+    }
+
     /// Sets a header.
     pub fn header(self, key: &str, value: &str) -> Self {
-        self.headers.set(key, value).expect("set header");
+        self.headers.set(key, value);
         self
     }
 
@@ -173,12 +181,12 @@ impl Request {
 
     /// Executes the request.
     pub async fn send(mut self) -> Result<Response, Error> {
-        self.options.headers(&self.headers);
+        self.options.headers(&self.headers.into_raw());
 
         let request = web_sys::Request::new_with_str_and_init(&self.url, &self.options)
             .map_err(js_to_error)?;
 
-        let promise = window().unwrap().fetch_with_request(&request);
+        let promise = gloo_utils::window().fetch_with_request(&request);
         let response = JsFuture::from(promise).await.map_err(js_to_error)?;
         match response.dyn_into::<web_sys::Response>() {
             Ok(response) => Ok(Response {
@@ -226,13 +234,8 @@ pub struct Response {
 }
 
 impl Response {
-    /// Downcast a js value to an instance of web_sys::Response.
-    ///
-    /// # Correctness
-    ///
-    /// Will result in incorrect code if `raw` is not a `web_sys::Response`.
-    fn from_raw(raw: JsValue) -> Self {
-        let raw: web_sys::Response = raw.unchecked_into();
+    /// Build a [Response] from [web_sys::Response].
+    pub fn from_raw(raw: web_sys::Response) -> Self {
         Self { response: raw }
     }
 
@@ -318,9 +321,6 @@ impl Response {
     }
 
     /// Reads the response to completion, parsing it as JSON.
-    ///
-    /// An alternative here is to get the data as bytes (`body_as_vec`) or a string (`text`), and
-    /// then parse the json in Rust, using `serde` or something else.
     #[cfg(feature = "json")]
     #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
     pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {

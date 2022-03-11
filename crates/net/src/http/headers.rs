@@ -6,7 +6,13 @@ use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 // experimental in MDN. However it's in the fetch spec, and it's necessary for appending headers.
 /// A wrapper around `web_sys::Headers`.
 pub struct Headers {
-    pub(crate) raw: web_sys::Headers,
+    raw: web_sys::Headers,
+}
+
+impl Default for Headers {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Headers {
@@ -18,8 +24,14 @@ impl Headers {
         }
     }
 
-    pub(crate) fn from_raw(raw: web_sys::Headers) -> Self {
+    /// Build [Headers] from [web_sys::Headers].
+    pub fn from_raw(raw: web_sys::Headers) -> Self {
         Self { raw }
+    }
+
+    /// Covert [Headers] to [web_sys::Headers].
+    pub fn into_raw(self) -> web_sys::Headers {
+        self.raw
     }
 
     /// This method appends a new value onto an existing header, or adds the header if it does not
