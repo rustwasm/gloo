@@ -90,7 +90,8 @@ macro_rules! info {
 /// Calls `console.table()`
 ///
 /// Since in most cases, this takes in an object, instead of, say a string literal/variable,
-/// we use [`serde`](https://serde.rs) to serialize the passed data object into [`JsValue`].
+/// we use [`serde`](https://serde.rs) to serialize the passed data object into
+/// [`JsValue`][wasm_bindgen::JsValue].
 ///
 /// An `IntoIterator<Item = &str>` can be passed to specify the columns.
 #[macro_export]

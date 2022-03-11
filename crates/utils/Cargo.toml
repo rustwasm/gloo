@@ -23,5 +23,6 @@ features = [
     "HtmlElement",
     "Location",
     "Window",
-    "HtmlHeadElement"
+    "HtmlHeadElement",
+    "Element",
 ]

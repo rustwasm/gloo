@@ -23,6 +23,7 @@ gloo-console = { version = "0.2.1", path = "crates/console" }
 gloo-utils = { version = "0.1.1", path = "crates/utils" }
 gloo-history = { version = "0.1.0", path = "crates/history" }
 gloo-worker = { version = "0.1.0", path = "crates/worker" }
+gloo-net = { path = "crates/net" }
 
 [features]
 default = []
@@ -43,4 +44,5 @@ members = [
     "crates/utils",
     "crates/history",
     "crates/worker",
+    "crates/net",
 ]

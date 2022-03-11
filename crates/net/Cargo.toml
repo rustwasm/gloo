@@ -1,39 +1,75 @@
 [package]
-name = "gloo-fetch"
-description = ""
+name = "gloo-net"
 version = "0.1.0"
-authors = ["Rust and WebAssembly Working Group"]
+authors = ["Rust and WebAssembly Working Group", "Muhammad Hamza <muhammadhamza1311@gmail.com>"]
 edition = "2018"
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/hamza1311/reqwasm"
+description = "HTTP requests library for WASM Apps"
 readme = "README.md"
-repository = "https://github.com/rustwasm/gloo/tree/master/crates/events"
-homepage = "https://github.com/rustwasm/gloo"
-categories = ["api-bindings", "asynchronous", "web-programming", "wasm"]
+keywords = ["requests", "http", "wasm", "websockets"]
+categories = ["wasm", "web-programming::http-client", "api-bindings"]
 
-[features]
-default = ["futures"]
-futures = ["wasm-bindgen-futures"]
+[package.metadata.docs.rs]
+all-features = true
 
 [dependencies]
-http = { version = "0.2.6", optional = true }
+wasm-bindgen = "0.2"
+web-sys = "0.3"
 js-sys = "0.3"
-wasm-bindgen = "0.2.55"
-wasm-bindgen-futures = { version = "0.4", optional = true }
+gloo-utils = { version = "0.1", path = "../utils" }
 
-[dependencies.web-sys]
-version = "0.3.32"
-features = [
-    "FormData",
-    "Headers",
-    "ReadableStream",
-    "ReferrerPolicy",
-    "Request",
-    "RequestInit",
-    "RequestMode",
-    "RequestCache",
-    "RequestCredentials",
-    "RequestRedirect",
-    "Response",
-    "ResponseType",
-    "Window",
+wasm-bindgen-futures = "0.4"
+futures-core = { version = "0.3", optional = true }
+futures-sink = { version = "0.3", optional = true }
+
+thiserror = "1.0"
+
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+
+futures-channel = { version = "0.3", optional = true }
+pin-project = { version = "1.0", optional = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+futures = "0.3"
+
+[features]
+default = ["json", "websocket", "http"]
+
+# Enables `.json()` on `Response`
+json = ["wasm-bindgen/serde-serialize", "serde", "serde_json"]
+# Enables the WebSocket API
+websocket = [
+    'web-sys/WebSocket',
+    'web-sys/ErrorEvent',
+    'web-sys/FileReader',
+    'web-sys/MessageEvent',
+    'web-sys/ProgressEvent',
+    'web-sys/CloseEvent',
+    'web-sys/BinaryType',
+    'web-sys/Blob',
+    "futures-channel",
+    "pin-project",
+    "futures-core",
+    "futures-sink",
+]
+# Enables the HTTP API
+http = [
+    'web-sys/Headers',
+    'web-sys/Request',
+    'web-sys/RequestInit',
+    'web-sys/RequestMode',
+    'web-sys/Response',
+    'web-sys/Window',
+    'web-sys/RequestCache',
+    'web-sys/RequestCredentials',
+    'web-sys/ObserverCallback',
+    'web-sys/RequestRedirect',
+    'web-sys/ReferrerPolicy',
+    'web-sys/AbortSignal',
+    'web-sys/ReadableStream',
+    'web-sys/Blob',
+    'web-sys/FormData',
 ]

@@ -10,6 +10,7 @@ pub use gloo_events as events;
 pub use gloo_fetch as fetch;
 pub use gloo_file as file;
 pub use gloo_history as history;
+pub use gloo_net as net;
 pub use gloo_render as render;
 pub use gloo_storage as storage;
 pub use gloo_timers as timers;
