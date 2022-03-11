@@ -1,6 +1,6 @@
 ---
 slug: release-gloo-net
-title: Gloo gets a new crate: gloo-net
+title: Gloo gets a new crate gloo-net
 author: Muhammad Hamza
 author_title: Maintainer of Gloo
 author_url: https://github.com/hamza1311
