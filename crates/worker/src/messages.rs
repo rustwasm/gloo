@@ -1,14 +1,17 @@
 use serde::{Deserialize, Serialize};
 
-use crate::HandlerId;
+use crate::{HandlerId, Worker};
 
 /// Serializable messages to worker
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) enum ToWorker<T> {
+pub(crate) enum ToWorker<W>
+where
+    W: Worker,
+{
     /// Client is connected
     Connected(HandlerId),
     /// Incoming message to Worker
-    ProcessInput(HandlerId, T),
+    ProcessInput(HandlerId, W::Input),
     /// Client is disconnected
     Disconnected(HandlerId),
     /// Worker should be terminated
@@ -17,11 +20,14 @@ pub(crate) enum ToWorker<T> {
 
 /// Serializable messages sent by worker to consumer
 #[derive(Serialize, Deserialize, Debug)]
-pub(crate) enum FromWorker<T> {
+pub(crate) enum FromWorker<W>
+where
+    W: Worker,
+{
     /// Worker sends this message when `wasm` bundle has loaded.
     WorkerLoaded,
     /// Outgoing message to consumer
-    ProcessOutput(HandlerId, T),
+    ProcessOutput(HandlerId, W::Output),
 }
 
 /// Message packager, based on serde::Serialize/Deserialize

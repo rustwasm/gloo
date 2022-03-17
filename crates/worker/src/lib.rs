@@ -34,11 +34,17 @@
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+mod bridge;
 mod messages;
 mod pool;
+mod registrar;
 mod scope;
+mod spawner;
 mod worker;
 mod worker_ext;
+
+pub use registrar::WorkerRegistrar;
+pub use spawner::{WorkerKind, WorkerSpawner};
 
 pub(crate) use pool::*;
 pub(crate) use scope::{WorkerLifecycleEvent, WorkerScope};

@@ -39,7 +39,7 @@ where
         let upd = WorkerLifecycleEvent::Create(scope.clone());
         scope.send(upd);
         let handler = move |data: Vec<u8>| {
-            let msg = ToWorker::<W::Input>::unpack(&data);
+            let msg = ToWorker::<W>::unpack(&data);
             match msg {
                 ToWorker::Connected(_) => {
                     let upd = WorkerLifecycleEvent::Connected(SINGLETON_ID);
@@ -61,7 +61,7 @@ where
                 }
             }
         };
-        let loaded: FromWorker<W::Output> = FromWorker::WorkerLoaded;
+        let loaded: FromWorker<W> = FromWorker::WorkerLoaded;
         let loaded = loaded.pack();
         let worker = worker_self();
         worker.set_onmessage_closure(handler);
@@ -81,7 +81,7 @@ where
         let id = PRIVATE_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
         let callback = callback.expect("Callback required for Private workers");
         let handler = move |data: Vec<u8>, worker: &web_sys::Worker| {
-            let msg = FromWorker::<W::Output>::unpack(&data);
+            let msg = FromWorker::<W>::unpack(&data);
             match msg {
                 FromWorker::WorkerLoaded => {
                     QUEUE.with(|queue| {
@@ -149,7 +149,7 @@ where
     HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     /// Send a message to the worker, queuing the message if necessary
-    fn send_message(&self, msg: ToWorker<W::Input>) {
+    fn send_message(&self, msg: ToWorker<W>) {
         QUEUE.with(|queue| {
             if queue.is_worker_loaded(&self.id) {
                 send_to_remote::<W>(&self.worker, msg);

@@ -49,7 +49,7 @@ where
 
     /// Send response to a worker bridge.
     pub fn respond(&self, id: HandlerId, output: W::Output) {
-        let msg = FromWorker::ProcessOutput(id, output);
+        let msg = FromWorker::<W>::ProcessOutput(id, output);
         let data = msg.pack();
         worker_self().post_message_vec(data);
     }

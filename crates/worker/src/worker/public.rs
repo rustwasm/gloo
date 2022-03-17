@@ -42,7 +42,7 @@ where
                     let handler = {
                         let slab = slab.clone();
                         move |data: Vec<u8>, worker: &web_sys::Worker| {
-                            let msg = FromWorker::<W::Output>::unpack(&data);
+                            let msg = FromWorker::<W>::unpack(&data);
                             match msg {
                                 FromWorker::WorkerLoaded => {
                                     QUEUE.with(|queue| {
@@ -112,7 +112,7 @@ where
     <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
 {
     /// Send a message to the worker, queuing the message if necessary
-    fn send_message(&self, msg: ToWorker<W::Input>) {
+    fn send_message(&self, msg: ToWorker<W>) {
         QUEUE.with(|queue| {
             if queue.is_worker_loaded(&TypeId::of::<W>()) {
                 send_to_remote::<W>(&self.worker, msg);
@@ -191,7 +191,7 @@ where
         let upd = WorkerLifecycleEvent::Create(scope.clone());
         scope.send(upd);
         let handler = move |data: Vec<u8>| {
-            let msg = ToWorker::<W::Input>::unpack(&data);
+            let msg = ToWorker::<W>::unpack(&data);
             match msg {
                 ToWorker::Connected(id) => {
                     let upd = WorkerLifecycleEvent::Connected(id);
@@ -213,7 +213,7 @@ where
                 }
             }
         };
-        let loaded: FromWorker<W::Output> = FromWorker::WorkerLoaded;
+        let loaded: FromWorker<W> = FromWorker::WorkerLoaded;
         let loaded = loaded.pack();
         let worker = worker_self();
         worker.set_onmessage_closure(handler);
@@ -224,8 +224,6 @@ where
 struct RemoteWorker<W>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
 {
     worker: web_sys::Worker,
     slab: SharedOutputSlab<W>,

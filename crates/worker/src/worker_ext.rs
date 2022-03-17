@@ -1,7 +1,10 @@
 use js_sys::Uint8Array;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue};
-use web_sys::{DedicatedWorkerGlobalScope, MessageEvent, Worker};
+use web_sys::{DedicatedWorkerGlobalScope, MessageEvent};
+
+use crate::messages::{FromWorker, Packed, ToWorker};
+use crate::Worker;
 
 pub(crate) fn worker_self() -> DedicatedWorkerGlobalScope {
     JsValue::from(js_sys::global()).into()
@@ -11,6 +14,14 @@ pub(crate) trait WorkerExt {
     fn set_onmessage_closure(&self, handler: impl 'static + Fn(Vec<u8>));
 
     fn post_message_vec(&self, data: Vec<u8>);
+
+    fn post_to_worker<W>(&self, to_worker: ToWorker<W>)
+    where
+        W: Worker;
+
+    fn post_from_worker<W>(&self, from_worker: FromWorker<W>)
+    where
+        W: Worker;
 }
 
 macro_rules! worker_ext_impl {
@@ -30,10 +41,26 @@ macro_rules! worker_ext_impl {
                 self.post_message(&Uint8Array::from(data.as_slice()))
                     .expect("failed to post message");
             }
+
+            fn post_to_worker<W>(&self, to_worker: ToWorker<W>)
+            where
+                W: Worker
+            {
+                let msg = to_worker.pack();
+                self.post_message_vec(msg);
+            }
+
+            fn post_from_worker<W>(&self, from_worker: FromWorker<W>)
+            where
+                W: Worker
+            {
+                let msg = from_worker.pack();
+                self.post_message_vec(msg);
+            }
         }
     )+};
 }
 
 worker_ext_impl! {
-    Worker, DedicatedWorkerGlobalScope
+    web_sys::Worker, DedicatedWorkerGlobalScope
 }

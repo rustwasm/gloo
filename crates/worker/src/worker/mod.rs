@@ -13,11 +13,9 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsValue, UnwrapThrowExt};
 use web_sys::{Blob, BlobPropertyBag, Url, WorkerOptions};
 
-fn send_to_remote<W>(worker: &web_sys::Worker, msg: ToWorker<W::Input>)
+fn send_to_remote<W>(worker: &web_sys::Worker, msg: ToWorker<W>)
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
 {
     let msg = msg.pack();
     worker.post_message_vec(msg);
