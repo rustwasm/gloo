@@ -34,20 +34,18 @@
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-mod link;
+mod messages;
 mod pool;
+mod scope;
 mod worker;
 
-pub use link::WorkerLink;
-pub(crate) use link::*;
 pub(crate) use pool::*;
-pub use pool::{Dispatched, Dispatcher};
+pub use scope::WorkerLink;
+pub(crate) use scope::*;
 use std::cell::RefCell;
 pub use worker::{Private, PrivateWorker, Public, PublicWorker};
 
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
 /// Alias for `Rc<RefCell<T>>`

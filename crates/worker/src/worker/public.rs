@@ -1,7 +1,7 @@
 use crate::worker::*;
 use crate::{
-    locate_callback_and_respond, Bridge, Callback, Discoverer, Dispatchable, HandlerId, Last,
-    Shared, SharedOutputSlab, Worker, WorkerLifecycleEvent, WorkerLink, WorkerScope,
+    locate_callback_and_respond, Bridge, Callback, Discoverer, HandlerId, Last, Shared,
+    SharedOutputSlab, Worker, WorkerLifecycleEvent, WorkerLink, WorkerScope,
 };
 use anymap2::{self, AnyMap};
 use queue::Queue;
@@ -80,14 +80,6 @@ where
         });
         Box::new(bridge)
     }
-}
-
-impl<W> Dispatchable for Public<W>
-where
-    W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
-{
 }
 
 /// A connection manager for components interaction with workers.

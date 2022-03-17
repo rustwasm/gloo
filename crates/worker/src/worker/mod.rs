@@ -2,6 +2,7 @@ mod private;
 mod public;
 mod queue;
 
+use crate::messages::*;
 pub use private::{Private, PrivateWorker};
 pub use public::{Public, PublicWorker};
 
@@ -26,46 +27,6 @@ where
         let data = msg.pack();
         worker_self().post_message_vec(data);
     }
-}
-
-/// Message packager, based on serde::Serialize/Deserialize
-pub trait Packed {
-    /// Pack serializable message into Vec<u8>
-    fn pack(&self) -> Vec<u8>;
-    /// Unpack deserializable message of byte slice
-    fn unpack(data: &[u8]) -> Self;
-}
-
-impl<T: Serialize + for<'de> Deserialize<'de>> Packed for T {
-    fn pack(&self) -> Vec<u8> {
-        bincode::serialize(&self).expect("can't serialize an worker message")
-    }
-
-    fn unpack(data: &[u8]) -> Self {
-        bincode::deserialize(data).expect("can't deserialize an worker message")
-    }
-}
-
-/// Serializable messages to worker
-#[derive(Serialize, Deserialize, Debug)]
-enum ToWorker<T> {
-    /// Client is connected
-    Connected(HandlerId),
-    /// Incoming message to Worker
-    ProcessInput(HandlerId, T),
-    /// Client is disconnected
-    Disconnected(HandlerId),
-    /// Worker should be terminated
-    Destroy,
-}
-
-/// Serializable messages sent by worker to consumer
-#[derive(Serialize, Deserialize, Debug)]
-enum FromWorker<T> {
-    /// Worker sends this message when `wasm` bundle has loaded.
-    WorkerLoaded,
-    /// Outgoing message to consumer
-    ProcessOutput(HandlerId, T),
 }
 
 fn send_to_remote<W>(worker: &web_sys::Worker, msg: ToWorker<W::Input>)
