@@ -1,7 +1,5 @@
 use crate::worker::*;
-use crate::{
-    Bridge, Callback, Discoverer, HandlerId, Worker, WorkerLifecycleEvent, WorkerLink, WorkerScope,
-};
+use crate::{Bridge, Callback, Discoverer, HandlerId, Worker, WorkerLifecycleEvent, WorkerScope};
 use queue::Queue;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
@@ -38,9 +36,7 @@ where
 {
     fn register() {
         let scope = WorkerScope::<W>::new();
-        let responder = WorkerResponder;
-        let link = WorkerLink::connect(&scope, responder);
-        let upd = WorkerLifecycleEvent::Create(link);
+        let upd = WorkerLifecycleEvent::Create(scope.clone());
         scope.send(upd);
         let handler = move |data: Vec<u8>| {
             let msg = ToWorker::<W::Input>::unpack(&data);

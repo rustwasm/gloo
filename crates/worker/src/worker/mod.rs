@@ -6,28 +6,13 @@ use crate::messages::*;
 pub use private::{Private, PrivateWorker};
 pub use public::{Public, PublicWorker};
 
-use crate::{HandlerId, Responder, Worker};
+use crate::Worker;
 use js_sys::{Array, Reflect, Uint8Array};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{closure::Closure, JsCast, JsValue, UnwrapThrowExt};
 use web_sys::{
     Blob, BlobPropertyBag, DedicatedWorkerGlobalScope, MessageEvent, Url, WorkerOptions,
 };
-
-pub(crate) struct WorkerResponder;
-
-impl<W> Responder<W> for WorkerResponder
-where
-    W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
-{
-    fn respond(&self, id: HandlerId, output: W::Output) {
-        let msg = FromWorker::ProcessOutput(id, output);
-        let data = msg.pack();
-        worker_self().post_message_vec(data);
-    }
-}
 
 fn send_to_remote<W>(worker: &web_sys::Worker, msg: ToWorker<W::Input>)
 where
@@ -94,11 +79,11 @@ fn worker_new(
     }
 }
 
-fn worker_self() -> DedicatedWorkerGlobalScope {
+pub(crate) fn worker_self() -> DedicatedWorkerGlobalScope {
     JsValue::from(js_sys::global()).into()
 }
 
-trait WorkerExt {
+pub(crate) trait WorkerExt {
     fn set_onmessage_closure(&self, handler: impl 'static + Fn(Vec<u8>));
 
     fn post_message_vec(&self, data: Vec<u8>);

@@ -40,8 +40,7 @@ mod scope;
 mod worker;
 
 pub(crate) use pool::*;
-pub use scope::WorkerLink;
-pub(crate) use scope::*;
+pub(crate) use scope::{WorkerLifecycleEvent, WorkerScope};
 use std::cell::RefCell;
 pub use worker::{Private, PrivateWorker, Public, PublicWorker};
 
@@ -61,12 +60,12 @@ pub trait Worker: Sized + 'static {
     /// Type of an input message.
     type Message;
     /// Incoming message type.
-    type Input;
+    type Input: Serialize + for<'de> Deserialize<'de>;
     /// Outgoing message type.
-    type Output;
+    type Output: Serialize + for<'de> Deserialize<'de>;
 
     /// Creates an instance of an worker.
-    fn create(link: WorkerLink<Self>) -> Self;
+    fn create(link: WorkerScope<Self>) -> Self;
 
     /// This method called on every update message.
     fn update(&mut self, msg: Self::Message);

@@ -1,3 +1,5 @@
+use crate::messages::{FromWorker, Packed};
+use crate::worker::{worker_self, WorkerExt};
 use crate::Shared;
 use crate::{HandlerId, Worker};
 use std::cell::RefCell;
@@ -6,33 +8,49 @@ use std::fmt;
 use std::future::Future;
 use std::rc::Rc;
 
-/// Defines communication from Worker to Consumers
-pub(crate) trait Responder<W: Worker> {
-    /// Implementation for communication channel from Worker to Consumers
-    fn respond(&self, id: HandlerId, output: W::Output);
+/// This struct holds a reference to a component and to a global scheduler.
+pub struct WorkerScope<W: Worker> {
+    state: Shared<WorkerState<W>>,
 }
 
-/// Link to worker's scope for creating callbacks.
-pub struct WorkerLink<W: Worker> {
-    scope: WorkerScope<W>,
-    responder: Rc<dyn Responder<W>>,
+impl<W: Worker> fmt::Debug for WorkerScope<W> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("WorkerScope<_>")
+    }
 }
 
-impl<W: Worker> WorkerLink<W> {
-    /// Create link for a scope.
-    pub(crate) fn connect<T>(scope: &WorkerScope<W>, responder: T) -> Self
-    where
-        T: Responder<W> + 'static,
-    {
-        WorkerLink {
-            scope: scope.clone(),
-            responder: Rc::new(responder),
+impl<W: Worker> Clone for WorkerScope<W> {
+    fn clone(&self) -> Self {
+        WorkerScope {
+            state: self.state.clone(),
         }
     }
+}
 
-    /// Send response to an worker.
+impl<W> WorkerScope<W>
+where
+    W: Worker,
+{
+    /// Create worker scope
+    pub(crate) fn new() -> Self {
+        let state = Rc::new(RefCell::new(WorkerState::new()));
+        WorkerScope { state }
+    }
+
+    /// Schedule message for sending to worker
+    pub(crate) fn send(&self, event: WorkerLifecycleEvent<W>) {
+        let runnable = Box::new(WorkerRunnable {
+            state: self.state.clone(),
+            event,
+        });
+        runnable.run();
+    }
+
+    /// Send response to a worker bridge.
     pub fn respond(&self, id: HandlerId, output: W::Output) {
-        self.responder.respond(id, output);
+        let msg = FromWorker::ProcessOutput(id, output);
+        let data = msg.pack();
+        worker_self().post_message_vec(data);
     }
 
     /// Send a message to the worker
@@ -40,7 +58,7 @@ impl<W: Worker> WorkerLink<W> {
     where
         T: Into<W::Message>,
     {
-        self.scope.send(WorkerLifecycleEvent::Message(msg.into()));
+        self.send(WorkerLifecycleEvent::Message(msg.into()));
     }
 
     /// Send an input to self
@@ -49,8 +67,7 @@ impl<W: Worker> WorkerLink<W> {
         T: Into<W::Input>,
     {
         let handler_id = HandlerId::new(0, false);
-        self.scope
-            .send(WorkerLifecycleEvent::Input(input.into(), handler_id));
+        self.send(WorkerLifecycleEvent::Input(input.into(), handler_id));
     }
 
     /// Create a callback which will send a message to the worker when invoked.
@@ -59,7 +76,7 @@ impl<W: Worker> WorkerLink<W> {
         M: Into<W::Message>,
         F: Fn(IN) -> M + 'static,
     {
-        let scope = self.scope.clone();
+        let scope = self.clone();
         let closure = move |input| {
             let output = function(input).into();
             scope.send(WorkerLifecycleEvent::Message(output));
@@ -102,63 +119,13 @@ impl<W: Worker> WorkerLink<W> {
         M: Into<W::Message>,
         F: Future<Output = M> + 'static,
     {
-        let link: WorkerLink<W> = self.clone();
+        let link = self.clone();
         let js_future = async move {
             let message: W::Message = future.await.into();
             let cb = link.callback(|m: W::Message| m);
             (*cb)(message);
         };
         wasm_bindgen_futures::spawn_local(js_future);
-    }
-}
-
-impl<W: Worker> fmt::Debug for WorkerLink<W> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("WorkerLink<_>")
-    }
-}
-
-impl<W: Worker> Clone for WorkerLink<W> {
-    fn clone(&self) -> Self {
-        WorkerLink {
-            scope: self.scope.clone(),
-            responder: self.responder.clone(),
-        }
-    }
-}
-/// This struct holds a reference to a component and to a global scheduler.
-pub(crate) struct WorkerScope<W: Worker> {
-    state: Shared<WorkerState<W>>,
-}
-
-impl<W: Worker> fmt::Debug for WorkerScope<W> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("WorkerScope<_>")
-    }
-}
-
-impl<W: Worker> Clone for WorkerScope<W> {
-    fn clone(&self) -> Self {
-        WorkerScope {
-            state: self.state.clone(),
-        }
-    }
-}
-
-impl<W: Worker> WorkerScope<W> {
-    /// Create worker scope
-    pub fn new() -> Self {
-        let state = Rc::new(RefCell::new(WorkerState::new()));
-        WorkerScope { state }
-    }
-
-    /// Schedule message for sending to worker
-    pub fn send(&self, event: WorkerLifecycleEvent<W>) {
-        let runnable = Box::new(WorkerRunnable {
-            state: self.state.clone(),
-            event,
-        });
-        runnable.run();
     }
 }
 
@@ -187,7 +154,7 @@ impl<W> WorkerState<W> {
 #[derive(Debug)]
 pub(crate) enum WorkerLifecycleEvent<W: Worker> {
     /// Request to create link
-    Create(WorkerLink<W>),
+    Create(WorkerScope<W>),
     /// Internal Worker message
     Message(W::Message),
     /// Client connected
