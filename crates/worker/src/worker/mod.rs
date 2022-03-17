@@ -3,16 +3,15 @@ mod public;
 mod queue;
 
 use crate::messages::*;
+use crate::worker_ext::{worker_self, WorkerExt};
 pub use private::{Private, PrivateWorker};
 pub use public::{Public, PublicWorker};
 
 use crate::Worker;
-use js_sys::{Array, Reflect, Uint8Array};
+use js_sys::{Array, Reflect};
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::{closure::Closure, JsCast, JsValue, UnwrapThrowExt};
-use web_sys::{
-    Blob, BlobPropertyBag, DedicatedWorkerGlobalScope, MessageEvent, Url, WorkerOptions,
-};
+use wasm_bindgen::{JsValue, UnwrapThrowExt};
+use web_sys::{Blob, BlobPropertyBag, Url, WorkerOptions};
 
 fn send_to_remote<W>(worker: &web_sys::Worker, msg: ToWorker<W::Input>)
 where
@@ -23,6 +22,7 @@ where
     let msg = msg.pack();
     worker.post_message_vec(msg);
 }
+
 fn worker_new(
     name_of_resource: &str,
     resource_is_relative: bool,
@@ -77,39 +77,4 @@ fn worker_new(
     } else {
         web_sys::Worker::new(&url).expect("failed to spawn worker")
     }
-}
-
-pub(crate) fn worker_self() -> DedicatedWorkerGlobalScope {
-    JsValue::from(js_sys::global()).into()
-}
-
-pub(crate) trait WorkerExt {
-    fn set_onmessage_closure(&self, handler: impl 'static + Fn(Vec<u8>));
-
-    fn post_message_vec(&self, data: Vec<u8>);
-}
-
-macro_rules! worker_ext_impl {
-    ($($type:path),+) => {$(
-        impl WorkerExt for $type {
-            fn set_onmessage_closure(&self, handler: impl 'static + Fn(Vec<u8>)) {
-                let handler = move |message: MessageEvent| {
-                    let data = Uint8Array::from(message.data()).to_vec();
-                    handler(data);
-                };
-                let closure = Closure::wrap(Box::new(handler) as Box<dyn Fn(MessageEvent)>);
-                self.set_onmessage(Some(closure.as_ref().unchecked_ref()));
-                closure.forget();
-            }
-
-            fn post_message_vec(&self, data: Vec<u8>) {
-                self.post_message(&Uint8Array::from(data.as_slice()))
-                    .expect("failed to post message");
-            }
-        }
-    )+};
-}
-
-worker_ext_impl! {
-    web_sys::Worker, DedicatedWorkerGlobalScope
 }

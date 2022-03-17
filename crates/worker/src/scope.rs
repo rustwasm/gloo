@@ -1,12 +1,13 @@
-use crate::messages::{FromWorker, Packed};
-use crate::worker::{worker_self, WorkerExt};
-use crate::Shared;
-use crate::{HandlerId, Worker};
 use std::cell::RefCell;
 use std::fmt;
 #[cfg(feature = "futures")]
 use std::future::Future;
 use std::rc::Rc;
+
+use crate::messages::{FromWorker, Packed};
+use crate::worker_ext::{worker_self, WorkerExt};
+use crate::Shared;
+use crate::{HandlerId, Worker};
 
 /// This struct holds a reference to a component and to a global scheduler.
 pub struct WorkerScope<W: Worker> {

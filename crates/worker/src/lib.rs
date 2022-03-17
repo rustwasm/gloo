@@ -38,6 +38,7 @@ mod messages;
 mod pool;
 mod scope;
 mod worker;
+mod worker_ext;
 
 pub(crate) use pool::*;
 pub(crate) use scope::{WorkerLifecycleEvent, WorkerScope};
