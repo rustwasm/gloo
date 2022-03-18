@@ -10,7 +10,8 @@ use crate::bridge::{CallbackMap, WorkerBridge};
 use crate::handler_id::HandlerId;
 use crate::messages::{FromWorker, Packed};
 use crate::traits::Worker;
-use crate::worker_ext::WorkerExt;
+use crate::worker_ext::NativeWorkerExt;
+use crate::Shared;
 
 fn create_worker(path: &str) -> web_sys::Worker {
     let wasm_url = path.replace(".js", "_bg.wasm");
@@ -55,6 +56,7 @@ impl<W> WorkerSpawner<W>
 where
     W: Worker,
 {
+    /// Creates a [WorkerSpawner].
     pub fn new() -> Self {
         Self {
             _marker: PhantomData,
@@ -62,6 +64,7 @@ where
         }
     }
 
+    /// Sets a callback.
     pub fn callback<F>(&mut self, cb: F) -> &mut Self
     where
         F: 'static + Fn(W::Output),
@@ -71,9 +74,10 @@ where
         self
     }
 
+    /// Spawns a Worker.
     pub fn spawn(&self, path: &str) -> WorkerBridge<W> {
         let pending_queue = Rc::new(RefCell::new(Some(Vec::new())));
-        let callbacks: Rc<RefCell<CallbackMap<W>>> = Rc::default();
+        let callbacks: Shared<CallbackMap<W>> = Rc::default();
 
         let handler = {
             let pending_queue = pending_queue.clone();
@@ -85,7 +89,7 @@ where
                     FromWorker::WorkerLoaded => {
                         if let Some(pending_queue) = pending_queue.borrow_mut().take() {
                             for to_worker in pending_queue.into_iter() {
-                                worker.post_to_worker(to_worker);
+                                worker.post_packed_message(to_worker);
                             }
                         }
                     }
@@ -110,7 +114,7 @@ where
             let handler_cell = handler_cell.clone();
             let worker = create_worker(path);
             let worker_clone = worker.clone();
-            worker.set_onmessage_closure(move |data: Vec<u8>| {
+            worker.set_on_packed_message(move |data: Vec<u8>| {
                 if let Some(handler) = handler_cell.borrow().as_ref() {
                     handler(data, &worker_clone)
                 }

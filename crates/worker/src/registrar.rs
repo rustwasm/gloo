@@ -1,7 +1,7 @@
 use crate::messages::{FromWorker, Packed, ToWorker};
 use crate::scope::{WorkerLifecycleEvent, WorkerScope};
 use crate::traits::Worker;
-use crate::worker_ext::{worker_self, WorkerExt};
+use crate::worker_ext::{worker_self, NativeWorkerExt};
 
 /// A trait to enable public workers being registered in a web worker.
 pub trait WorkerRegistrar {
@@ -43,7 +43,7 @@ where
         };
         let loaded: FromWorker<W> = FromWorker::WorkerLoaded;
         let worker = worker_self();
-        worker.set_onmessage_closure(handler);
-        worker.post_from_worker(loaded);
+        worker.set_on_packed_message(handler);
+        worker.post_packed_message(loaded);
     }
 }

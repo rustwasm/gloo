@@ -15,14 +15,14 @@ pub trait Worker: Sized + 'static {
     /// Creates an instance of an worker.
     fn create(link: WorkerScope<Self>) -> Self;
 
-    /// Receives an update via [Message].
+    /// Receives an update.
     fn update(&mut self, msg: Self::Message);
 
     /// This method called on when a new bridge created.
     fn connected(&mut self, _id: HandlerId) {}
 
-    /// This method called on every incoming message.
-    fn handle_input(&mut self, msg: Self::Input, id: HandlerId);
+    /// Receives an input.
+    fn received(&mut self, msg: Self::Input, id: HandlerId);
 
     /// This method called on when a new bridge destroyed.
     fn disconnected(&mut self, _id: HandlerId) {}

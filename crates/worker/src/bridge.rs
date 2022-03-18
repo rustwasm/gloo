@@ -8,7 +8,7 @@ use std::rc::Weak;
 use crate::handler_id::HandlerId;
 use crate::messages::ToWorker;
 use crate::traits::Worker;
-use crate::worker_ext::WorkerExt;
+use crate::worker_ext::NativeWorkerExt;
 use crate::{Callback, Shared};
 
 pub(crate) type ToWorkerQueue<W> = Vec<ToWorker<W>>;
@@ -47,7 +47,7 @@ where
                 m.push(msg);
             }
             None => {
-                self.worker.post_to_worker::<W>(msg);
+                self.worker.post_packed_message(msg);
             }
         }
     }

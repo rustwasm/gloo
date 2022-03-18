@@ -7,9 +7,9 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 
 use crate::handler_id::HandlerId;
-use crate::messages::{FromWorker, Packed};
+use crate::messages::FromWorker;
 use crate::traits::Worker;
-use crate::worker_ext::{worker_self, WorkerExt};
+use crate::worker_ext::{worker_self, NativeWorkerExt};
 use crate::Shared;
 
 /// This struct holds a reference to a component and to a global scheduler.
@@ -53,8 +53,7 @@ where
     /// Send response to a worker bridge.
     pub fn respond(&self, id: HandlerId, output: W::Output) {
         let msg = FromWorker::<W>::ProcessOutput(id, output);
-        let data = msg.pack();
-        worker_self().post_message_vec(data);
+        worker_self().post_packed_message(msg);
     }
 
     /// Send a message to the worker
@@ -199,7 +198,7 @@ where
                     .worker
                     .as_mut()
                     .expect_throw("worker was not created to process inputs")
-                    .handle_input(inp, id);
+                    .received(inp, id);
             }
             WorkerLifecycleEvent::Disconnected(id) => {
                 state
