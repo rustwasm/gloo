@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{HandlerId, Worker};
+use crate::handler_id::HandlerId;
+use crate::Worker;
 
 /// Serializable messages to worker
 #[derive(Serialize, Deserialize, Debug)]

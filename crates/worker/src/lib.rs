@@ -35,6 +35,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod bridge;
+mod handler_id;
 mod messages;
 mod pool;
 mod registrar;
@@ -46,11 +47,12 @@ mod worker_ext;
 pub use registrar::WorkerRegistrar;
 pub use spawner::{WorkerKind, WorkerSpawner};
 
-pub(crate) use pool::*;
-pub(crate) use scope::{WorkerLifecycleEvent, WorkerScope};
+use pool::*;
+use scope::{WorkerLifecycleEvent, WorkerScope};
 use std::cell::RefCell;
 pub use worker::{Private, PrivateWorker, Public, PublicWorker};
 
+use handler_id::HandlerId;
 use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 
@@ -108,23 +110,6 @@ pub trait Worker: Sized + 'static {
     /// This has pending browser support.
     fn is_module() -> bool {
         false
-    }
-}
-
-/// Id of responses handler.
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash, Clone, Copy)]
-pub struct HandlerId(usize, bool);
-
-impl HandlerId {
-    fn new(id: usize, respondable: bool) -> Self {
-        HandlerId(id, respondable)
-    }
-    fn raw_id(self) -> usize {
-        self.0
-    }
-    /// Indicates if a handler id corresponds to callback in the Worker runtime.
-    pub fn is_respondable(self) -> bool {
-        self.1
     }
 }
 

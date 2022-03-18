@@ -4,10 +4,11 @@ use std::fmt;
 use std::future::Future;
 use std::rc::Rc;
 
+use crate::handler_id::HandlerId;
 use crate::messages::{FromWorker, Packed};
 use crate::worker_ext::{worker_self, WorkerExt};
 use crate::Shared;
-use crate::{HandlerId, Worker};
+use crate::Worker;
 
 /// This struct holds a reference to a component and to a global scheduler.
 pub struct WorkerScope<W: Worker> {
@@ -67,7 +68,7 @@ where
     where
         T: Into<W::Input>,
     {
-        let handler_id = HandlerId::new(0, false);
+        let handler_id = HandlerId::new(0);
         self.send(WorkerLifecycleEvent::Input(input.into(), handler_id));
     }
 

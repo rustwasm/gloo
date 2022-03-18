@@ -1,7 +1,8 @@
+use crate::handler_id::HandlerId;
 use crate::worker::*;
 use crate::{
-    locate_callback_and_respond, Bridge, Callback, Discoverer, HandlerId, Last, Shared,
-    SharedOutputSlab, Worker, WorkerLifecycleEvent, WorkerScope,
+    locate_callback_and_respond, Bridge, Callback, Discoverer, Last, Shared, SharedOutputSlab,
+    Worker, WorkerLifecycleEvent, WorkerScope,
 };
 use anymap2::{self, AnyMap};
 use queue::Queue;
@@ -243,7 +244,7 @@ where
         let respondable = callback.is_some();
         let mut slab = self.slab.borrow_mut();
         let id: usize = slab.insert(callback);
-        let id = HandlerId::new(id, respondable);
+        let id = HandlerId::new(id);
         let bridge = PublicBridge {
             worker: self.worker.clone(),
             id,

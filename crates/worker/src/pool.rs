@@ -1,5 +1,7 @@
-use super::*;
+use crate::handler_id::HandlerId;
+use crate::Callback;
 use crate::Shared;
+use crate::Worker;
 use gloo_console as console;
 use slab::Slab;
 

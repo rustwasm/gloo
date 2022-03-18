@@ -1,5 +1,6 @@
+use crate::handler_id::HandlerId;
 use crate::worker::*;
-use crate::{Bridge, Callback, Discoverer, HandlerId, Worker, WorkerLifecycleEvent, WorkerScope};
+use crate::{Bridge, Callback, Discoverer, Worker, WorkerLifecycleEvent, WorkerScope};
 use queue::Queue;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
@@ -13,7 +14,7 @@ thread_local! {
 }
 
 static PRIVATE_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
-const SINGLETON_ID: HandlerId = HandlerId(0, true);
+const SINGLETON_ID: HandlerId = HandlerId::new(0);
 
 /// Create a new instance for every bridge.
 #[allow(missing_debug_implementations)]
