@@ -10,9 +10,6 @@ impl HandlerId {
     pub(crate) const fn new(id: usize) -> Self {
         HandlerId(id)
     }
-    pub(crate) fn raw_id(self) -> usize {
-        self.0
-    }
 
     pub fn new_inc() -> Self {
         static CTR: AtomicUsize = AtomicUsize::new(0);

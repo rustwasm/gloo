@@ -37,20 +37,16 @@
 mod bridge;
 mod handler_id;
 mod messages;
-mod pool;
 mod registrar;
 mod scope;
 mod spawner;
-mod worker;
 mod worker_ext;
 
 pub use registrar::WorkerRegistrar;
 pub use spawner::{WorkerKind, WorkerSpawner};
 
-use pool::*;
-use scope::{WorkerLifecycleEvent, WorkerScope};
+use scope::WorkerScope;
 use std::cell::RefCell;
-pub use worker::{Private, PrivateWorker, Public, PublicWorker};
 
 use handler_id::HandlerId;
 use serde::{Deserialize, Serialize};
@@ -128,20 +124,4 @@ pub trait Discoverer {
 pub trait Bridge<W: Worker> {
     /// Send a message to an worker.
     fn send(&mut self, msg: W::Input);
-}
-
-/// This trait allows registering or getting the address of a worker.
-pub trait Bridged: Worker + Sized + 'static {
-    /// Creates a messaging bridge between a worker and the component.
-    fn bridge(callback: Callback<Self::Output>) -> Box<dyn Bridge<Self>>;
-}
-
-impl<T> Bridged for T
-where
-    T: Worker,
-    <T as Worker>::Reach: Discoverer<Worker = T>,
-{
-    fn bridge(callback: Callback<Self::Output>) -> Box<dyn Bridge<Self>> {
-        Self::Reach::spawn_or_join(Some(callback))
-    }
 }
