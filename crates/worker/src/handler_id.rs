@@ -7,15 +7,11 @@ use serde::{Deserialize, Serialize};
 pub struct HandlerId(usize);
 
 impl HandlerId {
-    pub(crate) const fn new(id: usize) -> Self {
-        HandlerId(id)
-    }
-
-    pub fn new_inc() -> Self {
+    pub(crate) fn new() -> Self {
         static CTR: AtomicUsize = AtomicUsize::new(0);
 
         let id = CTR.fetch_add(1, Ordering::SeqCst);
 
-        HandlerId::new(id)
+        HandlerId(id)
     }
 }

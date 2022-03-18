@@ -112,7 +112,7 @@ where
         F: 'static + Fn(W::Output),
     {
         let cb = cb.map(|m| Rc::new(m) as Rc<dyn Fn(W::Output)>);
-        let handler_id = HandlerId::new_inc();
+        let handler_id = HandlerId::new();
 
         if let Some(cb_weak) = cb.as_ref().map(Rc::downgrade) {
             self.inner

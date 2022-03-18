@@ -4,6 +4,8 @@ use std::fmt;
 use std::future::Future;
 use std::rc::Rc;
 
+use wasm_bindgen::prelude::*;
+
 use crate::handler_id::HandlerId;
 use crate::messages::{FromWorker, Packed};
 use crate::traits::Worker;
@@ -41,11 +43,11 @@ where
 
     /// Schedule message for sending to worker
     pub(crate) fn send(&self, event: WorkerLifecycleEvent<W>) {
-        let runnable = Box::new(WorkerRunnable {
+        WorkerRunnable {
             state: self.state.clone(),
             event,
-        });
-        runnable.run();
+        }
+        .run();
     }
 
     /// Send response to a worker bridge.
@@ -61,15 +63,6 @@ where
         T: Into<W::Message>,
     {
         self.send(WorkerLifecycleEvent::Message(msg.into()));
-    }
-
-    /// Send an input to self
-    pub fn send_input<T>(&self, input: T)
-    where
-        T: Into<W::Input>,
-    {
-        let handler_id = HandlerId::new(0);
-        self.send(WorkerLifecycleEvent::Input(input.into(), handler_id));
     }
 
     /// Create a callback which will send a message to the worker when invoked.
@@ -191,35 +184,35 @@ where
                 state
                     .worker
                     .as_mut()
-                    .expect("worker was not created to process messages")
+                    .expect_throw("worker was not created to process messages")
                     .update(msg);
             }
             WorkerLifecycleEvent::Connected(id) => {
                 state
                     .worker
                     .as_mut()
-                    .expect("worker was not created to send a connected message")
+                    .expect_throw("worker was not created to send a connected message")
                     .connected(id);
             }
             WorkerLifecycleEvent::Input(inp, id) => {
                 state
                     .worker
                     .as_mut()
-                    .expect("worker was not created to process inputs")
+                    .expect_throw("worker was not created to process inputs")
                     .handle_input(inp, id);
             }
             WorkerLifecycleEvent::Disconnected(id) => {
                 state
                     .worker
                     .as_mut()
-                    .expect("worker was not created to send a disconnected message")
+                    .expect_throw("worker was not created to send a disconnected message")
                     .disconnected(id);
             }
             WorkerLifecycleEvent::Destroy => {
                 let mut worker = state
                     .worker
                     .take()
-                    .expect("trying to destroy not existent worker");
+                    .expect_throw("trying to destroy not existent worker");
                 worker.destroy();
                 state.destroyed = true;
             }

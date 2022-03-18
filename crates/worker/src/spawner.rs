@@ -119,7 +119,7 @@ where
         };
 
         WorkerBridge::<W>::new(
-            HandlerId::new_inc(),
+            HandlerId::new(),
             worker,
             pending_queue,
             callbacks,
