@@ -9,8 +9,8 @@ use web_sys::{Blob, BlobPropertyBag, Url};
 use crate::bridge::{CallbackMap, WorkerBridge};
 use crate::handler_id::HandlerId;
 use crate::messages::{FromWorker, Packed};
+use crate::traits::Worker;
 use crate::worker_ext::WorkerExt;
-use crate::Worker;
 
 fn create_worker(path: &str) -> web_sys::Worker {
     let wasm_url = path.replace(".js", "_bg.wasm");
@@ -26,20 +26,12 @@ fn create_worker(path: &str) -> web_sys::Worker {
     web_sys::Worker::new(&url).expect("failed to spawn worker")
 }
 
-/// Worker Kind
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum WorkerKind {
-    /// A dedicated Worker.
-    Dedicated,
-}
-
 /// A spawner to create workers.
 #[derive(Clone)]
 pub struct WorkerSpawner<W>
 where
     W: Worker,
 {
-    _kind: WorkerKind,
     _marker: PhantomData<W>,
     callback: Option<Rc<dyn Fn(W::Output)>>,
 }
@@ -50,13 +42,21 @@ impl<W: Worker> fmt::Debug for WorkerSpawner<W> {
     }
 }
 
+impl<W> Default for WorkerSpawner<W>
+where
+    W: Worker,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<W> WorkerSpawner<W>
 where
     W: Worker,
 {
-    pub fn new(kind: WorkerKind) -> Self {
+    pub fn new() -> Self {
         Self {
-            _kind: kind,
             _marker: PhantomData,
             callback: None,
         }

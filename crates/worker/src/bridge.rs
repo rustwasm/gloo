@@ -7,9 +7,9 @@ use std::rc::Weak;
 
 use crate::handler_id::HandlerId;
 use crate::messages::ToWorker;
+use crate::traits::Worker;
 use crate::worker_ext::WorkerExt;
-use crate::Callback;
-use crate::Worker;
+use crate::{Callback, Shared};
 
 pub(crate) type ToWorkerQueue<W> = Vec<ToWorker<W>>;
 pub(crate) type CallbackMap<W> = HashMap<HandlerId, Weak<dyn Fn(<W as Worker>::Output)>>;
@@ -20,9 +20,9 @@ where
 {
     worker: web_sys::Worker,
     // When worker is loaded, queue becomes None.
-    pending_queue: Rc<RefCell<Option<ToWorkerQueue<W>>>>,
+    pending_queue: Shared<Option<ToWorkerQueue<W>>>,
 
-    callbacks: Rc<RefCell<CallbackMap<W>>>,
+    callbacks: Shared<CallbackMap<W>>,
 }
 
 impl<W> fmt::Debug for WorkerBridgeInner<W>

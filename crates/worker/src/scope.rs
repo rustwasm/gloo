@@ -6,9 +6,9 @@ use std::rc::Rc;
 
 use crate::handler_id::HandlerId;
 use crate::messages::{FromWorker, Packed};
+use crate::traits::Worker;
 use crate::worker_ext::{worker_self, WorkerExt};
 use crate::Shared;
-use crate::Worker;
 
 /// This struct holds a reference to a component and to a global scheduler.
 pub struct WorkerScope<W: Worker> {

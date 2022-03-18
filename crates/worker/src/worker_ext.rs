@@ -4,7 +4,7 @@ use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{DedicatedWorkerGlobalScope, MessageEvent};
 
 use crate::messages::{FromWorker, Packed, ToWorker};
-use crate::Worker;
+use crate::traits::Worker;
 
 pub(crate) fn worker_self() -> DedicatedWorkerGlobalScope {
     JsValue::from(js_sys::global()).into()

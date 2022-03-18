@@ -1,7 +1,7 @@
 use crate::messages::{FromWorker, Packed, ToWorker};
 use crate::scope::{WorkerLifecycleEvent, WorkerScope};
+use crate::traits::Worker;
 use crate::worker_ext::{worker_self, WorkerExt};
-use crate::Worker;
 
 /// A trait to enable public workers being registered in a web worker.
 pub trait WorkerRegistrar {

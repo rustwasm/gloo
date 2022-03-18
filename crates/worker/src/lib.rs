@@ -40,16 +40,15 @@ mod messages;
 mod registrar;
 mod scope;
 mod spawner;
+mod traits;
 mod worker_ext;
 
 pub use registrar::WorkerRegistrar;
-pub use spawner::{WorkerKind, WorkerSpawner};
+pub use scope::WorkerScope;
+pub use spawner::WorkerSpawner;
+pub use traits::Worker;
 
-use scope::WorkerScope;
 use std::cell::RefCell;
-
-use handler_id::HandlerId;
-use serde::{Deserialize, Serialize};
 use std::rc::Rc;
 
 /// Alias for `Rc<RefCell<T>>`
@@ -57,71 +56,3 @@ pub type Shared<T> = Rc<RefCell<T>>;
 
 /// Alias for `Rc<dyn Fn(IN)>`
 pub type Callback<IN> = Rc<dyn Fn(IN)>;
-
-/// Declares the behavior of the worker.
-pub trait Worker: Sized + 'static {
-    /// Reach capability of the worker.
-    type Reach: Discoverer<Worker = Self>;
-    /// Type of an input message.
-    type Message;
-    /// Incoming message type.
-    type Input: Serialize + for<'de> Deserialize<'de>;
-    /// Outgoing message type.
-    type Output: Serialize + for<'de> Deserialize<'de>;
-
-    /// Creates an instance of an worker.
-    fn create(link: WorkerScope<Self>) -> Self;
-
-    /// This method called on every update message.
-    fn update(&mut self, msg: Self::Message);
-
-    /// This method called on when a new bridge created.
-    fn connected(&mut self, _id: HandlerId) {}
-
-    /// This method called on every incoming message.
-    fn handle_input(&mut self, msg: Self::Input, id: HandlerId);
-
-    /// This method called on when a new bridge destroyed.
-    fn disconnected(&mut self, _id: HandlerId) {}
-
-    /// This method called when the worker is destroyed.
-    fn destroy(&mut self) {}
-
-    /// Represents the name of loading resource for remote workers which
-    /// have to live in a separate files.
-    fn name_of_resource() -> &'static str {
-        "main.js"
-    }
-
-    /// Indicates whether the name of the resource is relative.
-    ///
-    /// The default implementation returns `false`, which will cause the result
-    /// returned by [`Self::name_of_resource`] to be interpreted as an absolute
-    /// URL. If `true` is returned, it will be interpreted as a relative URL.
-    fn resource_path_is_relative() -> bool {
-        false
-    }
-
-    /// Signifies if resource is a module.
-    /// This has pending browser support.
-    fn is_module() -> bool {
-        false
-    }
-}
-
-/// Determine a visibility of an worker.
-#[doc(hidden)]
-pub trait Discoverer {
-    type Worker: Worker;
-
-    /// Spawns an worker and returns `Bridge` implementation.
-    fn spawn_or_join(
-        _callback: Option<Callback<<Self::Worker as Worker>::Output>>,
-    ) -> Box<dyn Bridge<Self::Worker>>;
-}
-
-/// Bridge to a specific kind of worker.
-pub trait Bridge<W: Worker> {
-    /// Send a message to an worker.
-    fn send(&mut self, msg: W::Input);
-}
