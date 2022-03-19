@@ -7,7 +7,7 @@ use std::rc::Weak;
 
 use crate::handler_id::HandlerId;
 use crate::messages::ToWorker;
-use crate::native_worker::NativeWorkerExt;
+use crate::native_worker::{DedicatedWorker, NativeWorkerExt};
 use crate::traits::Worker;
 use crate::{Callback, Shared};
 
@@ -18,7 +18,7 @@ struct WorkerBridgeInner<W>
 where
     W: Worker,
 {
-    worker: web_sys::Worker,
+    worker: DedicatedWorker,
     // When worker is loaded, queue becomes None.
     pending_queue: Shared<Option<ToWorkerQueue<W>>>,
 

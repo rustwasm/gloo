@@ -5,8 +5,14 @@
 //!
 //! ## Bridges
 //!
-//! A bridge allows bi-directional communication between an worker and a component.
+//! After a Worker is spawned, a bridge is created.
+//! A Bridge allows bi-directional communication between an worker and a component.
 //! Bridges also allow workers to communicate with one another.
+//!
+//! ## Scopes
+//!
+//! Scopes are used by workers to communicates with bridges and send updates to itself after
+//! a task is finished.
 //!
 //! # Overhead
 //!
@@ -36,7 +42,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Alias for `Rc<RefCell<T>>`
-pub type Shared<T> = Rc<RefCell<T>>;
+pub(crate) type Shared<T> = Rc<RefCell<T>>;
 
 /// Alias for `Rc<dyn Fn(IN)>`
-pub type Callback<IN> = Rc<dyn Fn(IN)>;
+pub(crate) type Callback<IN> = Rc<dyn Fn(IN)>;

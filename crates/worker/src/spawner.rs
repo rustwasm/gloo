@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fmt;
 use std::marker::PhantomData;
 use std::rc::{Rc, Weak};
@@ -77,7 +78,16 @@ where
     /// Spawns a Worker.
     pub fn spawn(&self, path: &str) -> WorkerBridge<W> {
         let pending_queue = Rc::new(RefCell::new(Some(Vec::new())));
-        let callbacks: Shared<CallbackMap<W>> = Rc::default();
+
+        let handler_id = HandlerId::new();
+
+        let mut callbacks = HashMap::new();
+
+        if let Some(m) = self.callback.as_ref().map(Rc::downgrade) {
+            callbacks.insert(handler_id, m);
+        }
+
+        let callbacks: Shared<CallbackMap<W>> = Rc::new(RefCell::new(callbacks));
 
         let handler = {
             let pending_queue = pending_queue.clone();
@@ -123,7 +133,7 @@ where
         };
 
         WorkerBridge::<W>::new(
-            HandlerId::new(),
+            handler_id,
             worker,
             pending_queue,
             callbacks,

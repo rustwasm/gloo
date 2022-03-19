@@ -4,9 +4,9 @@ use crate::handler_id::HandlerId;
 use crate::scope::WorkerScope;
 use crate::spawner::WorkerSpawner;
 
-/// Declares the behavior of the worker.
+/// Declares the behaviour of a worker.
 pub trait Worker: Sized + 'static {
-    /// Type of an input message.
+    /// Update message type.
     type Message;
     /// Incoming message type.
     type Input: Serialize + for<'de> Deserialize<'de>;
