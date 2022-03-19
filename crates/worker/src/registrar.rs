@@ -4,13 +4,13 @@ use crate::scope::{WorkerLifecycleEvent, WorkerScope};
 use crate::traits::Worker;
 
 /// A trait to enable public workers being registered in a web worker.
-pub trait WorkerRegistrar {
+pub trait Registrable {
     /// Executes an worker in the current environment.
     /// Uses in `main` function of a worker.
     fn register();
 }
 
-impl<W> WorkerRegistrar for W
+impl<W> Registrable for W
 where
     W: Worker,
 {

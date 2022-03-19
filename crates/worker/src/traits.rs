@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::handler_id::HandlerId;
 use crate::scope::WorkerScope;
-use crate::spawner::WorkerSpawner;
+use crate::spawner::Spawner;
 
 /// Declares the behaviour of a worker.
 pub trait Worker: Sized + 'static {
@@ -35,14 +35,14 @@ pub trait Worker: Sized + 'static {
 /// A Worker that can be spawned by a spawner.
 pub trait Spawnable: Worker {
     /// Creates a spawner.
-    fn spawner() -> WorkerSpawner<Self>;
+    fn spawner() -> Spawner<Self>;
 }
 
 impl<T> Spawnable for T
 where
     T: Worker,
 {
-    fn spawner() -> WorkerSpawner<Self> {
-        WorkerSpawner::new()
+    fn spawner() -> Spawner<Self> {
+        Spawner::new()
     }
 }

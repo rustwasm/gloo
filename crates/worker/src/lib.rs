@@ -32,11 +32,11 @@ mod scope;
 mod spawner;
 mod traits;
 
-pub use bridge::WorkerBridge;
+pub use bridge::Bridge;
 pub use handler_id::HandlerId;
-pub use registrar::WorkerRegistrar;
+pub use registrar::Registrable;
 pub use scope::WorkerScope;
-pub use spawner::WorkerSpawner;
+pub use spawner::Spawner;
 pub use traits::{Spawnable, Worker};
 
 use std::cell::RefCell;
