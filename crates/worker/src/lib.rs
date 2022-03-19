@@ -20,11 +20,11 @@
 mod bridge;
 mod handler_id;
 mod messages;
+mod native_worker;
 mod registrar;
 mod scope;
 mod spawner;
 mod traits;
-mod worker_ext;
 
 pub use handler_id::HandlerId;
 pub use registrar::WorkerRegistrar;

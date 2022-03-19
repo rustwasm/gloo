@@ -2,12 +2,23 @@ use js_sys::Uint8Array;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::{JsCast, JsValue};
+pub(crate) use web_sys::Worker as DedicatedWorker;
 use web_sys::{DedicatedWorkerGlobalScope, MessageEvent};
 
 use crate::messages::Packed;
 
-pub(crate) fn worker_self() -> DedicatedWorkerGlobalScope {
-    JsValue::from(js_sys::global()).into()
+pub(crate) trait WorkerSelf {
+    type GlobalScope;
+
+    fn worker_self() -> Self::GlobalScope;
+}
+
+impl WorkerSelf for DedicatedWorker {
+    type GlobalScope = DedicatedWorkerGlobalScope;
+
+    fn worker_self() -> Self::GlobalScope {
+        JsValue::from(js_sys::global()).into()
+    }
 }
 
 pub(crate) trait NativeWorkerExt {
@@ -50,5 +61,5 @@ macro_rules! worker_ext_impl {
 }
 
 worker_ext_impl! {
-    web_sys::Worker, DedicatedWorkerGlobalScope
+    DedicatedWorker, DedicatedWorkerGlobalScope
 }

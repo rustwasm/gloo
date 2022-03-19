@@ -8,8 +8,8 @@ use wasm_bindgen::prelude::*;
 
 use crate::handler_id::HandlerId;
 use crate::messages::FromWorker;
+use crate::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
 use crate::traits::Worker;
-use crate::worker_ext::{worker_self, NativeWorkerExt};
 use crate::Shared;
 
 /// This struct holds a reference to a component and to a global scheduler.
@@ -53,7 +53,7 @@ where
     /// Send response to a worker bridge.
     pub fn respond(&self, id: HandlerId, output: W::Output) {
         let msg = FromWorker::<W>::ProcessOutput(id, output);
-        worker_self().post_packed_message(msg);
+        DedicatedWorker::worker_self().post_packed_message(msg);
     }
 
     /// Send a message to the worker

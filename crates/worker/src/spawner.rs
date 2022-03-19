@@ -9,11 +9,11 @@ use web_sys::{Blob, BlobPropertyBag, Url};
 use crate::bridge::{CallbackMap, WorkerBridge};
 use crate::handler_id::HandlerId;
 use crate::messages::{FromWorker, Packed};
+use crate::native_worker::{DedicatedWorker, NativeWorkerExt};
 use crate::traits::Worker;
-use crate::worker_ext::NativeWorkerExt;
 use crate::Shared;
 
-fn create_worker(path: &str) -> web_sys::Worker {
+fn create_worker(path: &str) -> DedicatedWorker {
     let wasm_url = path.replace(".js", "_bg.wasm");
     let array = Array::new();
     array.push(&format!(r#"importScripts("{}");wasm_bindgen("{}");"#, path, wasm_url).into());
@@ -24,7 +24,7 @@ fn create_worker(path: &str) -> web_sys::Worker {
     .unwrap();
     let url = Url::create_object_url_with_blob(&blob).unwrap();
 
-    web_sys::Worker::new(&url).expect("failed to spawn worker")
+    DedicatedWorker::new(&url).expect("failed to spawn worker")
 }
 
 /// A spawner to create workers.

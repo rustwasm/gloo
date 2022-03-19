@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::handler_id::HandlerId;
 use crate::scope::WorkerScope;
+use crate::spawner::WorkerSpawner;
 
 /// Declares the behavior of the worker.
 pub trait Worker: Sized + 'static {
@@ -29,4 +30,19 @@ pub trait Worker: Sized + 'static {
 
     /// This method called when the worker is destroyed.
     fn destroy(&mut self) {}
+}
+
+/// A Worker that can be spawned by a spawner.
+pub trait Spawnable: Worker {
+    /// Creates a spawner.
+    fn spawner() -> WorkerSpawner<Self>;
+}
+
+impl<T> Spawnable for T
+where
+    T: Worker,
+{
+    fn spawner() -> WorkerSpawner<Self> {
+        WorkerSpawner::new()
+    }
 }

@@ -7,8 +7,8 @@ use std::rc::Weak;
 
 use crate::handler_id::HandlerId;
 use crate::messages::ToWorker;
+use crate::native_worker::NativeWorkerExt;
 use crate::traits::Worker;
-use crate::worker_ext::NativeWorkerExt;
 use crate::{Callback, Shared};
 
 pub(crate) type ToWorkerQueue<W> = Vec<ToWorker<W>>;
