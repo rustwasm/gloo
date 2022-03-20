@@ -14,7 +14,7 @@ use crate::{Callback, Shared};
 pub(crate) type ToWorkerQueue<W> = Vec<ToWorker<W>>;
 pub(crate) type CallbackMap<W> = HashMap<HandlerId, Weak<dyn Fn(<W as Worker>::Output)>>;
 
-struct BridgeInner<W>
+struct WorkerBridgeInner<W>
 where
     W: Worker,
 {
@@ -25,16 +25,16 @@ where
     callbacks: Shared<CallbackMap<W>>,
 }
 
-impl<W> fmt::Debug for BridgeInner<W>
+impl<W> fmt::Debug for WorkerBridgeInner<W>
 where
     W: Worker,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("BridgeInner<_>")
+        f.write_str("WorkerBridgeInner<_>")
     }
 }
 
-impl<W> BridgeInner<W>
+impl<W> WorkerBridgeInner<W>
 where
     W: Worker,
 {
@@ -53,7 +53,7 @@ where
     }
 }
 
-impl<W> Drop for BridgeInner<W>
+impl<W> Drop for WorkerBridgeInner<W>
 where
     W: Worker,
 {
@@ -64,17 +64,17 @@ where
 }
 
 /// A connection manager for components interaction with workers.
-pub struct Bridge<W>
+pub struct WorkerBridge<W>
 where
     W: Worker,
 {
-    inner: Rc<BridgeInner<W>>,
+    inner: Rc<WorkerBridgeInner<W>>,
     id: HandlerId,
     _worker: PhantomData<W>,
     cb: Option<Rc<dyn Fn(W::Output)>>,
 }
 
-impl<W> Bridge<W>
+impl<W> WorkerBridge<W>
 where
     W: Worker,
 {
@@ -86,7 +86,7 @@ where
         callback: Option<Callback<W::Output>>,
     ) -> Self {
         Self {
-            inner: BridgeInner {
+            inner: WorkerBridgeInner {
                 worker: native_worker,
                 pending_queue,
                 callbacks,
@@ -130,7 +130,7 @@ where
     }
 }
 
-impl<W> Clone for Bridge<W>
+impl<W> Clone for WorkerBridge<W>
 where
     W: Worker,
 {
@@ -144,7 +144,7 @@ where
     }
 }
 
-impl<W> Drop for Bridge<W>
+impl<W> Drop for WorkerBridge<W>
 where
     W: Worker,
 {
@@ -154,11 +154,20 @@ where
     }
 }
 
-impl<W> fmt::Debug for Bridge<W>
+impl<W> fmt::Debug for WorkerBridge<W>
 where
     W: Worker,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("Bridge<_>")
+        f.write_str("WorkerBridge<_>")
+    }
+}
+
+impl<W> PartialEq for WorkerBridge<W>
+where
+    W: Worker,
+{
+    fn eq(&self, rhs: &Self) -> bool {
+        self.id == rhs.id
     }
 }

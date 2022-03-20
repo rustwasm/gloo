@@ -7,7 +7,7 @@ use std::rc::{Rc, Weak};
 use js_sys::Array;
 use web_sys::{Blob, BlobPropertyBag, Url};
 
-use crate::bridge::{Bridge, CallbackMap};
+use crate::bridge::{CallbackMap, WorkerBridge};
 use crate::handler_id::HandlerId;
 use crate::messages::{FromWorker, Packed};
 use crate::native_worker::{DedicatedWorker, NativeWorkerExt};
@@ -30,7 +30,7 @@ fn create_worker(path: &str) -> DedicatedWorker {
 
 /// A spawner to create workers.
 #[derive(Clone)]
-pub struct Spawner<W>
+pub struct WorkerSpawner<W>
 where
     W: Worker,
 {
@@ -38,13 +38,13 @@ where
     callback: Option<Rc<dyn Fn(W::Output)>>,
 }
 
-impl<W: Worker> fmt::Debug for Spawner<W> {
+impl<W: Worker> fmt::Debug for WorkerSpawner<W> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("WorkerScope<_>")
     }
 }
 
-impl<W> Default for Spawner<W>
+impl<W> Default for WorkerSpawner<W>
 where
     W: Worker,
 {
@@ -53,11 +53,11 @@ where
     }
 }
 
-impl<W> Spawner<W>
+impl<W> WorkerSpawner<W>
 where
     W: Worker,
 {
-    /// Creates a [Spawner].
+    /// Creates a [WorkerSpawner].
     pub fn new() -> Self {
         Self {
             _marker: PhantomData,
@@ -76,7 +76,7 @@ where
     }
 
     /// Spawns a Worker.
-    pub fn spawn(&self, path: &str) -> Bridge<W> {
+    pub fn spawn(&self, path: &str) -> WorkerBridge<W> {
         let pending_queue = Rc::new(RefCell::new(Some(Vec::new())));
 
         let handler_id = HandlerId::new();
@@ -132,7 +132,7 @@ where
             worker
         };
 
-        Bridge::<W>::new(
+        WorkerBridge::<W>::new(
             handler_id,
             worker,
             pending_queue,
