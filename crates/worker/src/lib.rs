@@ -25,6 +25,7 @@
 
 mod bridge;
 mod handler_id;
+mod lifecycle;
 mod messages;
 mod native_worker;
 mod registrar;

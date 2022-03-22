@@ -1,6 +1,7 @@
+use crate::lifecycle::WorkerLifecycleEvent;
 use crate::messages::{FromWorker, Packed, ToWorker};
 use crate::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
-use crate::scope::{WorkerLifecycleEvent, WorkerScope};
+use crate::scope::WorkerScope;
 use crate::traits::Worker;
 
 /// A trait to enable public workers being registered in a web worker.
@@ -34,10 +35,8 @@ where
                     scope.send(upd);
                 }
                 ToWorker::Destroy => {
-                    let upd = WorkerLifecycleEvent::Destroy;
+                    let upd = WorkerLifecycleEvent::Destroy(scope.clone());
                     scope.send(upd);
-                    // Terminates web worker
-                    DedicatedWorker::worker_self().close();
                 }
             }
         };

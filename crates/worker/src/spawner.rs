@@ -12,7 +12,7 @@ use crate::handler_id::HandlerId;
 use crate::messages::{FromWorker, Packed};
 use crate::native_worker::{DedicatedWorker, NativeWorkerExt};
 use crate::traits::Worker;
-use crate::Shared;
+use crate::{Callback, Shared};
 
 fn create_worker(path: &str) -> DedicatedWorker {
     let wasm_url = path.replace(".js", "_bg.wasm");
@@ -35,7 +35,7 @@ where
     W: Worker,
 {
     _marker: PhantomData<W>,
-    callback: Option<Rc<dyn Fn(W::Output)>>,
+    callback: Option<Callback<W::Output>>,
 }
 
 impl<W: Worker> fmt::Debug for WorkerSpawner<W> {

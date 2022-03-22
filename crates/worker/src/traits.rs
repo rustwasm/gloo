@@ -29,7 +29,14 @@ pub trait Worker: Sized + 'static {
     fn disconnected(&mut self, _id: HandlerId) {}
 
     /// This method called when the worker is destroyed.
-    fn destroy(&mut self) {}
+    ///
+    /// Returns a boolean indicating whether a worker is going to close itself afterwards.
+    /// When the value is `true`, it means that it can be closed immediately.
+    /// When the value is `false`, the worker itself is responsible to close it with
+    /// [`WorkerScope::close`].
+    fn destroy(&mut self) -> bool {
+        true
+    }
 }
 
 /// A Worker that can be spawned by a spawner.

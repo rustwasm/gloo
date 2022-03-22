@@ -3,8 +3,9 @@ use std::fmt;
 #[cfg(feature = "futures")]
 use std::future::Future;
 use std::rc::Rc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
-use wasm_bindgen::prelude::*;
+use crate::lifecycle::{WorkerLifecycleEvent, WorkerRunnable, WorkerState};
 
 use crate::handler_id::HandlerId;
 use crate::messages::FromWorker;
@@ -15,6 +16,7 @@ use crate::Shared;
 /// This struct holds a reference to a component and to a global scheduler.
 pub struct WorkerScope<W: Worker> {
     state: Shared<WorkerState<W>>,
+    closable: Rc<AtomicBool>,
 }
 
 impl<W: Worker> fmt::Debug for WorkerScope<W> {
@@ -27,6 +29,7 @@ impl<W: Worker> Clone for WorkerScope<W> {
     fn clone(&self) -> Self {
         WorkerScope {
             state: self.state.clone(),
+            closable: self.closable.clone(),
         }
     }
 }
@@ -38,7 +41,10 @@ where
     /// Create worker scope
     pub(crate) fn new() -> Self {
         let state = Rc::new(RefCell::new(WorkerState::new()));
-        WorkerScope { state }
+        WorkerScope {
+            state,
+            closable: AtomicBool::new(false).into(),
+        }
     }
 
     /// Schedule message for sending to worker
@@ -76,6 +82,27 @@ where
             scope.send(WorkerLifecycleEvent::Message(output));
         };
         Rc::new(closure)
+    }
+
+    /// Notifies the scope that close can be called.
+    pub(crate) fn set_closable(&self) {
+        self.closable.store(true, Ordering::Relaxed);
+    }
+
+    /// Closes the current worker.
+    ///
+    /// Note: You can only call this method after the `destroy` lifecycle event is notified.
+    ///
+    /// # Panics
+    ///
+    /// This method would panic if it is called before the `destroy` lifecycle event.
+    pub fn close(&self) {
+        assert!(
+            self.closable.load(Ordering::Relaxed),
+            "a worker can only be closed after its destroy method is notified."
+        );
+
+        DedicatedWorker::worker_self().close();
     }
 
     /// This method creates a callback which returns a Future which
@@ -126,95 +153,5 @@ where
 impl<W: Worker> Default for WorkerScope<W> {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-struct WorkerState<W> {
-    worker: Option<W>,
-    // TODO: Use worker field to control create message this flag
-    destroyed: bool,
-}
-
-impl<W> WorkerState<W> {
-    fn new() -> Self {
-        WorkerState {
-            worker: None,
-            destroyed: false,
-        }
-    }
-}
-
-/// Internal Worker lifecycle events
-#[derive(Debug)]
-pub(crate) enum WorkerLifecycleEvent<W: Worker> {
-    /// Request to create link
-    Create(WorkerScope<W>),
-    /// Internal Worker message
-    Message(W::Message),
-    /// Client connected
-    Connected(HandlerId),
-    /// Received message from Client
-    Input(W::Input, HandlerId),
-    /// Client disconnected
-    Disconnected(HandlerId),
-    /// Request to destroy worker
-    Destroy,
-}
-
-struct WorkerRunnable<W: Worker> {
-    state: Shared<WorkerState<W>>,
-    event: WorkerLifecycleEvent<W>,
-}
-
-impl<W> WorkerRunnable<W>
-where
-    W: Worker,
-{
-    fn run(self) {
-        let mut state = self.state.borrow_mut();
-        if state.destroyed {
-            return;
-        }
-        match self.event {
-            WorkerLifecycleEvent::Create(link) => {
-                state.worker = Some(W::create(link));
-            }
-            WorkerLifecycleEvent::Message(msg) => {
-                state
-                    .worker
-                    .as_mut()
-                    .expect_throw("worker was not created to process messages")
-                    .update(msg);
-            }
-            WorkerLifecycleEvent::Connected(id) => {
-                state
-                    .worker
-                    .as_mut()
-                    .expect_throw("worker was not created to send a connected message")
-                    .connected(id);
-            }
-            WorkerLifecycleEvent::Input(inp, id) => {
-                state
-                    .worker
-                    .as_mut()
-                    .expect_throw("worker was not created to process inputs")
-                    .received(inp, id);
-            }
-            WorkerLifecycleEvent::Disconnected(id) => {
-                state
-                    .worker
-                    .as_mut()
-                    .expect_throw("worker was not created to send a disconnected message")
-                    .disconnected(id);
-            }
-            WorkerLifecycleEvent::Destroy => {
-                let mut worker = state
-                    .worker
-                    .take()
-                    .expect_throw("trying to destroy not existent worker");
-                worker.destroy();
-                state.destroyed = true;
-            }
-        }
     }
 }
