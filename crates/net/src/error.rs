@@ -16,6 +16,9 @@ pub enum Error {
         #[from]
         serde_json::Error,
     ),
+    /// Error returned by this crate
+    #[error("{0}")]
+    GlooError(String),
 }
 
 #[cfg(any(feature = "http", feature = "websocket", feature = "eventsource"))]
