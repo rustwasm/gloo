@@ -8,12 +8,15 @@
 
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
+use wasm_bindgen_futures::JsFuture;
 
 use crate::errors::js_to_error;
 use errors::StorageError;
+use gloo_utils::window;
 use serde_json::{Map, Value};
 
 pub mod errors;
+mod indexeddb;
 mod local_storage;
 mod session_storage;
 pub use local_storage::LocalStorage;
@@ -94,4 +97,20 @@ pub trait Storage {
             .length()
             .expect_throw("unreachable: length does not throw an exception")
     }
+}
+
+/// Request that stored data be persisted and not reclaimed unless the user specifically clears
+/// their storage.
+///
+/// Returns `true` if the request was granted, or `false` if not.
+pub async fn persist() -> bool {
+    JsFuture::from(storage_manager().persist().unwrap_throw())
+        .await
+        .unwrap_throw()
+        .is_truthy()
+}
+
+/// Get the user agent's storage manager instance
+fn storage_manager() -> web_sys::StorageManager {
+    window().navigator().storage()
 }
