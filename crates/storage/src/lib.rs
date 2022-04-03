@@ -16,7 +16,7 @@ use gloo_utils::window;
 use serde_json::{Map, Value};
 
 pub mod errors;
-mod indexeddb;
+pub mod indexed_db;
 mod local_storage;
 mod session_storage;
 pub use local_storage::LocalStorage;

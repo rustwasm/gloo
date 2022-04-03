@@ -18,6 +18,9 @@ serde_json = "1.0"
 thiserror = "1.0"
 js-sys = "0.3"
 gloo-utils = { version = "0.1", path = "../utils" }
+gloo-events = { version = "0.1", path = "../events" }
+futures-channel = "0.3"
+futures = "0.3"
 
 [dependencies.web-sys]
 version = "0.3"
@@ -27,13 +30,16 @@ features = [
     "StorageManager",
     "Storage",
     # indexeddb
+    "DomException",
+    "DomStringList",
     "IdbFactory",
     "IdbOpenDbRequest",
     "IdbVersionChangeEvent",
-    "IdbVersionChangeEventInit",
+    "IdbDatabase",
     "IdbIndex",
     "IdbCursor",
     "IdbObjectStore",
+    "IdbObjectStoreParameters",
 ]
 
 [dev-dependencies]
