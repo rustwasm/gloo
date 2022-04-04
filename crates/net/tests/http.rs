@@ -69,12 +69,10 @@ async fn post_json() {
     }
 
     let resp = Request::post(&format!("{}/anything", HTTPBIN_URL))
-        .body(
-            serde_json::to_string(&Payload {
-                data: "data".to_string(),
-            })
-            .unwrap(),
-        )
+        .json(&Payload {
+            data: "data".to_string(),
+        })
+        .expect("should not fail to serialize json")
         .send()
         .await
         .unwrap();

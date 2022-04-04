@@ -126,12 +126,9 @@ impl Request {
         self
     }
     /// convenience method for json request bodies
-    pub fn json<T: Serialize + ?Sized>(self, value: &T) -> Result<Self,Error> {
+    pub fn json<T: Serialize + ?Sized>(self, value: &T) -> Result<Self, Error> {
         let json = serde_json::to_string(value)?;
-        Result::Ok(
-            self.header("Content-Type", "application/json")
-            .body(json)
-        )
+        Result::Ok(self.header("Content-Type", "application/json").body(json))
     }
     /// The request method, e.g., GET, POST.
     ///
