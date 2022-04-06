@@ -17,6 +17,7 @@ mod headers;
 
 use crate::{js_to_error, Error};
 use js_sys::{ArrayBuffer, Uint8Array};
+use serde::Serialize;
 use std::fmt;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -124,7 +125,15 @@ impl Request {
         self.options.integrity(integrity);
         self
     }
-
+    /// A convenience method to set JSON as request body
+    ///
+    /// # Note
+    ///
+    /// This method also sets the `Content-Type` header to `application/json`
+    pub fn json<T: Serialize + ?Sized>(self, value: &T) -> Result<Self, Error> {
+        let json = serde_json::to_string(value)?;
+        Result::Ok(self.header("Content-Type", "application/json").body(json))
+    }
     /// The request method, e.g., GET, POST.
     ///
     /// Note that the Origin header is not set on Fetch requests with a method of HEAD or GET.

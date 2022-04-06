@@ -57,10 +57,26 @@ async fn gzip_response() {
 }
 
 #[wasm_bindgen_test]
+async fn json_body() {
+    #[derive(Serialize, Deserialize, Debug)]
+    struct Payload {
+        data: String,
+        num: i16,
+    }
+
+    let result = Request::post(&format!("{}/anything", HTTPBIN_URL)).json(&Payload {
+        data: "data".to_string(),
+        num: 42,
+    });
+    assert!(result.is_ok(), "failed to create json request body")
+}
+
+#[wasm_bindgen_test]
 async fn post_json() {
     #[derive(Serialize, Deserialize, Debug)]
     struct Payload {
         data: String,
+        num: i16,
     }
 
     #[derive(Deserialize, Debug)]
@@ -68,19 +84,19 @@ async fn post_json() {
         json: Payload,
     }
 
-    let resp = Request::post(&format!("{}/anything", HTTPBIN_URL))
-        .body(
-            serde_json::to_string(&Payload {
-                data: "data".to_string(),
-            })
-            .unwrap(),
-        )
+    let req = Request::post(&format!("{}/anything", HTTPBIN_URL))
+        .json(&Payload {
+            data: "data".to_string(),
+            num: 42,
+        })
+        .expect("should not fail to serialize json")
         .send()
         .await
         .unwrap();
-    let json: HttpBin = resp.json().await.unwrap();
-    assert_eq!(resp.status(), 200);
-    assert_eq!(json.json.data, "data");
+    let resp: HttpBin = req.json().await.unwrap();
+    assert_eq!(req.status(), 200);
+    assert_eq!(resp.json.data, "data");
+    assert_eq!(resp.json.num, 42);
 }
 
 #[wasm_bindgen_test]
