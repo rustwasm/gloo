@@ -128,7 +128,7 @@ impl Request {
     /// A convenience method to set JSON as request body
     ///
     /// # Note
-    /// 
+    ///
     /// This method also sets the `Content-Type` header to `application/json`
     pub fn json<T: Serialize + ?Sized>(self, value: &T) -> Result<Self, Error> {
         let json = serde_json::to_string(value)?;
