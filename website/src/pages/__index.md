@@ -6,14 +6,14 @@ as [API documentation](https://docs.rs/gloo/).
 ## Gloo Crates
 
 1. [`console`](https://crates.io/crates/gloo-console)
-2. [`dialog`](https://crates.io/crates/gloo-dialog)
-3. [`event`](https://crates.io/crates/gloo-event)
+2. [`dialogs`](https://crates.io/crates/gloo-dialogs)
+3. [`events`](https://crates.io/crates/gloo-events)
 4. [`file`](https://crates.io/crates/gloo-file)
 5. [`history`](https://crates.io/crates/gloo-history)
 6. [`net`](https://crates.io/crates/gloo-net)
 7. [`render`](https://crates.io/crates/gloo-render)
 8. [`storage`](https://crates.io/crates/gloo-storage)
-9. [`timer`](https://crates.io/crates/gloo-timer)
+9. [`timers`](https://crates.io/crates/gloo-timers)
 10. [`utils`](https://crates.io/crates/gloo-utils)
 11. [`worker`](https://crates.io/crates/gloo-worker)
 
