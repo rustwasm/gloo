@@ -15,12 +15,14 @@ wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
 serde = "1.0"
 serde_json = "1.0"
-thiserror = "1.0"
+thiserror = "1.0.30"
 js-sys = "0.3"
 gloo-utils = { version = "0.1", path = "../utils" }
 gloo-events = { version = "0.1", path = "../events" }
 futures-channel = "0.3"
 futures = "0.3"
+once_cell = "1.10.0"
+serde-wasm-bindgen = "0.4.2"
 
 [dependencies.web-sys]
 version = "0.3"
@@ -32,14 +34,22 @@ features = [
     # indexeddb
     "DomException",
     "DomStringList",
-    "IdbFactory",
-    "IdbOpenDbRequest",
-    "IdbVersionChangeEvent",
-    "IdbDatabase",
-    "IdbIndex",
     "IdbCursor",
+    "IdbCursorWithValue",
+    "IdbCursorDirection",
+    "IdbDatabase",
+    "IdbFactory",
+    "IdbIndex",
+    "IdbIndexParameters",
+    "IdbKeyRange",
     "IdbObjectStore",
     "IdbObjectStoreParameters",
+    "IdbOpenDbRequest",
+    "IdbRequest",
+    "IdbRequestReadyState",
+    "IdbTransaction",
+    "IdbTransactionMode",
+    "IdbVersionChangeEvent",
 ]
 
 [dev-dependencies]

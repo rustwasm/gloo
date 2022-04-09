@@ -15,6 +15,8 @@ use errors::StorageError;
 use gloo_utils::window;
 use serde_json::{Map, Value};
 
+#[macro_use]
+mod macros;
 pub mod errors;
 pub mod indexed_db;
 mod local_storage;
