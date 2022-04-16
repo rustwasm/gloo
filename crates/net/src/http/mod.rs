@@ -135,8 +135,6 @@ impl Request {
         Result::Ok(self.header("Content-Type", "application/json").body(json))
     }
     /// The request method, e.g., GET, POST.
-    ///
-    /// Note that the Origin header is not set on Fetch requests with a method of HEAD or GET.
     pub fn method(mut self, method: Method) -> Self {
         self.options.method(&method.to_string());
         self
