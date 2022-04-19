@@ -24,4 +24,4 @@ provides an [`EventListener`] type which makes it easy!
 
 See the documentation for [`EventListener`] for more information.
 
-[`EventListener`]: struct.EventListener.html
+[`EventListener`]: https://docs.rs/gloo-events/latest/gloo_events/struct.EventListener.html
