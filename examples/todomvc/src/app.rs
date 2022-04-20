@@ -22,7 +22,7 @@ pub enum Route {
 impl Route {
     // This could use more advanced URL parsing, but it isn't needed
     pub fn from_url(url: &str) -> Self {
-        let url = Url::new(&url).unwrap_throw();
+        let url = Url::new(url).unwrap_throw();
         match url.hash().as_str() {
             "#/active" => Route::Active,
             "#/completed" => Route::Completed,
@@ -30,7 +30,7 @@ impl Route {
         }
     }
 
-    pub fn to_url(&self) -> &'static str {
+    pub fn as_url(&self) -> &'static str {
         match self {
             Route::Active => "#/active",
             Route::Completed => "#/completed",
@@ -160,7 +160,7 @@ impl AppInner {
     fn remove_all_completed_todos(&self) {
         let mut ids = HashSet::new();
         self.todo_list.lock_mut().retain(|todo| {
-            if todo.completed.get() == false {
+            if !todo.completed.get() {
                 true
             } else {
                 ids.insert(todo.id);
@@ -286,7 +286,7 @@ impl AppInner {
     fn render_button(text: &str, route: Route) -> Dom {
         html!("li", {
             .children(&mut [
-                link!(route.to_url(), {
+                link!(route.as_url(), {
                     .text(text)
                     .class_signal("selected", ROUTE.with(|r| r.signal().map(move |x| x == route)))
                 })
@@ -351,7 +351,7 @@ impl AppInner {
             .children(&mut [
                 Self::render_header(self.clone()),
                 Self::render_main(self.clone()),
-                Self::render_footer(self.clone()),
+                Self::render_footer(self),
             ])
         })
     }

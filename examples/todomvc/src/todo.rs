@@ -45,7 +45,7 @@ impl Todo {
     }
 
     fn remove(&self, app: &AppInner) {
-        app.remove_todo(&self);
+        app.remove_todo(self);
     }
 
     fn is_visible(&self) -> impl Signal<Item = bool> {
@@ -74,7 +74,7 @@ impl Todo {
             if let Some(title) = trim(&title) {
                 self.title.set_neq(title.to_string());
             } else {
-                app.remove_todo(&self);
+                app.remove_todo(self);
             }
         }
     }

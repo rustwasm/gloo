@@ -42,8 +42,8 @@ where
 {
     fn into_jsvalue(self) -> JsValue {
         let arr = js_sys::Array::new();
-        for i in 0..self.len() {
-            arr.push(&JsValue::from(self[i].as_ref()));
+        for itm in self {
+            arr.push(&JsValue::from(itm.as_ref()));
         }
         JsValue::from(arr)
     }
@@ -56,7 +56,7 @@ impl IntoKeyPath for KeyPath {
             KeyPath::String(s) => JsValue::from(s),
             KeyPath::Sequence(multi) => multi
                 .iter()
-                .map(|s| JsValue::from(s))
+                .map(JsValue::from)
                 .collect::<js_sys::Array>()
                 .into(),
         }
@@ -218,7 +218,7 @@ impl Query {
 
     /// Create a range that will only match the given key.
     pub fn only(key: &Key) -> Self {
-        Self::new(IdbKeyRange::only(&key).expect_throw("unreachable"))
+        Self::new(IdbKeyRange::only(key).expect_throw("unreachable"))
     }
 
     /// Create a query from a given range.
@@ -235,7 +235,7 @@ impl Query {
     pub fn from_range(
         lower: Option<(&Key, bool)>,
         upper: Option<(&Key, bool)>,
-    ) -> Result<Self, ()> {
+    ) -> Result<Self, Box<dyn std::error::Error + 'static>> {
         match (lower, upper) {
             (None, None) => return Ok(Self::ALL),
             (None, Some((upper, upper_open))) => {
@@ -251,7 +251,7 @@ impl Query {
             }
         }
         .map(Self::new)
-        .map_err(|_| ())
+        .map_err(|_| "invalid range".into())
     }
 
     fn new(inner: IdbKeyRange) -> Self {
@@ -262,14 +262,14 @@ impl Query {
 }
 
 impl TryFrom<Range<Key>> for Query {
-    type Error = ();
+    type Error = Box<dyn std::error::Error + 'static>;
     fn try_from(range: Range<Key>) -> Result<Self, Self::Error> {
         Self::from_range(Some((&range.start, false)), Some((&range.end, true)))
     }
 }
 
 impl TryFrom<RangeInclusive<Key>> for Query {
-    type Error = ();
+    type Error = Box<dyn std::error::Error + 'static>;
     fn try_from(range: RangeInclusive<Key>) -> Result<Self, Self::Error> {
         Self::from_range(Some((range.start(), false)), Some((range.end(), false)))
     }

@@ -193,7 +193,7 @@ impl<Ty> ObjectStore<Ty> {
         let query = opts.query.as_ref();
         let request = self
             .inner
-            .open_cursor_with_range_and_direction(&query, dir)?;
+            .open_cursor_with_range_and_direction(query, dir)?;
         Ok(CursorStream::new(StreamingRequest::new(
             request,
             opts.bubble_errors,
@@ -474,6 +474,12 @@ impl ObjectStore<ReadOnly> {
 pub struct IndexOptions {
     key_path: JsValue,
     params: IdbIndexParameters,
+}
+
+impl Default for IndexOptions {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl IndexOptions {

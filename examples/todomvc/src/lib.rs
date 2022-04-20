@@ -1,3 +1,4 @@
+#![allow(clippy::unused_unit)]
 use crate::app::App;
 use discard::Discard;
 use dominator::DomHandle;

@@ -31,6 +31,7 @@ features = [
     "Navigator",
     "StorageManager",
     "Storage",
+    "console",
     # indexeddb
     "DomException",
     "DomStringList",
