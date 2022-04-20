@@ -13,6 +13,7 @@ use wasm_bindgen_futures::JsFuture;
 use crate::errors::js_to_error;
 use errors::StorageError;
 use gloo_utils::window;
+use js_sys::Reflect;
 use serde_json::{Map, Value};
 
 #[macro_use]
@@ -101,6 +102,14 @@ pub trait Storage {
     }
 }
 
+/// Have we been granted permission to store data indefinitely?
+pub async fn is_persisted() -> bool {
+    JsFuture::from(storage_manager().persisted().unwrap_throw())
+        .await
+        .unwrap_throw()
+        .is_truthy()
+}
+
 /// Request that stored data be persisted and not reclaimed unless the user specifically clears
 /// their storage.
 ///
@@ -110,6 +119,35 @@ pub async fn persist() -> bool {
         .await
         .unwrap_throw()
         .is_truthy()
+}
+
+/// How much quota do we have, and how much have we used?
+pub async fn estimate() -> Quota {
+    let raw = JsFuture::from(storage_manager().estimate().unwrap_throw())
+        .await
+        .unwrap_throw();
+    // The casts here are lossy, but the values are approximate anyway.
+    let total = Reflect::get(&raw, &JsValue::from_str(wasm_bindgen::intern("quota")))
+        .unwrap_throw()
+        .as_f64()
+        .unwrap_throw() as u64;
+    let used = Reflect::get(&raw, &JsValue::from_str(wasm_bindgen::intern("usage")))
+        .unwrap_throw()
+        .as_f64()
+        .unwrap_throw() as u64;
+    Quota { total, used }
+}
+
+/// Approximate amount of storage available, and used.
+///
+/// See [MDN](https://developer.mozilla.org/en-US/docs/Web/API/StorageManager/estimate) for more
+/// details.
+#[derive(Debug, Copy, Clone)]
+pub struct Quota {
+    /// The total space available to this origin.
+    pub total: u64,
+    /// The space used by this origin.
+    pub used: u64,
 }
 
 /// Get the user agent's storage manager instance

@@ -15,19 +15,17 @@ use std::{
 use wasm_bindgen::{prelude::*, throw_str, JsCast, UnwrapThrowExt};
 use web_sys::{
     DomException, IdbDatabase, IdbFactory, IdbObjectStoreParameters, IdbOpenDbRequest, IdbRequest,
-    IdbRequestReadyState, IdbTransaction, IdbTransactionMode, IdbVersionChangeEvent,
+    IdbRequestReadyState, IdbTransactionMode, IdbVersionChangeEvent,
 };
 
 mod util;
 pub use util::{StringList, StringListIter};
 mod object_store;
-pub use object_store::{
-    CreateIndex, ObjectStoreDuringUpgrade, ObjectStoreReadOnly, ObjectStoreReadWrite, OpenCursor,
-};
+pub use object_store::{CursorOptions, IndexOptions, ObjectStore};
 mod key;
 pub use key::{IntoKeyPath, Key, KeyPath, Query};
 mod transaction;
-pub use transaction::{TransactionDuringUpgrade, TransactionReadOnly, TransactionReadWrite};
+pub use transaction::Transaction;
 mod index;
 pub use index::Index;
 mod cursor;
@@ -130,7 +128,7 @@ impl Database {
 
                 // This seems to be the way to get a transation
                 let transaction = request.transaction().expect_throw("request.transaction()");
-                let transaction = TransactionDuringUpgrade::new(transaction);
+                let transaction: Transaction<Upgrade> = Transaction::new(transaction);
 
                 upgrade_fn(DatabaseDuringUpgrade {
                     old_version,
@@ -176,36 +174,31 @@ impl Database {
     pub fn transaction_readwrite(
         &self,
         stores: &[impl AsRef<str>],
-    ) -> Result<TransactionReadWrite, errors::StartTransactionError> {
-        let array = js_sys::Array::new();
-        for store in stores {
-            array.push(&JsValue::from_str(store.as_ref()));
-        }
-        self.transaction_inner(&array, IdbTransactionMode::Readwrite)
-            .map(TransactionReadWrite::new)
+    ) -> Result<Transaction<ReadWrite>, errors::StartTransactionError> {
+        self.transaction_inner(stores, IdbTransactionMode::Readwrite)
     }
 
     /// Open a transaction with access to the given stores in "readonly" mode.
     pub fn transaction_readonly(
         &self,
         stores: &[impl AsRef<str>],
-    ) -> Result<TransactionReadOnly, errors::StartTransactionError> {
+    ) -> Result<Transaction<ReadOnly>, errors::StartTransactionError> {
+        self.transaction_inner(stores, IdbTransactionMode::Readonly)
+    }
+
+    fn transaction_inner<Ty>(
+        &self,
+        stores: &[impl AsRef<str>],
+        mode: IdbTransactionMode,
+    ) -> Result<Transaction<Ty>, errors::StartTransactionError> {
         let array = js_sys::Array::new();
         for store in stores {
             array.push(&JsValue::from_str(store.as_ref()));
         }
-        self.transaction_inner(&array, IdbTransactionMode::Readonly)
-            .map(TransactionReadOnly::new)
-    }
-
-    fn transaction_inner(
-        &self,
-        stores: &JsValue,
-        mode: IdbTransactionMode,
-    ) -> Result<IdbTransaction, errors::StartTransactionError> {
         self.inner
-            .transaction_with_str_sequence_and_mode(stores, mode)
+            .transaction_with_str_sequence_and_mode(&array, mode)
             .map_err(errors::StartTransactionError::from)
+            .map(Transaction::new)
     }
 }
 
@@ -225,7 +218,7 @@ pub struct DatabaseDuringUpgrade<'trans> {
     old_version: u32,
     new_version: u32,
     db: Database,
-    transaction: &'trans TransactionDuringUpgrade,
+    transaction: &'trans Transaction<Upgrade>,
 }
 
 impl<'trans> DatabaseDuringUpgrade<'trans> {
@@ -242,6 +235,11 @@ impl<'trans> DatabaseDuringUpgrade<'trans> {
 
     /// Create a new object store in the database
     ///
+    /// # Panics
+    ///
+    /// This function will panic if `auto_increment` is set to `false` (the default), and
+    /// `key_path` is empty or not set.
+    ///
     /// # Example
     ///
     /// ```no_run
@@ -250,12 +248,16 @@ impl<'trans> DatabaseDuringUpgrade<'trans> {
     ///     .key_path("key.path")
     ///     .build()
     /// ```
-    pub fn create_object_store<'a>(&'a self, name: &'a str) -> CreateObjectStore<'a> {
-        CreateObjectStore {
-            name,
-            params: IdbObjectStoreParameters::new(),
-            db: &self.db.inner,
-        }
+    pub fn create_object_store<'a>(
+        &'a self,
+        name: &'a str,
+        opts: ObjectStoreOptions,
+    ) -> Result<ObjectStore<Upgrade>, errors::CreateObjectStoreError> {
+        self.db
+            .inner
+            .create_object_store_with_optional_parameters(name, &opts.inner)
+            .map(ObjectStore::new)
+            .map_err(errors::CreateObjectStoreError::from)
     }
     /// Delete an object store from the database
     ///
@@ -268,11 +270,11 @@ impl<'trans> DatabaseDuringUpgrade<'trans> {
             .map_err(errors::DeleteObjectStoreError::from)
     }
 
-    /// Get the database upgrade transaction.
+    /// Get the transaction this database upgrade is running in.
     ///
     /// Use this method rather than `Database::start_*_transaction` if you want to rename or add indexes to
     /// already existing object stores.
-    pub fn upgrade_transaction(&self) -> &'trans TransactionDuringUpgrade {
+    pub fn transaction(&self) -> &'trans Transaction<Upgrade> {
         self.transaction
     }
 }
@@ -285,20 +287,25 @@ impl<'trans> Deref for DatabaseDuringUpgrade<'trans> {
     }
 }
 
-/// Builder struct to create object stores
+/// Possible objects when creating an object store
 #[derive(Debug)]
-pub struct CreateObjectStore<'a> {
-    name: &'a str,
-    params: IdbObjectStoreParameters,
-    db: &'a IdbDatabase,
+pub struct ObjectStoreOptions {
+    inner: IdbObjectStoreParameters,
 }
 
-impl<'a> CreateObjectStore<'a> {
+impl ObjectStoreOptions {
+    /// The default options
+    pub fn new() -> Self {
+        Self {
+            inner: Default::default(),
+        }
+    }
+
     /// If `true`, the object store has a
     /// [key generator](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology#key_generator).
     /// Defaults to `false`.
     pub fn auto_increment(mut self, auto_increment: bool) -> Self {
-        self.params.auto_increment(auto_increment);
+        self.inner.auto_increment(auto_increment);
         self
     }
 
@@ -309,25 +316,20 @@ impl<'a> CreateObjectStore<'a> {
     /// [key path]: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology#key_path
     /// [out-of-line keys]: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Basic_Terminology#out-of-line_key
     pub fn key_path(mut self, key_path: impl IntoKeyPath) -> Self {
-        self.params.key_path(Some(&key_path.into_jsvalue()));
+        self.inner.key_path(Some(&key_path.into_jsvalue()));
         self
     }
+}
 
-    /// Actually create the object store using the configured builder.
-    ///
-    /// # Panics
-    ///
-    /// This function will panic if `auto_increment` is set to `false` (the default), and
-    /// `key_path` is empty or not set.
-    pub fn build(self) -> Result<ObjectStoreDuringUpgrade, errors::CreateObjectStoreError> {
-        self.db
-            .create_object_store_with_optional_parameters(self.name, &self.params)
-            .map(ObjectStoreDuringUpgrade::new)
-            .map_err(errors::CreateObjectStoreError::from)
+impl Default for ObjectStoreOptions {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 /// Wrapper around IdbRequest that implements `Future`.
+///
+/// We don't need to expose this - we just return it as an `impl Future<_>`.
 struct Request {
     inner: IdbRequest,
     bubble_errors: bool,

@@ -2,7 +2,8 @@ use super::{errors, indexed_db};
 use std::{
     cmp::Ordering,
     convert::TryFrom,
-    ops::{Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive},
+    iter::FromIterator,
+    ops::{Deref, Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive},
 };
 use wasm_bindgen::{prelude::*, throw_str};
 use web_sys::IdbKeyRange;
@@ -131,6 +132,14 @@ impl Ord for Key {
     }
 }
 
+impl Deref for Key {
+    type Target = JsValue;
+
+    fn deref(&self) -> &JsValue {
+        &self.0
+    }
+}
+
 impl TryFrom<f64> for Key {
     type Error = errors::NumberIsNan;
 
@@ -181,77 +190,123 @@ impl From<&[Key]> for Key {
     }
 }
 
+impl FromIterator<Key> for Key {
+    fn from_iter<T: IntoIterator<Item = Key>>(iter: T) -> Self {
+        let array = js_sys::Array::new();
+        for el in iter {
+            array.push(&el.0);
+        }
+        Key(array.into())
+    }
+}
+
 /// A query to filter a sequence of records (to those that match the query).
 ///
 /// It is either no restriction (`Query::ALL`), a specific value of the `Key`, or a range of
 /// `Key` values.
 #[derive(Debug)]
 pub struct Query {
-    /// `None` means `all records`
-    pub(crate) inner: Option<IdbKeyRange>,
+    inner: JsValue,
 }
 
+// TODO error type
 impl Query {
     /// A special range that includes all records in a store/index.
-    pub const ALL: Self = Self { inner: None };
+    pub const ALL: Self = Self {
+        inner: JsValue::UNDEFINED,
+    };
 
-    /// Create a new `Query`.
-    fn new(inner: Result<IdbKeyRange, JsValue>) -> Self {
+    /// Create a range that will only match the given key.
+    pub fn only(key: &Key) -> Self {
+        Self::new(IdbKeyRange::only(&key).expect_throw("unreachable"))
+    }
+
+    /// Create a query from a given range.
+    ///
+    /// Each parameter, if specified, is a tuple of (`value`, `open`) where `value` is the value of
+    /// this end of the range, and `open` is whether the value given should be included, or only
+    /// those more/less than it (same meaning as open/closed intervals in math). If unspecified,
+    /// the range is unbounded in that direction.
+    ///
+    /// The error semantics are there to match the JavaScript equivalent function. They aren't
+    /// quite ideomatic Rust (I think the ideomatic thing to do is to return an empty collection if
+    /// upper < lower), but it's more important to be familiar to JS users, I think.
+    #[inline]
+    pub fn from_range(
+        lower: Option<(&Key, bool)>,
+        upper: Option<(&Key, bool)>,
+    ) -> Result<Self, ()> {
+        match (lower, upper) {
+            (None, None) => return Ok(Self::ALL),
+            (None, Some((upper, upper_open))) => {
+                IdbKeyRange::upper_bound_with_open(&upper.0, upper_open)
+            }
+            (Some((lower, lower_open)), None) => {
+                IdbKeyRange::lower_bound_with_open(&lower.0, lower_open)
+            }
+            (Some((lower, lower_open)), Some((upper, upper_open))) => {
+                IdbKeyRange::bound_with_lower_open_and_upper_open(
+                    &lower.0, &upper.0, lower_open, upper_open,
+                )
+            }
+        }
+        .map(Self::new)
+        .map_err(|_| ())
+    }
+
+    fn new(inner: IdbKeyRange) -> Self {
         Self {
-            inner: Some(inner.expect_throw("keyrange error not caught (should be unreachable)")),
+            inner: inner.into(),
         }
     }
 }
 
-impl From<Range<Key>> for Query {
-    fn from(range: Range<Key>) -> Self {
-        if range.start >= range.end {
-            throw_str("lower bound was >= upper bound (the range is empty)");
-        }
-        Self::new(IdbKeyRange::bound_with_lower_open_and_upper_open(
-            &range.start.0,
-            &range.end.0,
-            false,
-            true,
-        ))
+impl TryFrom<Range<Key>> for Query {
+    type Error = ();
+    fn try_from(range: Range<Key>) -> Result<Self, Self::Error> {
+        Self::from_range(Some((&range.start, false)), Some((&range.end, true)))
     }
 }
 
-impl From<RangeInclusive<Key>> for Query {
-    fn from(range: RangeInclusive<Key>) -> Self {
-        if range.start() > range.end() {
-            throw_str("lower bound was > upper bound (the range is empty)");
-        }
-        Self::new(IdbKeyRange::bound(&range.start().0, &range.end().0))
+impl TryFrom<RangeInclusive<Key>> for Query {
+    type Error = ();
+    fn try_from(range: RangeInclusive<Key>) -> Result<Self, Self::Error> {
+        Self::from_range(Some((range.start(), false)), Some((range.end(), false)))
     }
 }
 
 impl From<RangeFrom<Key>> for Query {
     fn from(range: RangeFrom<Key>) -> Self {
-        Self::new(IdbKeyRange::lower_bound(&range.start.0))
+        Self::from_range(Some((&range.start, false)), None).expect_throw("unreachable")
     }
 }
 
 impl From<RangeTo<Key>> for Query {
     fn from(range: RangeTo<Key>) -> Self {
-        Self::new(IdbKeyRange::upper_bound_with_open(&range.end.0, true))
+        Self::from_range(None, Some((&range.end, true))).expect_throw("unreachable")
     }
 }
 
 impl From<RangeToInclusive<Key>> for Query {
     fn from(range: RangeToInclusive<Key>) -> Self {
-        Self::new(IdbKeyRange::upper_bound(&range.end.0))
+        Self::from_range(None, Some((&range.end, false))).expect_throw("unreachable")
     }
 }
 
-impl From<Key> for Query {
-    fn from(key: Key) -> Self {
-        Self::new(IdbKeyRange::only(&key.0))
+impl From<&Key> for Query {
+    fn from(key: &Key) -> Self {
+        Self::only(key)
     }
 }
 
 impl From<RangeFull> for Query {
     fn from(_: RangeFull) -> Self {
         Self::ALL
+    }
+}
+
+impl AsRef<JsValue> for Query {
+    fn as_ref(&self) -> &JsValue {
+        &self.inner
     }
 }

@@ -1,105 +1,33 @@
-use super::{errors, ObjectStoreDuringUpgrade, ObjectStoreReadOnly, ObjectStoreReadWrite};
-use js_sys::{Object, Reflect};
+use super::{errors, ObjectStore};
+use js_sys::Reflect;
 use once_cell::sync::Lazy;
-use std::ops::Deref;
-use wasm_bindgen::{prelude::*, throw_str, JsCast};
-use web_sys::{IdbObjectStore, IdbTransaction};
+use std::marker::PhantomData;
+use wasm_bindgen::{prelude::*, JsCast};
+use web_sys::IdbTransaction;
 
-/// An in-progress database upgrade transaction
+/// A database transaction.
 ///
-/// Please do not stash the transaction. Once our code yields (e.g. over an await point that
-/// doesn't involve a database method) the transaction will autocommit, and further attempts to use
-/// it will return an error.
+/// All interaction with a database happens in a transaction.
 #[derive(Debug)]
-pub struct TransactionDuringUpgrade {
-    inner: TransactionReadWrite,
-}
-
-impl TransactionDuringUpgrade {
-    pub(crate) fn new(inner: IdbTransaction) -> Self {
-        Self {
-            inner: TransactionReadWrite::new(inner),
-        }
-    }
-
-    /// Fetch an object store
-    ///
-    /// Note this deliberately shadows [`TransactionReadWrite::object_store`], providing access to
-    /// it through `ObjectStoreDuringUpgrade::deref`.
-    pub fn object_store<'trans>(
-        &'trans self,
-        name: &str,
-    ) -> Result<ObjectStoreDuringUpgrade, errors::ObjectStoreError> {
-        object_store(self.raw(), name).map(ObjectStoreDuringUpgrade::new)
-    }
-}
-
-impl Deref for TransactionDuringUpgrade {
-    type Target = TransactionReadWrite;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-/// An in-progress database transaction
-///
-/// Please do not stash the transaction. Once our code yields (e.g. over an await point)
-#[derive(Debug)]
-pub struct TransactionReadWrite {
-    inner: TransactionReadOnly,
-}
-
-impl TransactionReadWrite {
-    pub(crate) fn new(inner: IdbTransaction) -> Self {
-        Self {
-            inner: TransactionReadOnly::new(inner),
-        }
-    }
-
-    /// Fetch an object store
-    ///
-    /// Note this deliberately shadows [`TransactionReadOnly::object_store`], providing access to
-    /// it through `Deref`.
-    pub fn object_store(
-        &self,
-        name: &str,
-    ) -> Result<ObjectStoreReadWrite, errors::ObjectStoreError> {
-        object_store(self.raw(), name).map(ObjectStoreReadWrite::new)
-    }
-}
-
-impl Deref for TransactionReadWrite {
-    type Target = TransactionReadOnly;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-/// An in-progress database transaction
-///
-/// Please do not stash the transaction. Once our code yields (e.g. over an await point)
-#[derive(Debug)]
-pub struct TransactionReadOnly {
+pub struct Transaction<Ty> {
     inner: IdbTransaction,
+    ty: PhantomData<Ty>,
 }
 
-impl TransactionReadOnly {
+impl<Ty> Transaction<Ty> {
     pub(crate) fn new(inner: IdbTransaction) -> Self {
-        Self { inner }
+        Self {
+            inner,
+            ty: PhantomData,
+        }
     }
 
-    fn raw(&self) -> &IdbTransaction {
-        &self.inner
-    }
-
-    /// Fetch an object store
-    pub fn object_store(
-        &self,
-        name: &str,
-    ) -> Result<ObjectStoreReadOnly, errors::ObjectStoreError> {
-        object_store(self.raw(), name).map(ObjectStoreReadOnly::new)
+    /// Open an object store.
+    pub fn object_store(&self, name: &str) -> Result<ObjectStore<Ty>, errors::ObjectStoreError> {
+        self.inner
+            .object_store(name)
+            .map(ObjectStore::new)
+            .map_err(errors::ObjectStoreError::from)
     }
 
     /// This function commits the transaction if supported.
@@ -112,25 +40,6 @@ impl TransactionReadOnly {
             t.commit();
         }
     }
-}
-
-impl Drop for TransactionReadOnly {
-    fn drop(&mut self) {
-        // indexeddb already does auto-commit. This tells it we've done so it can potentially
-        // commit the transaction earlier
-        // TODO if we re-enable this we need to force users to keep the transaciton alive (e.g. by
-        // making object stores borrow from it).
-        //self.commit();
-    }
-}
-
-fn object_store(
-    trans: &IdbTransaction,
-    name: &str,
-) -> Result<IdbObjectStore, errors::ObjectStoreError> {
-    trans
-        .object_store(name)
-        .map_err(errors::ObjectStoreError::from)
 }
 
 // Optional support for transaction.commit

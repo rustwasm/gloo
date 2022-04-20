@@ -281,101 +281,59 @@ error_from_jsvalue!(DeleteError {
     "DataError" => InvalidKey,
 });
 
-/// An error when deleting objects from an objecct store
+/// An error when opening an index
 #[derive(Debug, Error)]
-pub enum GetError {
-    /// Tried to get an object within a transaction that has finished
-    #[error("tried to get an object within a transaction that has finished")]
-    TransactionInactive,
-    /// The object store was deleted or moved
-    #[error("the object store was deleted or moved")]
-    StoreNotFound,
-    /// The given key was not a valid key
+pub enum IndexError {
+    /// The source object store has been deleted or the current transaction has finished.
+    #[error("the source object store has been deleted or the current transaction has finished")]
+    InvalidState,
+    /// No index with the given name exists.
+    #[error("no index with the given name exists")]
+    NotFound,
+    /// Unexpected error
+    #[error("unexpected error: {0}")]
+    Unexpected(String),
+}
+
+error_from_jsvalue!(IndexError {
+    "InvalidStateError" => InvalidState,
+});
+
+/// Errors that occur when some object we rely on is no longer active.
+///
+/// In reality, the two variants below are not used consistently throughout, so it might be better
+/// to combine them.
+#[derive(Debug, Error)]
+pub enum LifetimeError {
+    /// The transaction is no longer active
     ///
-    /// This should only happen in edge cases.
-    #[error("the given key was not a valid key")]
-    InvalidKey,
-    /// Could not deserialize results
-    #[error("could not deserialize results")]
-    Deserialize(serde_wasm_bindgen::Error),
-    /// Unexpected error
-    #[error("unexpected error: {0}")]
-    Unexpected(String),
-}
-
-error_from_jsvalue!(GetError {
-    "TransactionInactiveError" => TransactionInactive,
-    "InvalidStateError" => StoreNotFound,
-    "DataError" => InvalidKey,
-});
-
-/// An error when deleting objects from an objecct store
-#[derive(Debug, Error)]
-pub enum CursorError {
-    /// Tried to open an cursor within a transaction that has finished
-    #[error("tried to open a cursor within a transaction that has finished")]
+    /// This can happen if we try to use a transaction after the user agent (browser) has
+    /// auto-comitted it.
+    #[error("the transaction is no longer active")]
     TransactionInactive,
-    /// The object store was deleted or moved
-    #[error("the object store was deleted or moved")]
-    StoreNotFound,
-    /// The given key was not a valid key
+    /// This error occurs when the object we are running a query against has been deleted.
     ///
-    /// This should only happen in edge cases, and only when a query is used.
-    #[error("the given key was not a valid key")]
-    InvalidKey,
-    /// Could not deserialize results
-    #[error("could not deserialize results")]
-    Deserialize(serde_wasm_bindgen::Error),
+    /// It is unlikely to be seen outside of an upgrade transaction.
+    #[error("the current operation is not possible because of indexedDB's state")]
+    InvalidState,
     /// Unexpected error
     #[error("unexpected error: {0}")]
     Unexpected(String),
 }
 
-error_from_jsvalue!(CursorError {
+error_from_jsvalue!(LifetimeError {
     "TransactionInactiveError" => TransactionInactive,
-    "InvalidStateError" => StoreNotFound,
-    "DataError" => InvalidKey,
+    "InvalidStateError" => InvalidState,
 });
 
-/// An error when deleting objects from an objecct store
+/// A wrapper around other errors to include a de/serialization error variant.
 #[derive(Debug, Error)]
-pub enum KeyRangeError {
-    /// Either upper < lower, upper = lower and at least one is closed, or upper or lower not a
-    /// valid key
-    // TODO options here are to panic on invalid ranges or check the conditions ourselves.
-    #[error("upper < lower, upper = lower and one is closed, or upper or lower not a valid key")]
-    InvalidParams,
-    /// Unexpected error
-    #[error("unexpected error: {0}")]
-    Unexpected(String),
+pub enum DeSerialize<E> {
+    /// A ser/de error
+    DeSerialize(#[from] serde_wasm_bindgen::Error),
+    /// A non-ser/de error
+    Other(E),
 }
-
-error_from_jsvalue!(KeyRangeError {
-    "DataError" => InvalidParams,
-});
-
-/// An error when deleting objects from an objecct store
-#[derive(Debug, Error)]
-pub enum AdvanceError {
-    /// The amount was not a positive integer (should be unreachable)
-    #[error("The amount was not a positive integer (should be unreachable)")]
-    InvalidParams,
-    /// The transaction this cursor is attached to is no longer active
-    #[error("the transaction this cursor is attached to is no longer active")]
-    TransactionInactive,
-    /// The cursor is past the end of the object store (should be unreachable)
-    #[error("the cursor is past the end of the object store (should be unreachable)")]
-    PastEnd,
-    /// Unexpected error
-    #[error("unexpected error: {0}")]
-    Unexpected(String),
-}
-
-error_from_jsvalue!(AdvanceError {
-    "TypeError" => InvalidParams,
-    "TransactionInactiveError" => TransactionInactive,
-    "InvalidStateError" => PastEnd,
-});
 
 // key conversions
 

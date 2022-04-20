@@ -1,32 +1,41 @@
 // NOTE: all transaction operations must be started on the *same tick* (i.e. not in an async block)
 // otherwise with transaction will auto-commit before the operation is started.
 use super::{
-    errors, CursorDirection, CursorStream, Index, IntoKeyPath, Key, KeyPath, Query, Request,
-    StreamingRequest, StringList, TransactionDuringUpgrade,
+    errors, util::UnreachableExt, CursorDirection, CursorStream, Index, IntoKeyPath, Key, KeyPath,
+    Query, ReadOnly, ReadWrite, Request, StreamingRequest, StringList, Upgrade,
 };
-use futures::{
-    future::{ready, Either},
-    FutureExt,
-};
-use serde::{de::DeserializeOwned, Serialize};
-use std::{convert::TryFrom, future::Future, ops::Deref};
-use wasm_bindgen::{prelude::*, throw_str, JsCast, UnwrapThrowExt};
+use serde::{Deserialize, Serialize};
+use std::{future::Future, marker::PhantomData};
+use wasm_bindgen::{prelude::*, throw_str, JsCast};
 use web_sys::{IdbIndexParameters, IdbObjectStore};
 
-/// An object store during a database upgrade.
+/// An indexedDB object store.
 ///
-/// Note that object stores are always sorted with their key values ascending.
+/// The type `Ty` denotes what context the store exists (`Upgrade`, `ReadWrite`, or `ReadOnly`).
 #[derive(Debug)]
-pub struct ObjectStoreDuringUpgrade {
-    inner: ObjectStoreReadWrite,
+pub struct ObjectStore<Ty> {
+    inner: IdbObjectStore,
+    ty: PhantomData<Ty>,
 }
 
-impl ObjectStoreDuringUpgrade {
+impl<Ty> ObjectStore<Ty> {
+    /// Contract: the caller is responsible for choosing the right subtype
     pub(crate) fn new(inner: IdbObjectStore) -> Self {
         Self {
-            inner: ObjectStoreReadWrite::new(inner),
+            inner,
+            ty: PhantomData,
         }
     }
+
+    fn raw(&self) -> &IdbObjectStore {
+        &self.inner
+    }
+
+    // We actually implement all methods privately for all variants and then publicly expose only
+    // those methods that are valid. Hopefully this should help reduce code duplication (TODO does
+    // it actually?)
+
+    // Only valid during upgrade
 
     /// Changes the object store's name.
     ///
@@ -35,141 +44,106 @@ impl ObjectStoreDuringUpgrade {
     /// Currently this method will panic on error. If/when [this wasm-bindgen patch](https://github.com/rustwasm/wasm-bindgen/pull/2852)
     /// lands errors will be returned instead. Because of the return type, the change will be
     /// backwards-compatible.
-    pub fn set_name(&self, new_name: &str) -> Result<(), errors::SetNameError> {
+    fn set_name_inner(&self, new_name: &str) -> Result<(), errors::SetNameError> {
         self.raw().set_name(new_name);
         Ok(())
     }
 
     /// Create a new index for the object store.
-    pub fn create_index<'b, K: IntoKeyPath>(
-        &'b self,
-        name: &'b str,
-        key_path: K,
-    ) -> CreateIndex<'b, K> {
-        CreateIndex {
-            store: self.raw(),
-            name,
-            key_path,
-            params: IdbIndexParameters::new(),
-        }
-    }
-
-    /// Delete the index with the given name.
-    pub fn delete_index(&self, name: &str) -> Result<(), errors::DeleteIndexError> {
-        self.raw()
-            .delete_index(name)
-            .map_err(errors::DeleteIndexError::from)
-    }
-}
-
-impl Deref for ObjectStoreDuringUpgrade {
-    type Target = ObjectStoreReadWrite;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-/// A builder object for creating an index.
-///
-/// Once you have set the options you require, call `build` to run the operation.
-#[derive(Debug)]
-pub struct CreateIndex<'a, K: IntoKeyPath> {
-    store: &'a IdbObjectStore,
-    name: &'a str,
-    key_path: K,
-    params: IdbIndexParameters,
-}
-
-impl<'a, K: IntoKeyPath> CreateIndex<'a, K> {
-    /// If `true`, the index will not allow duplicate values for a single key.
-    pub fn unique(mut self, yes: bool) -> Self {
-        self.params.unique(yes);
-        self
-    }
-
-    /// If `true`, the index will add an entry in the index for each array element when the
-    /// *keyPath* resolves to an `Array`. If `false`, it will add one single entry containing the
-    /// `Array`.
-    pub fn multi_entry(mut self, yes: bool) -> Self {
-        self.params.multi_entry(yes);
-        self
-    }
-
-    // TODO potentially add `locale` in the future.
-
-    ///
-    /// Note that object stores are always sorted with their key values ascending.
-    /// Run the create index operation.
-    ///
-    /// If you don't call this method, then the index won't be created.
-    pub fn build(self) -> Result<Index, errors::CreateIndexError> {
-        self.store
+    fn create_index_inner<ITy>(
+        &self,
+        name: &str,
+        opts: IndexOptions,
+    ) -> Result<Index<ITy>, errors::CreateIndexError> {
+        self.inner
             .create_index_with_str_sequence_and_optional_parameters(
-                self.name,
-                &self.key_path.into_jsvalue(),
-                &self.params,
+                name,
+                &opts.key_path,
+                &opts.params,
             )
             .map(Index::new)
             .map_err(errors::CreateIndexError::from)
     }
-}
 
-/// An object store during a `readwrite` transaction.
-///
-/// Note that object stores are always sorted with their key values ascending.
-#[derive(Debug)]
-pub struct ObjectStoreReadWrite {
-    inner: ObjectStoreReadOnly,
-}
-
-impl ObjectStoreReadWrite {
-    pub(crate) fn new(inner: IdbObjectStore) -> Self {
-        Self {
-            inner: ObjectStoreReadOnly::new(inner),
-        }
+    /// Delete the index with the given name.
+    fn delete_index_inner(&self, name: &str) -> Result<(), errors::DeleteIndexError> {
+        self.raw()
+            .delete_index(name)
+            .map_err(errors::DeleteIndexError::from)
     }
+
+    // Valid during upgrade or read/write transaction
 
     /// Add an object to the database.
     ///
     /// This method returns a future, but always tries to add the object irrespective of whether
     /// the future is ever polled. If `bubble_errors = true` any errors returned here will also
     /// cause the transaction to abort.
-    pub fn add_raw(
+    async fn add_raw_inner(
         &self,
         value: &JsValue,
         key: Option<Key>,
         bubble_errors: bool,
-    ) -> impl Future<Output = Result<(), errors::AddError>> {
+    ) -> Result<(), errors::AddError> {
         let request = if let Some(key) = key {
-            self.raw().add_with_key(value, &key.0)
+            self.raw().add_with_key(value, &key)
         } else {
             self.raw().add(value)
         };
 
-        async move {
-            let request = match request {
-                Ok(request) => request,
-                Err(e) => return Err(errors::AddError::from(e)),
-            };
-            match Request::new(request, bubble_errors).await {
-                Ok(_) => Ok(()),
-                Err(e) => Err(errors::AddError::from(e)),
-            }
+        let request = match request {
+            Ok(request) => request,
+            Err(e) => return Err(errors::AddError::from(e)),
+        };
+        match Request::new(request, bubble_errors).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(errors::AddError::from(e)),
         }
     }
 
     /// Add an arbitrary object to the database using serde to serialize it to a JsValue.
-    pub fn add(
+    async fn add_inner(
         &self,
         value: &(impl Serialize + ?Sized),
         key: Option<Key>,
         bubble_errors: bool,
-    ) -> impl Future<Output = Result<(), errors::AddError>> {
+    ) -> Result<(), errors::AddError> {
         // TODO handle errors
-        let value = serde_wasm_bindgen::to_value(value).unwrap();
-        let request = self.add_raw(&value, key, bubble_errors);
-        async move { request.await }
+        let value = serde_wasm_bindgen::to_value(value).unwrap_unreachable();
+        self.add_raw_inner(&value, key, bubble_errors).await
+    }
+
+    async fn put_raw_inner(
+        &self,
+        value: &JsValue,
+        key: Option<Key>,
+        bubble_errors: bool,
+    ) -> Result<(), errors::AddError> {
+        let request = if let Some(key) = key {
+            self.raw().put_with_key(value, &key)
+        } else {
+            self.raw().put(value)
+        };
+
+        let request = match request {
+            Ok(request) => request,
+            Err(e) => return Err(errors::AddError::from(e)),
+        };
+        match Request::new(request, bubble_errors).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(errors::AddError::from(e)),
+        }
+    }
+
+    async fn put_inner(
+        &self,
+        value: &(impl Serialize + ?Sized),
+        key: Option<Key>,
+        bubble_errors: bool,
+    ) -> Result<(), errors::AddError> {
+        // TODO handle errors
+        let value = serde_wasm_bindgen::to_value(value).unwrap_unreachable();
+        self.put_raw_inner(&value, key, bubble_errors).await
     }
 
     /// Delete all objects in this object store.
@@ -179,7 +153,7 @@ impl ObjectStoreReadWrite {
     ///
     /// If `bubble_errors = true` then an error here will also cause the transaction to abort,
     /// whether the error is handled or not.
-    pub fn clear(
+    fn clear_inner(
         &self,
         bubble_errors: bool,
     ) -> impl Future<Output = Result<(), errors::ClearError>> {
@@ -195,72 +169,54 @@ impl ObjectStoreReadWrite {
 
     /// Delete records from the store that match the given key.
     // TODO delete_range function
-    pub async fn delete(
+    fn delete_inner(
         &self,
-        key: impl Into<Key>,
+        key: Key,
         bubble_errors: bool,
-    ) -> Result<(), errors::DeleteError> {
-        // give the optimizer the choice of inlining this function or not (minus generics)
-        async fn delete_inner(
-            this: &ObjectStoreReadWrite,
-            key: Key,
-            bubble_errors: bool,
-        ) -> Result<(), errors::DeleteError> {
-            let request = this
-                .raw()
-                .delete(&key.0)
-                .map_err(errors::DeleteError::from)?;
+    ) -> impl Future<Output = Result<(), errors::DeleteError>> {
+        let request = self.inner.delete(&key);
+        async move {
+            let request = request.map_err(errors::DeleteError::from)?;
             Request::new(request, bubble_errors)
                 .await
                 .map(|_| ())
                 .map_err(errors::DeleteError::from)
         }
-
-        delete_inner(self, key.into(), bubble_errors).await
-    }
-}
-impl Deref for ObjectStoreReadWrite {
-    type Target = ObjectStoreReadOnly;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-/// An object store during a `readonly` transaction.
-///
-/// Note that object stores are always sorted with their key values ascending. To iterate in the
-/// descending direction use `CursorDirection::Previous`.
-#[derive(Debug)]
-pub struct ObjectStoreReadOnly {
-    inner: IdbObjectStore,
-    // TODO cache key path so we can provide better errors when key not supplied?
-}
-
-impl ObjectStoreReadOnly {
-    pub(crate) fn new(inner: IdbObjectStore) -> Self {
-        Self { inner }
     }
 
-    fn raw(&self) -> &IdbObjectStore {
-        &self.inner
+    /// Execute the request and return an object implementing `Stream<Item = Result<Cursor, _>>`.
+    fn cursor_inner<CurTy>(
+        &self,
+        opts: CursorOptions,
+    ) -> Result<CursorStream<CurTy>, errors::LifetimeError> {
+        let dir = opts.direction.into();
+        let query = opts.query.as_ref();
+        let request = self
+            .inner
+            .open_cursor_with_range_and_direction(&query, dir)?;
+        Ok(CursorStream::new(StreamingRequest::new(
+            request,
+            opts.bubble_errors,
+        )))
     }
 
-    /// Get whether this object store uses an auto-incrementing key
-    pub fn auto_increment(&self) -> bool {
-        self.raw().auto_increment()
+    // Always valid (read only)
+
+    /// Whether this object store uses an auto-incrementing key
+    pub fn is_auto_increment(&self) -> bool {
+        self.inner.auto_increment()
     }
 
     /// Get a list containing all the names of indices on this object store.
     pub fn index_names(&self) -> StringList {
-        StringList::new(self.raw().index_names())
+        StringList::new(self.inner.index_names())
     }
 
     /// Get the key path for the object store.
     // Note: return value should be either null, a DOMString, or a sequence<DOMString> (from w3
     // spec)
-    pub fn key_path(&self) -> KeyPath {
-        let key_path = self.raw().key_path().unwrap_throw();
+    pub fn key_path_inner(&self) -> KeyPath {
+        let key_path = self.inner.key_path().unwrap_unreachable();
         if key_path.is_null() {
             KeyPath::None
         } else if let Some(key_path) = key_path.as_string() {
@@ -270,7 +226,7 @@ impl ObjectStoreReadOnly {
 
             let mut out = vec![];
             for val in &key_path {
-                out.push(val.unwrap_throw().as_string().unwrap_throw());
+                out.push(val.unwrap_unreachable().as_string().unwrap_unreachable());
             }
             KeyPath::Sequence(out)
         }
@@ -278,15 +234,21 @@ impl ObjectStoreReadOnly {
 
     /// The name of the object store.
     pub fn name(&self) -> String {
-        self.raw().name()
+        self.inner.name()
     }
 
     /// Count the number of records in the object store.
-    // TODO optional query argument - `count_query` function?
-    pub async fn count(&self) -> Result<u32, errors::CountError> {
-        let result = Request::new(self.raw().count().map_err(errors::CountError::from)?, false)
-            .await
-            .map_err(errors::CountError::from)?;
+    ///
+    /// To count all objects pass `&Query::ALL`.
+    pub async fn count(&self, query: &Query) -> Result<u32, errors::CountError> {
+        let result = Request::new(
+            self.inner
+                .count_with_key(query.as_ref())
+                .map_err(errors::CountError::from)?,
+            false,
+        )
+        .await
+        .map_err(errors::CountError::from)?;
         let result = result.as_f64().expect_throw("unreachable");
         // From reading MDN it seems indexeddb cannot handle counts more than 2^32-1.
         if result <= u32::MAX.into() {
@@ -297,88 +259,266 @@ impl ObjectStoreReadOnly {
     }
 
     /// Get an object from the object store by searching for the given key.
-    pub fn get<K, V>(&self, key: K) -> impl Future<Output = Result<Option<V>, errors::GetError>>
-    where
-        Key: TryFrom<K>,
-        V: DeserializeOwned,
-    {
-        fn get_inner(
-            this: &ObjectStoreReadOnly,
-            key: Key,
-        ) -> impl Future<Output = Result<JsValue, errors::GetError>> {
-            let request = this.raw().get(&key.0).map_err(errors::GetError::from);
-            async move {
-                let request = Request::new(request?, false);
-                request.await.map_err(errors::GetError::from)
-            }
-        }
-
-        let key = match Key::try_from(key) {
-            Ok(key) => key,
-            Err(_) => return Either::Left(ready(Err(errors::GetError::InvalidKey))),
-        };
-        Either::Right(get_inner(self, key).map(|output| {
-            serde_wasm_bindgen::from_value(output?).map_err(errors::GetError::Deserialize)
-        }))
+    pub async fn get_raw(&self, key: Key) -> Result<JsValue, errors::LifetimeError> {
+        let request = self.inner.get(&key)?;
+        Ok(Request::new(request, false).await?)
     }
 
     /// Get an object from the object store by searching for the given key.
     ///
-    /// The result will be need to be deserialized from a javascript array, so you should use a
-    /// type like `Vec<T>` to deserialize into. The reason we don't return a `Vec` is that you
-    /// might want to use a different collection, for example `im::Vector` from the
-    /// [`im`](https://crates.io/crates/im) crate, or `futures_signals::SignalVec::MutableVec` from
-    /// the [`futures_signals`](https://crates.io/crates/futures_signals) crate
-    pub async fn get_all<V>(&self) -> Result<V, errors::GetError>
+    /// Automatically deserializes the result.
+    pub async fn get<V>(
+        &self,
+        key: Key,
+    ) -> Result<Option<V>, errors::DeSerialize<errors::LifetimeError>>
     where
-        V: DeserializeOwned,
+        V: for<'de> Deserialize<'de>,
     {
-        Request::new(self.raw().get_all().map_err(errors::GetError::from)?, false)
-            .await
-            .map_err(errors::GetError::from)
-            .and_then(|val| {
-                serde_wasm_bindgen::from_value(val).map_err(errors::GetError::Deserialize)
-            })
+        Ok(serde_wasm_bindgen::from_value(
+            self.get_raw(key)
+                .await
+                .map_err(errors::DeSerialize::Other)?,
+        )?)
     }
 
-    /// Open a cursor into the object store.
+    /// Get all objects from the object store matching the given query.
     ///
-    /// This returns a builder - call `build` on it to submit the request. Defaults to iterating
-    /// over all values in the store, going forwards.
+    /// Use `Query::ALL` to get all values.
     ///
-    /// # Examples
+    /// The second argument is the maximum number of objects to return. If `None`, all matching
+    /// objects will be returned.
+    pub async fn get_all_raw(
+        &self,
+        query: &Query,
+        limit: Option<u32>,
+    ) -> Result<JsValue, errors::LifetimeError> {
+        let request = match limit {
+            Some(limit) => self
+                .inner
+                .get_all_with_key_and_limit(query.as_ref(), limit)?,
+            None => self.inner.get_all_with_key(query.as_ref())?,
+        };
+        Ok(Request::new(request, false).await?)
+    }
+
+    /// Get a sequence of values
     ///
-    /// > For all examples assume `store` is an open object store
+    /// The user should choose a collection type `C` that can deserialize a sequence of values (for
+    /// example `Vec` from the standard library).
     ///
-    /// Iterate over all records in ascending order (like [`get_all`], but doesn't require holding
-    /// all records in memory at once)
+    /// Use `Query::ALL` to get all values.
     ///
-    /// ```no_run
-    /// use futures::StreamExt;
+    /// The second argument is the maximum number of objects to return. If `None`, all matching
+    /// objects will be returned.
+    pub async fn get_all<C>(
+        &self,
+        query: &Query,
+        limit: Option<u32>,
+    ) -> Result<C, errors::DeSerialize<errors::LifetimeError>>
+    where
+        C: for<'de> Deserialize<'de>,
+    {
+        Ok(serde_wasm_bindgen::from_value(
+            self.get_all_raw(query, limit)
+                .await
+                .map_err(errors::DeSerialize::Other)?,
+        )?)
+    }
+
+    /// Open an index with the given name.
     ///
-    /// let mut iter = store.open_cursor().build();
-    /// while let Some(object) = store.next().await {
-    ///     // do something with the object
-    /// }
-    /// ```
-    pub fn open_cursor(&self) -> OpenCursor {
-        OpenCursor::new(self)
+    /// Returns `None` if no index with the given name exists.
+    pub fn index(&self, name: &str) -> Result<Option<Index<Ty>>, errors::LifetimeError> {
+        match self.inner.index(name) {
+            Ok(idx) => Ok(Some(Index::new(idx))),
+            Err(e) => {
+                let e = errors::LifetimeError::from(e);
+                if matches!(
+                    &e,
+                    errors::LifetimeError::Unexpected(msg) if msg.as_str() == "NotFoundError")
+                {
+                    Ok(None)
+                } else {
+                    Err(e)
+                }
+            }
+        }
     }
 }
 
-/// Builder struct to open a cursor
+impl ObjectStore<Upgrade> {
+    /// Changes the object store's name.
+    ///
+    /// # Panics
+    ///
+    /// Currently this method will panic on error. If/when [this wasm-bindgen patch](https://github.com/rustwasm/wasm-bindgen/pull/2852)
+    /// lands errors will be returned instead. Because of the return type, the change will be
+    /// backwards-compatible.
+    pub fn set_name(&self, new_name: &str) -> Result<(), errors::SetNameError> {
+        self.set_name_inner(new_name)
+    }
+
+    /// Create a new index for the object store.
+    pub fn create_index(
+        &self,
+        name: &str,
+        opts: IndexOptions,
+    ) -> Result<Index<Upgrade>, errors::CreateIndexError> {
+        self.create_index_inner(name, opts)
+    }
+
+    /// Delete the index with the given name.
+    pub fn delete_index(&self, name: &str) -> Result<(), errors::DeleteIndexError> {
+        self.delete_index_inner(name)
+    }
+}
+
+macro_rules! impl_ReadWrite {
+    ($ty:ty) => {
+        impl $ty {
+            /// Add an object to the database.
+            ///
+            /// This method returns a future, but always tries to add the object irrespective of whether
+            /// the future is ever polled. If `bubble_errors = true` any errors returned here will also
+            /// cause the transaction to abort.
+            pub async fn add_raw(
+                &self,
+                value: &JsValue,
+                key: Option<Key>,
+                bubble_errors: bool,
+            ) -> Result<(), errors::AddError> {
+                self.add_raw_inner(value, key, bubble_errors).await
+            }
+
+            /// Add an arbitrary object to the database using serde to serialize it to a JsValue.
+            pub async fn add(
+                &self,
+                value: &(impl Serialize + ?Sized),
+                key: Option<Key>,
+                bubble_errors: bool,
+            ) -> Result<(), errors::AddError> {
+                self.add_inner(value, key, bubble_errors).await
+            }
+
+            /// Update an object in the database using serde to serialize it to a JsValue.
+            pub async fn put_raw(
+                &self,
+                value: &JsValue,
+                key: Option<Key>,
+                bubble_errors: bool,
+            ) -> Result<(), errors::AddError> {
+                self.put_raw_inner(value, key, bubble_errors).await
+            }
+
+            /// Update an object in the database using serde to serialize it to a JsValue.
+            pub async fn put(
+                &self,
+                value: &(impl Serialize + ?Sized),
+                key: Option<Key>,
+                bubble_errors: bool,
+            ) -> Result<(), errors::AddError> {
+                self.put_inner(value, key, bubble_errors).await
+            }
+
+            /// Delete all objects in this object store.
+            ///
+            /// This method returns a future, but always tries to add the object irrespective of whether
+            /// the future is ever polled.
+            ///
+            /// If `bubble_errors = true` then an error here will also cause the transaction to abort,
+            /// whether the error is handled or not.
+            pub fn clear(
+                &self,
+                bubble_errors: bool,
+            ) -> impl Future<Output = Result<(), errors::ClearError>> {
+                self.clear_inner(bubble_errors)
+            }
+
+            /// Delete records from the store that match the given key.
+            pub fn delete(
+                &self,
+                key: impl Into<Key>,
+                bubble_errors: bool,
+            ) -> impl Future<Output = Result<(), errors::DeleteError>> {
+                self.delete_inner(key.into(), bubble_errors)
+            }
+
+            /// Iterate over records in the store using a cursor.
+            pub fn cursor(
+                &self,
+                opts: CursorOptions,
+            ) -> Result<CursorStream<ReadWrite>, errors::LifetimeError> {
+                self.cursor_inner(opts)
+            }
+        }
+    };
+}
+
+impl_ReadWrite!(ObjectStore<Upgrade>);
+impl_ReadWrite!(ObjectStore<ReadWrite>);
+
+impl ObjectStore<ReadOnly> {
+    /// Iterate over records in the store using a cursor.
+    pub fn cursor(
+        &self,
+        opts: CursorOptions,
+    ) -> Result<CursorStream<ReadOnly>, errors::LifetimeError> {
+        self.cursor_inner(opts)
+    }
+}
+
+/// A builder object for creating an index.
+///
+/// Once you have set the options you require, call `build` to run the operation.
 #[derive(Debug)]
-pub struct OpenCursor<'a> {
-    store: &'a ObjectStoreReadOnly,
+pub struct IndexOptions {
+    key_path: JsValue,
+    params: IdbIndexParameters,
+}
+
+impl IndexOptions {
+    /// The default options
+    pub fn new() -> Self {
+        Self {
+            key_path: JsValue::UNDEFINED,
+            params: IdbIndexParameters::new(),
+        }
+    }
+
+    /// Set the key path for the index.
+    pub fn key_path(mut self, key_path: impl IntoKeyPath) -> Self {
+        self.key_path = key_path.into_jsvalue();
+        self
+    }
+
+    /// If `true`, the index will not allow duplicate values for a single key.
+    pub fn unique(mut self, yes: bool) -> Self {
+        self.params.unique(yes);
+        self
+    }
+
+    /// If `true`, the index will add an entry in the index for each array element when the
+    /// *keyPath* resolves to an `Array`. If `false`, it will add one single entry containing the
+    /// `Array`.
+    pub fn multi_entry(mut self, yes: bool) -> Self {
+        self.params.multi_entry(yes);
+        self
+    }
+
+    // TODO potentially add `locale` in the future.
+}
+
+/// Options when opening a cursor.
+#[derive(Debug)]
+pub struct CursorOptions {
     query: Query,
     direction: CursorDirection,
     bubble_errors: bool,
 }
 
-impl<'store> OpenCursor<'store> {
-    fn new(store: &'store ObjectStoreReadOnly) -> Self {
+impl CursorOptions {
+    fn new() -> Self {
         Self {
-            store,
             query: Query::ALL,
             direction: CursorDirection::Next,
             bubble_errors: true,
@@ -404,18 +544,15 @@ impl<'store> OpenCursor<'store> {
         self
     }
 
-    /// Execute the request and return an object implementing `Stream<Item = Result<Cursor, _>>`.
-    pub fn build(self) -> Result<CursorStream, errors::GetError> {
-        let store = self.store.raw();
-        let dir = self.direction.into();
-        let request = match self.query.inner.as_ref() {
-            Some(range) => store.open_cursor_with_range_and_direction(&range, dir),
-            None => store.open_cursor_with_range_and_direction(&JsValue::UNDEFINED, dir),
-        }
-        .map_err(errors::GetError::from)?;
-        Ok(CursorStream::new(StreamingRequest::new(
-            request,
-            self.bubble_errors,
-        )))
+    /// Whether errors should abort the whole transaction.
+    pub fn bubble_errors(mut self, bubble_errors: bool) -> Self {
+        self.bubble_errors = bubble_errors;
+        self
+    }
+}
+
+impl Default for CursorOptions {
+    fn default() -> Self {
+        Self::new()
     }
 }

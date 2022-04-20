@@ -1,43 +1,92 @@
-use super::{errors, StreamingRequest};
+use super::{errors, util::UnreachableExt, Request, StreamingRequest};
 use futures::stream::Stream;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     cell::Cell,
-    num::NonZeroU32,
+    marker::PhantomData,
     ops::Deref,
     pin::Pin,
+    sync::{
+        atomic::{AtomicU8, Ordering},
+        Arc,
+    },
     task::{Context, Poll},
 };
-use wasm_bindgen::{prelude::*, throw_str, JsCast, UnwrapThrowExt};
+use wasm_bindgen::{prelude::*, throw_str, JsCast};
 use web_sys::{IdbCursor, IdbCursorDirection, IdbCursorWithValue};
+
+#[derive(Debug, Clone)]
+struct StreamState {
+    /// - `0`: No cursor
+    /// - `1`: Active cursor
+    /// - `2`: Multi cursors error
+    inner: Arc<AtomicU8>,
+}
+
+impl StreamState {
+    fn new() -> Self {
+        Self {
+            inner: Arc::new(AtomicU8::new(0)),
+        }
+    }
+
+    fn take(&self) -> bool {
+        if self.inner.load(Ordering::SeqCst) == 0 {
+            self.inner
+                .compare_exchange(0, 1, Ordering::SeqCst, Ordering::SeqCst)
+                .is_ok()
+        } else {
+            // Set to error unconditionally.
+            self.inner.store(2, Ordering::SeqCst);
+            false
+        }
+    }
+
+    fn untake(&self) {
+        let _ = self
+            .inner
+            .compare_exchange(1, 0, Ordering::SeqCst, Ordering::SeqCst);
+    }
+}
 
 /// Represents an async stream of values from the DB. use the `Stream` impl to access the cursor
 /// and its values.
 #[derive(Debug)]
-pub struct CursorStream {
+pub struct CursorStream<Ty> {
     /// Every time the request succeeds, its result is an instance of cursor.
     request: StreamingRequest,
+    ty: PhantomData<Ty>,
+    state: StreamState,
 }
 
-impl CursorStream {
+impl<Ty> CursorStream<Ty> {
     pub(crate) fn new(request: StreamingRequest) -> Self {
-        Self { request }
+        Self {
+            request,
+            ty: PhantomData,
+            state: StreamState::new(),
+        }
     }
 }
 
-impl Stream for CursorStream {
-    type Item = Result<Cursor, errors::CursorError>;
+impl<Ty: Unpin> Stream for CursorStream<Ty> {
+    type Item = Result<Cursor<Ty>, errors::LifetimeError>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         match Pin::new(&mut self.request).poll_next(cx) {
             Poll::Pending => Poll::Pending,
             Poll::Ready(None) => Poll::Ready(None),
-            Poll::Ready(Some(Err(e))) => Poll::Ready(Some(Err(errors::CursorError::from(e)))),
+            Poll::Ready(Some(Err(e))) => Poll::Ready(Some(Err(errors::LifetimeError::from(e)))),
             Poll::Ready(Some(Ok(next))) => {
-                let cursor = next
-                    .dyn_into::<IdbCursorWithValue>()
-                    .expect_throw("unreachable");
-                Poll::Ready(Some(Ok(Cursor::new(cursor))))
+                let cursor = next.dyn_into::<IdbCursorWithValue>().unwrap_unreachable();
+                if self.state.take() {
+                    Poll::Ready(Some(Ok(Cursor::new(cursor, self.state.clone()))))
+                } else {
+                    // TODO add an error type here for overlapping cursors.
+                    Poll::Ready(Some(Err(errors::LifetimeError::Unexpected(
+                        "overlapping cursors".into(),
+                    ))))
+                }
             }
         }
     }
@@ -49,14 +98,14 @@ impl Stream for CursorStream {
 /// modelled by having `Cursor` (cursors with values) `Deref` to `KeyCursor` (cursors without
 /// values).
 #[derive(Debug)]
-pub struct Cursor {
-    inner: KeyCursor,
+pub struct Cursor<Ty> {
+    inner: KeyCursor<Ty>,
 }
 
-impl Cursor {
-    fn new(inner: IdbCursorWithValue) -> Self {
+impl<Ty> Cursor<Ty> {
+    fn new(inner: IdbCursorWithValue, state: StreamState) -> Self {
         Self {
-            inner: KeyCursor::new(inner.into()),
+            inner: KeyCursor::new(inner.into(), state),
         }
     }
 
@@ -66,7 +115,7 @@ impl Cursor {
 
     /// Get the value at the current location of this cursor.
     pub fn value_raw(&self) -> JsValue {
-        self.raw().value().expect_throw("unreachable")
+        self.raw().value().unwrap_unreachable()
     }
 
     /// The value of the object the cursor is currently pointing to.
@@ -76,10 +125,51 @@ impl Cursor {
     {
         serde_wasm_bindgen::from_value(self.value_raw())
     }
+
+    /// Update the value the cursor is currently pointing to.
+    ///
+    /// Note that the primary key must remain the same. If the primary key is changed (only
+    /// possible using in-tree primary keys) then an error will be returned.
+    pub async fn update_raw(
+        &self,
+        updated_value: &JsValue,
+        bubble_errors: bool,
+    ) -> Result<(), errors::LifetimeError> {
+        let req_raw = self.raw().update(updated_value)?;
+        Request::new(req_raw, bubble_errors).await?;
+        Ok(())
+    }
+
+    // TODO we need to handle the error case where the updated value changed the primary key (which
+    // will cause an exception). Need a new error type.
+    /// Update the value the cursor is currently pointing to.
+    ///
+    /// Note that the primary key must remain the same. If the primary key is changed (only
+    /// possible using in-tree primary keys) then an error will be returned.
+    pub async fn update<V>(
+        &self,
+        updated_value: &V,
+        bubble_errors: bool,
+    ) -> Result<(), errors::DeSerialize<errors::LifetimeError>>
+    where
+        V: Serialize,
+    {
+        let raw_value = serde_wasm_bindgen::to_value(updated_value)?;
+        self.update_raw(&raw_value, bubble_errors)
+            .await
+            .map_err(errors::DeSerialize::Other)
+    }
+
+    /// Delete the value the cursor is currently pointing to.
+    pub async fn delete(&self, bubble_errors: bool) -> Result<(), errors::LifetimeError> {
+        let req_raw = self.raw().delete()?;
+        Request::new(req_raw, bubble_errors).await?;
+        Ok(())
+    }
 }
 
-impl Deref for Cursor {
-    type Target = KeyCursor;
+impl<Ty> Deref for Cursor<Ty> {
+    type Target = KeyCursor<Ty>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
@@ -88,18 +178,23 @@ impl Deref for Cursor {
 
 /// Wrapper round IDBCursor
 #[derive(Debug)]
-pub struct KeyCursor {
+pub struct KeyCursor<Ty> {
     inner: IdbCursor,
     /// Keep track of if the user has advanced the cursor somehow (if they don't we call `advance`
     /// on drop)
     advanced: Cell<bool>,
+    /// Ensure that only one cursor object is held at any one time.
+    state: StreamState,
+    ty: PhantomData<Ty>,
 }
 
-impl KeyCursor {
-    fn new(inner: IdbCursor) -> Self {
+impl<Ty> KeyCursor<Ty> {
+    fn new(inner: IdbCursor, state: StreamState) -> Self {
         Self {
             inner,
             advanced: Cell::new(false),
+            state,
+            ty: PhantomData,
         }
     }
 
@@ -111,7 +206,7 @@ impl KeyCursor {
     /// Get the primary key for the current record.
     pub fn primary_key_raw(&self) -> JsValue {
         // Unwrap: the `Stream` implementation ensures that the cursor is valid and not moving
-        self.inner.primary_key().expect_throw("unreachable")
+        self.inner.primary_key().unwrap_unreachable()
     }
 
     /// Get the primary key for the current record.
@@ -123,10 +218,15 @@ impl KeyCursor {
     }
 
     /// Advance the cursor by the given value.
-    pub fn advance(self, amount: NonZeroU32) -> Result<(), errors::AdvanceError> {
-        self.inner
-            .advance(amount.get())
-            .map_err(errors::AdvanceError::from)?;
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `amount` is `0`.
+    pub fn advance(self, amount: u32) -> Result<(), errors::LifetimeError> {
+        if amount == 0 {
+            throw_str("advance amount must be > 0");
+        }
+        self.inner.advance(amount)?;
         self.advanced.set(true);
         Ok(())
     }
@@ -134,10 +234,20 @@ impl KeyCursor {
     /// Move the cursor on to the next record.
     ///
     /// Equivalent to `cursor.advance(1)`
-    pub fn continue_(self) -> Result<(), errors::AdvanceError> {
-        self.inner.continue_().map_err(errors::AdvanceError::from)?;
+    pub fn continue_(self) -> Result<(), errors::LifetimeError> {
+        self.inner.continue_()?;
         self.advanced.set(true);
         Ok(())
+    }
+}
+
+impl<Ty> Drop for KeyCursor<Ty> {
+    fn drop(&mut self) {
+        if !self.advanced.get() {
+            // ignore errors
+            let _ = self.inner.continue_();
+        }
+        self.state.untake();
     }
 }
 
@@ -193,7 +303,7 @@ impl From<IdbCursorDirection> for CursorDirection {
             IdbCursorDirection::Nextunique => CursorDirection::NextUnique,
             IdbCursorDirection::Prev => CursorDirection::Prev,
             IdbCursorDirection::Prevunique => CursorDirection::PrevUnique,
-            _ => throw_str("unexpected indexeddb cursor direction"),
+            _ => throw_str("unreachable"),
         }
     }
 }

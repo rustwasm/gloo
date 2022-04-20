@@ -1,5 +1,15 @@
-use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{intern, UnwrapThrowExt};
 use web_sys::DomStringList;
+
+pub(crate) trait UnreachableExt<T>: UnwrapThrowExt<T> {
+    fn unwrap_unreachable(self) -> T;
+}
+
+impl<T, R: UnwrapThrowExt<T>> UnreachableExt<T> for R {
+    fn unwrap_unreachable(self) -> T {
+        self.expect_throw(intern("unreachable"))
+    }
+}
 
 /// A wrapper around [`web_sys::DomStringList`] for easy iteration.
 #[derive(Debug)]
