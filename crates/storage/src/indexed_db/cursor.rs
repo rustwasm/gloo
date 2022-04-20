@@ -31,12 +31,13 @@ impl StreamState {
     }
 
     fn take(&self) -> bool {
-        if self.inner.load(Ordering::SeqCst) == 0 {
-            self.inner
-                .compare_exchange(0, 1, Ordering::SeqCst, Ordering::SeqCst)
-                .is_ok()
+        if self
+            .inner
+            .compare_exchange(0, 1, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
+        {
+            true
         } else {
-            // Set to error unconditionally.
             self.inner.store(2, Ordering::SeqCst);
             false
         }
