@@ -236,7 +236,7 @@ impl Request {
         let url = web_sys::Url::new(&request.url()).map_err(js_to_error)?;
         let combined_query = match url.search().as_str() {
             "" => self.query.to_string(),
-            _ => format!("{}&{}", url.search(), self.query.to_string()),
+            _ => format!("{}&{}", url.search(), self.query),
         };
         url.set_search(&combined_query);
         Ok(url)
