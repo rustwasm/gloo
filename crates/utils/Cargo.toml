@@ -26,3 +26,6 @@ features = [
     "HtmlHeadElement",
     "Element",
 ]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
