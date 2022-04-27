@@ -3,28 +3,6 @@ use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
 
-const HTTPBIN_URL: &str = env!("HTTPBIN_URL");
-
-#[wasm_bindgen_test]
-async fn query_preserve_initial() {
-    let resp = Request::get(&format!("{}/get?key=value", HTTPBIN_URL))
-        .query([("q", "val")])
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(resp.url(), format!("{}/get?key=value&q=val", HTTPBIN_URL));
-}
-
-#[wasm_bindgen_test]
-async fn query_preserve_duplicate_params() {
-    let resp = Request::get(&format!("{}/get", HTTPBIN_URL))
-        .query([("q", "1"), ("q", "2")])
-        .send()
-        .await
-        .unwrap();
-    assert_eq!(resp.url(), format!("{}/get?q=1&q=2", HTTPBIN_URL));
-}
-
 #[wasm_bindgen_test]
 fn query_params_entries() {
     let params = QueryParams::new();
