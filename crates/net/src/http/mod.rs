@@ -29,7 +29,7 @@ use wasm_bindgen_futures::JsFuture;
 use serde::de::DeserializeOwned;
 
 pub use headers::Headers;
-use query::QueryParams;
+pub use query::QueryParams;
 pub use web_sys::{
     AbortSignal, FormData, ObserverCallback, ReadableStream, ReferrerPolicy, RequestCache,
     RequestCredentials, RequestMode, RequestRedirect, ResponseType,
