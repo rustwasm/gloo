@@ -129,6 +129,8 @@ impl Request {
     /// It is possible to append the same parameters with the same name multiple times, so
     /// `.query([("a", "1"), ("a", "2")])` results in the query string `a=1&a=2`.
     ///
+    /// This method preserves the query parameters set as part of URL in [`Request::new`]
+    ///
     /// # Examples
     ///
     /// The query parameters can be passed as many different types:
