@@ -14,6 +14,7 @@ use wasm_bindgen::{JsValue, UnwrapThrowExt};
 /// use gloo_utils::iter::UncheckedIter;
 /// use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
 ///
+/// # fn no_run() {
 /// let map = js_sys::Map::new();
 /// map.set(&JsValue::from("one"), &JsValue::from(1_f64));
 ///
@@ -27,6 +28,7 @@ use wasm_bindgen::{JsValue, UnwrapThrowExt};
 ///
 /// assert_eq!(iter.next(), Some((String::from("one"), 1_f64)));
 /// assert_eq!(iter.next(), None);
+/// # }
 /// ```
 pub struct UncheckedIter(js_sys::Iterator);
 
