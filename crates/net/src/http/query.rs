@@ -24,7 +24,7 @@ impl QueryParams {
         }
     }
 
-    /// Convert [`QueryParams`] to [`web_sys::UrlSearchParams`].
+    /// Create [`QueryParams`] from [`web_sys::UrlSearchParams`] object.
     pub fn from_raw(raw: web_sys::UrlSearchParams) -> Self {
         Self { raw }
     }
@@ -72,9 +72,11 @@ impl QueryParams {
     }
 }
 
-/// The formatted query parameters ready to be used as a URL query string.
+/// The formatted query parameters ready to be used in a URL query string.
 ///
 /// # Examples
+///
+/// The resulting string does not contain a leading `?` and is properly encoded:
 ///
 /// ```
 /// # fn no_run() {
@@ -89,10 +91,6 @@ impl QueryParams {
 /// assert_eq!(params.to_string(), "a=1&b=2&key=ab%26c");
 /// # }
 /// ```
-///
-/// The parameters are properly escaped for use
-///
-/// without leading `?`, for instance `a=1&b=2`.
 impl fmt::Display for QueryParams {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.raw.to_string())
