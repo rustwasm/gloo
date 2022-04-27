@@ -229,7 +229,7 @@ impl Request {
     }
 
     /// Build the URL including additional query parameters.
-    pub fn build_url(&self) -> Result<web_sys::Url, Error> {
+    fn build_url(&self) -> Result<web_sys::Url, Error> {
         // To preserve existing query parameters of self.url, it must be parsed and extended with
         // self.query's parameters. As web_sys::Url just accepts absolute URLs, retrieve the
         // absolute URL through creating a web_sys::Request object.
