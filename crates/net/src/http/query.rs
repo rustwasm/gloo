@@ -55,7 +55,7 @@ impl QueryParams {
     }
 
     /// Iterate over (name, value) pairs of the query parameters.
-    pub fn entries(&self) -> impl Iterator<Item = (String, String)> {
+    pub fn iter(&self) -> impl Iterator<Item = (String, String)> {
         // Here we cheat and cast to a map even though `self` isn't, because the method names match
         // and everything works. Is there a better way? Should there be a `MapLike` or
         // `MapIterator` type in `js_sys`?
@@ -99,6 +99,6 @@ impl fmt::Display for QueryParams {
 
 impl fmt::Debug for QueryParams {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_list().entries(self.entries()).finish()
+        f.debug_list().entries(self.iter()).finish()
     }
 }

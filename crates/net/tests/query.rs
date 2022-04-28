@@ -4,11 +4,11 @@ use wasm_bindgen_test::*;
 wasm_bindgen_test_configure!(run_in_browser);
 
 #[wasm_bindgen_test]
-fn query_params_entries() {
+fn query_params_iter() {
     let params = QueryParams::new();
     params.append("a", "1");
     params.append("b", "value");
-    let mut entries = params.entries();
+    let mut entries = params.iter();
     assert_eq!(entries.next(), Some(("a".into(), "1".into())));
     assert_eq!(entries.next(), Some(("b".into(), "value".into())));
     assert_eq!(entries.next(), None);
