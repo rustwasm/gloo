@@ -129,11 +129,9 @@ impl Request {
     /// It is possible to append the same parameters with the same name multiple times, so
     /// `.query([("a", "1"), ("a", "2")])` results in the query string `a=1&a=2`.
     ///
-    /// This method preserves the query parameters set as part of URL in [`Request::new`]
-    ///
     /// # Examples
     ///
-    /// The query parameters can be passed as many different types:
+    /// The query parameters can be passed in various different forms:
     ///
     /// ```
     /// # fn no_run() {
@@ -141,7 +139,7 @@ impl Request {
     /// use gloo_net::http::Request;
     ///
     /// let slice_params = [("key", "value")];
-    /// let vec_params = vec![("a", 3), ("b", 4)];
+    /// let vec_params = vec![("a", "3"), ("b", "4")];
     /// let mut map_params: HashMap<&'static str, &'static str> = HashMap::new();
     /// map_params.insert("key", "another_value");
     ///
@@ -155,10 +153,10 @@ impl Request {
     pub fn query<'a, T, V>(self, params: T) -> Self
     where
         T: IntoIterator<Item = (&'a str, V)>,
-        V: ToString,
+        V: AsRef<str>,
     {
         for (name, value) in params {
-            self.query.append(name, value.to_string().as_str());
+            self.query.append(name, value.as_ref());
         }
         self
     }
