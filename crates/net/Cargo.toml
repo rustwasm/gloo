@@ -59,6 +59,8 @@ websocket = [
 # Enables the HTTP API
 http = [
     'web-sys/Headers',
+    'web-sys/UrlSearchParams',
+    'web-sys/Url',
     'web-sys/Request',
     'web-sys/RequestInit',
     'web-sys/RequestMode',

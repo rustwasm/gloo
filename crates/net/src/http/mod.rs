@@ -14,6 +14,7 @@
 //! ```
 
 mod headers;
+mod query;
 
 use crate::{js_to_error, Error};
 use js_sys::{ArrayBuffer, Uint8Array};
@@ -28,6 +29,7 @@ use wasm_bindgen_futures::JsFuture;
 use serde::de::DeserializeOwned;
 
 pub use headers::Headers;
+pub use query::QueryParams;
 pub use web_sys::{
     AbortSignal, FormData, ObserverCallback, ReadableStream, ReferrerPolicy, RequestCache,
     RequestCredentials, RequestMode, RequestRedirect, ResponseType,
@@ -73,6 +75,7 @@ impl fmt::Display for Method {
 pub struct Request {
     options: web_sys::RequestInit,
     headers: Headers,
+    query: QueryParams,
     url: String,
 }
 
@@ -84,6 +87,7 @@ impl Request {
         Self {
             options: web_sys::RequestInit::new(),
             headers: Headers::new(),
+            query: QueryParams::new(),
             url: url.into(),
         }
     }
@@ -116,6 +120,44 @@ impl Request {
     /// Sets a header.
     pub fn header(self, key: &str, value: &str) -> Self {
         self.headers.set(key, value);
+        self
+    }
+
+    /// Append query parameters to the url, given as `(name, value)` tuples. Values can be of any
+    /// type that implements [`ToString`].
+    ///
+    /// It is possible to append the same parameters with the same name multiple times, so
+    /// `.query([("a", "1"), ("a", "2")])` results in the query string `a=1&a=2`.
+    ///
+    /// # Examples
+    ///
+    /// The query parameters can be passed in various different forms:
+    ///
+    /// ```
+    /// # fn no_run() {
+    /// use std::collections::HashMap;
+    /// use gloo_net::http::Request;
+    ///
+    /// let slice_params = [("key", "value")];
+    /// let vec_params = vec![("a", "3"), ("b", "4")];
+    /// let mut map_params: HashMap<&'static str, &'static str> = HashMap::new();
+    /// map_params.insert("key", "another_value");
+    ///
+    /// let r = Request::get("/search")
+    ///     .query(slice_params)
+    ///     .query(vec_params)
+    ///     .query(map_params);
+    /// // Result URL: /search?key=value&a=3&b=4&key=another_value
+    /// # }
+    /// ```
+    pub fn query<'a, T, V>(self, params: T) -> Self
+    where
+        T: IntoIterator<Item = (&'a str, V)>,
+        V: AsRef<str>,
+    {
+        for (name, value) in params {
+            self.query.append(name, value.as_ref());
+        }
         self
     }
 
@@ -186,12 +228,27 @@ impl Request {
         self
     }
 
+    /// Build the URL including additional query parameters.
+    fn build_url(&self) -> Result<web_sys::Url, Error> {
+        // To preserve existing query parameters of self.url, it must be parsed and extended with
+        // self.query's parameters. As web_sys::Url just accepts absolute URLs, retrieve the
+        // absolute URL through creating a web_sys::Request object.
+        let request = web_sys::Request::new_with_str(&self.url).map_err(js_to_error)?;
+        let url = web_sys::Url::new(&request.url()).map_err(js_to_error)?;
+        let combined_query = match url.search().as_str() {
+            "" => self.query.to_string(),
+            _ => format!("{}&{}", url.search(), self.query),
+        };
+        url.set_search(&combined_query);
+        Ok(url)
+    }
+
     /// Executes the request.
     pub async fn send(mut self) -> Result<Response, Error> {
+        let url = String::from(&self.build_url()?.to_string());
         self.options.headers(&self.headers.into_raw());
-
-        let request = web_sys::Request::new_with_str_and_init(&self.url, &self.options)
-            .map_err(js_to_error)?;
+        let request =
+            web_sys::Request::new_with_str_and_init(&url, &self.options).map_err(js_to_error)?;
 
         let promise = gloo_utils::window().fetch_with_request(&request);
         let response = JsFuture::from(promise).await.map_err(js_to_error)?;

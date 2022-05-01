@@ -44,13 +44,13 @@ mod feat_serialize {
         assert_eq!(window().location().hash().unwrap(), "#/path-b");
 
         history.back();
-        sleep(Duration::from_millis(100)).await;
+        sleep(Duration::from_millis(200)).await;
         assert_eq!(history.location().path(), "/");
         assert_eq!(window().location().pathname().unwrap(), "/");
         assert_eq!(window().location().hash().unwrap(), "#/");
 
         history.forward();
-        sleep(Duration::from_millis(100)).await;
+        sleep(Duration::from_millis(200)).await;
         assert_eq!(history.location().path(), "/path-b");
         assert_eq!(window().location().pathname().unwrap(), "/");
         assert_eq!(window().location().hash().unwrap(), "#/path-b");
