@@ -121,18 +121,16 @@ impl Future for OpenDbRequest {
 
         match Pin::new(&mut self.inner).poll(cx) {
             Poll::Pending => {
-                if self.error_on_block {
-                    if self.blocked_listener.is_none() {
-                        self.blocked_listener =
-                            Some(EventListener::once(&self.inner.inner, "blocked", {
-                                let blocked = self.blocked.clone();
-                                let waker = cx.waker().clone();
-                                move |_| {
-                                    blocked.store(true, Ordering::SeqCst);
-                                    waker.wake();
-                                }
-                            }))
-                    }
+                if self.error_on_block && self.blocked_listener.is_none() {
+                    self.blocked_listener =
+                        Some(EventListener::once(&self.inner.inner, "blocked", {
+                            let blocked = self.blocked.clone();
+                            let waker = cx.waker().clone();
+                            move |_| {
+                                blocked.store(true, Ordering::SeqCst);
+                                waker.wake();
+                            }
+                        }))
                 }
                 Poll::Pending
             }
