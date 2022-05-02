@@ -21,7 +21,7 @@ impl<Ty> Index<Ty> {
 
     /// Get the path to the key/keys for this index.
     pub fn key_path(&self) -> JsValue {
-        self.inner.key_path().unwrap_unreachable()
+        self.inner.key_path().unreachable_throw()
     }
 
     /// How an array key is handled.
@@ -43,7 +43,7 @@ impl<Ty> Index<Ty> {
         let count = Request::new(request, false)
             .await
             .map_err(errors::LifetimeError::from)?;
-        let count = count.as_f64().unwrap_unreachable();
+        let count = count.as_f64().unreachable_throw();
         // assume count is a valid u32
         Ok(count as u32)
     }

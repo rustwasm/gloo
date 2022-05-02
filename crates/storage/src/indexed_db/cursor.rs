@@ -1,4 +1,8 @@
-use super::{errors, util::UnreachableExt, Request, StreamingRequest};
+use super::{
+    errors,
+    util::{unreachable_throw, UnreachableExt},
+    Request, StreamingRequest,
+};
 use futures::stream::Stream;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -79,7 +83,7 @@ impl<Ty: Unpin> Stream for CursorStream<Ty> {
             Poll::Ready(None) => Poll::Ready(None),
             Poll::Ready(Some(Err(e))) => Poll::Ready(Some(Err(errors::LifetimeError::from(e)))),
             Poll::Ready(Some(Ok(next))) => {
-                let cursor = next.dyn_into::<IdbCursorWithValue>().unwrap_unreachable();
+                let cursor = next.dyn_into::<IdbCursorWithValue>().unreachable_throw();
                 if self.state.take() {
                     Poll::Ready(Some(Ok(Cursor::new(cursor, self.state.clone()))))
                 } else {
@@ -116,7 +120,7 @@ impl<Ty> Cursor<Ty> {
 
     /// Get the value at the current location of this cursor.
     pub fn value_raw(&self) -> JsValue {
-        self.raw().value().unwrap_unreachable()
+        self.raw().value().unreachable_throw()
     }
 
     /// The value of the object the cursor is currently pointing to.
@@ -207,7 +211,7 @@ impl<Ty> KeyCursor<Ty> {
     /// Get the primary key for the current record.
     pub fn primary_key_raw(&self) -> JsValue {
         // Unwrap: the `Stream` implementation ensures that the cursor is valid and not moving
-        self.inner.primary_key().unwrap_unreachable()
+        self.inner.primary_key().unreachable_throw()
     }
 
     /// Get the primary key for the current record.
@@ -304,7 +308,7 @@ impl From<IdbCursorDirection> for CursorDirection {
             IdbCursorDirection::Nextunique => CursorDirection::NextUnique,
             IdbCursorDirection::Prev => CursorDirection::Prev,
             IdbCursorDirection::Prevunique => CursorDirection::PrevUnique,
-            _ => throw_str("unreachable"),
+            _ => unreachable_throw(),
         }
     }
 }

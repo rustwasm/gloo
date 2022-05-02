@@ -1,25 +1,17 @@
 //! A futures-based wrapper around indexed DB.
-use futures::stream::Stream;
-use gloo_events::{EventListener, EventListenerOptions};
+use gloo_events::EventListener;
 use gloo_utils::window;
-use std::{
-    future::Future,
-    ops::Deref,
-    pin::Pin,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-    task::{Context, Poll},
-};
-use wasm_bindgen::{prelude::*, throw_str, JsCast, UnwrapThrowExt};
+use std::{future::Future, ops::Deref};
+use wasm_bindgen::{prelude::*, JsCast, UnwrapThrowExt};
 use web_sys::{
-    DomException, IdbDatabase, IdbFactory, IdbObjectStoreParameters, IdbOpenDbRequest, IdbRequest,
-    IdbRequestReadyState, IdbTransactionMode, IdbVersionChangeEvent,
+    IdbDatabase, IdbFactory, IdbObjectStoreParameters, IdbTransactionMode, IdbVersionChangeEvent,
 };
 
 mod util;
+use util::UnreachableExt;
 pub use util::{StringList, StringListIter};
+mod request;
+use request::{OpenDbRequest, Request, StreamingRequest};
 mod object_store;
 pub use object_store::{CursorOptions, IndexOptions, ObjectStore};
 mod key;
@@ -106,27 +98,26 @@ impl Database {
         let request = indexed_db()
             .ok_or(errors::OpenDatabaseError::IndexedDbUnsupported)?
             .open_with_u32(name, version)
-            .expect_throw("Database::open");
+            .unreachable_throw();
 
         // Listeners keep the closures alive unless dropped, in which case they are cleaned up.
         // Using `let _ = ...` would immediately drop the closure meaning it is not run.
         let _upgrade_listener = EventListener::new(&request, "upgradeneeded", {
             let request = request.clone();
             move |event| {
-                let event = event
-                    .dyn_ref::<IdbVersionChangeEvent>()
-                    .expect_throw("IdbVersionChangeEvent dyn_into");
+                let event = event.unchecked_ref::<IdbVersionChangeEvent>();
                 let old_version = event.old_version() as u32;
                 // newVersion is only null in a delete transation (which we know isn't happening
                 // here)
                 let new_version = event.new_version().unwrap_throw() as u32;
                 let db = request
                     .result()
-                    .expect_throw("IdbOpenDatabaseRequest::result")
-                    .dyn_into::<IdbDatabase>()
-                    .expect_throw("IdbDatabase dyn_into");
+                    .unreachable_throw()
+                    .unchecked_into::<IdbDatabase>();
 
-                // This seems to be the way to get a transation
+                // Usually the transaction will be used to create a request, but in the db upgrade
+                // case this is the only way to gain access to the upgrade transaction. We grab it
+                // here to allow the user to do open existing object stores etc during upgrade.
                 let transaction = request.transaction().expect_throw("request.transaction()");
                 let transaction: Transaction<Upgrade> = Transaction::new(transaction);
 
@@ -142,9 +133,7 @@ impl Database {
         let result = OpenDbRequest::new(request, error_on_block)
             .await
             .map_err(errors::OpenDatabaseError::from)?;
-        let inner = result
-            .dyn_into::<IdbDatabase>()
-            .expect_throw("dyn_into IdbDatabase");
+        let inner = result.dyn_into::<IdbDatabase>().unreachable_throw();
         Ok(Database { inner })
     }
 
@@ -324,247 +313,5 @@ impl ObjectStoreOptions {
 impl Default for ObjectStoreOptions {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-/// Wrapper around IdbRequest that implements `Future`.
-///
-/// We don't need to expose this - we just return it as an `impl Future<_>`.
-struct Request {
-    inner: IdbRequest,
-    bubble_errors: bool,
-    success_listener: Option<EventListener>,
-    error_listener: Option<EventListener>,
-}
-
-impl Request {
-    fn new(inner: IdbRequest, bubble_errors: bool) -> Self {
-        Self {
-            inner,
-            bubble_errors,
-            success_listener: None,
-            error_listener: None,
-        }
-    }
-}
-
-impl Future for Request {
-    type Output = Result<JsValue, DomException>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match self.inner.ready_state() {
-            IdbRequestReadyState::Pending => {
-                if self.success_listener.is_none() {
-                    self.success_listener = Some(EventListener::once(&self.inner, "success", {
-                        let waker = cx.waker().clone();
-                        move |_| waker.wake()
-                    }))
-                } else {
-                    throw_str("success_listener")
-                }
-                if self.error_listener.is_none() {
-                    let opts = if self.bubble_errors {
-                        EventListenerOptions::enable_prevent_default()
-                    } else {
-                        EventListenerOptions::default()
-                    };
-                    self.error_listener = Some(EventListener::once_with_options(
-                        &self.inner,
-                        "error",
-                        opts,
-                        {
-                            let waker = cx.waker().clone();
-                            let bubble_errors = self.bubble_errors;
-                            move |event| {
-                                waker.wake();
-                                if !bubble_errors {
-                                    event.prevent_default();
-                                }
-                            }
-                        },
-                    ))
-                } else {
-                    throw_str("error_listener")
-                }
-                Poll::Pending
-            }
-            IdbRequestReadyState::Done => {
-                if let Some(error) = self.inner.error().expect_throw("get error") {
-                    Poll::Ready(Err(error))
-                } else {
-                    // no error = success
-                    Poll::Ready(Ok(self.inner.result().expect_throw("get result")))
-                }
-            }
-            _ => throw_str("unknown ReadyState"),
-        }
-    }
-}
-
-/// Wrapper around IdbRequest that implements `Future`.
-struct OpenDbRequest {
-    inner: IdbOpenDbRequest,
-    error_on_block: bool,
-    success_listener: Option<EventListener>,
-    error_listener: Option<EventListener>,
-    blocked_listener: Option<EventListener>,
-    blocked: Arc<AtomicBool>,
-}
-
-impl OpenDbRequest {
-    fn new(inner: IdbOpenDbRequest, error_on_block: bool) -> Self {
-        Self {
-            inner,
-            error_on_block,
-            success_listener: None,
-            error_listener: None,
-            blocked_listener: None,
-            blocked: Arc::new(AtomicBool::new(false)),
-        }
-    }
-}
-
-impl Future for OpenDbRequest {
-    type Output = Result<JsValue, DomException>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if self.blocked.load(Ordering::SeqCst) {
-            // return error
-            return Poll::Ready(Err(DomException::new_with_message_and_name(
-                "transaction would block",
-                "TransactionWouldBlock",
-            )
-            .expect_throw("DomException")));
-        }
-
-        match self.inner.ready_state() {
-            IdbRequestReadyState::Pending => {
-                if self.success_listener.is_none() {
-                    self.success_listener = Some(EventListener::once(&self.inner, "success", {
-                        let waker = cx.waker().clone();
-                        move |_| waker.wake()
-                    }))
-                } else {
-                    throw_str("success_listener")
-                }
-                if self.error_listener.is_none() {
-                    self.error_listener = Some(EventListener::once(&self.inner, "error", {
-                        let waker = cx.waker().clone();
-                        move |_| waker.wake()
-                    }))
-                } else {
-                    throw_str("error_listener")
-                }
-                if self.error_on_block {
-                    if self.blocked_listener.is_none() {
-                        self.blocked_listener = Some(EventListener::once(&self.inner, "blocked", {
-                            let blocked = self.blocked.clone();
-                            let waker = cx.waker().clone();
-                            move |_| {
-                                blocked.store(true, Ordering::SeqCst);
-                                waker.wake();
-                            }
-                        }))
-                    } else {
-                        throw_str("blocked_lsitener")
-                    }
-                }
-                Poll::Pending
-            }
-            IdbRequestReadyState::Done => {
-                if let Some(error) = self.inner.error().expect_throw("error") {
-                    Poll::Ready(Err(error))
-                } else {
-                    // no error = success
-                    Poll::Ready(Ok(self.inner.result().expect_throw("result")))
-                }
-            }
-            _ => throw_str("ready state"),
-        }
-    }
-}
-
-/// Wrapper for IDBRequest where the success callback is run multiple times.
-// TODO If a task is woken up, does `wasm_bindgen_futures` try to progress the future in the same
-// microtask or a separate one? This will impact whether I need to have space for more than one
-// result at a time.
-#[derive(Debug)]
-pub struct StreamingRequest {
-    inner: IdbRequest,
-    bubble_errors: bool,
-    success_listener: Option<EventListener>,
-    error_listener: Option<EventListener>,
-}
-
-impl StreamingRequest {
-    fn new(inner: IdbRequest, bubble_errors: bool) -> Self {
-        Self {
-            inner,
-            bubble_errors,
-            success_listener: None,
-            error_listener: None,
-        }
-    }
-}
-
-impl Stream for StreamingRequest {
-    type Item = Result<JsValue, DomException>;
-
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        match self.inner.ready_state() {
-            IdbRequestReadyState::Pending => {
-                if self.success_listener.is_none() {
-                    // First call - setup
-                    self.success_listener = Some(EventListener::new(&self.inner, "success", {
-                        let waker = cx.waker().clone();
-                        move |_| {
-                            let waker = waker.clone();
-                            waker.wake()
-                        }
-                    }));
-
-                    // omit the error.is_none check to save a branch.
-                    let opts = if self.bubble_errors {
-                        EventListenerOptions::enable_prevent_default()
-                    } else {
-                        EventListenerOptions::default()
-                    };
-                    self.error_listener = Some(EventListener::new_with_options(
-                        &self.inner,
-                        "error",
-                        opts,
-                        {
-                            let waker = cx.waker().clone();
-                            let bubble_errors = self.bubble_errors;
-                            move |event| {
-                                let waker = waker.clone();
-                                waker.wake();
-                                if !bubble_errors {
-                                    event.prevent_default();
-                                }
-                            }
-                        },
-                    ));
-                }
-
-                Poll::Pending
-            }
-            IdbRequestReadyState::Done => {
-                if let Some(error) = self.inner.error().expect_throw("get error") {
-                    Poll::Ready(Some(Err(error)))
-                } else {
-                    // no error = success
-                    // if the result is null, there won't be any more entries (at least for
-                    // IDBCursor, which I think is the only case a request is re-used)
-                    let result = self.inner.result().expect_throw("get result");
-                    if result.is_null() || result.is_undefined() {
-                        Poll::Ready(None)
-                    } else {
-                        Poll::Ready(Some(Ok(result)))
-                    }
-                }
-            }
-            _ => throw_str("unreachable"),
-        }
     }
 }

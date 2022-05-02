@@ -1,14 +1,24 @@
-use wasm_bindgen::{intern, UnwrapThrowExt};
+use once_cell::sync::Lazy;
+use wasm_bindgen::{intern, throw_str, UnwrapThrowExt};
 use web_sys::DomStringList;
 
+// TODO need to work out what the most efficient way to do this is. Hopefully interning once is the
+// best, but it might not make any difference (over interning every time). I don't know the
+// internals of `intern`.
+static UNREACHABLE_MSG: Lazy<&'static str> = Lazy::new(|| intern("internal error: unreachable"));
+
 pub(crate) trait UnreachableExt<T>: UnwrapThrowExt<T> {
-    fn unwrap_unreachable(self) -> T;
+    fn unreachable_throw(self) -> T;
 }
 
 impl<T, R: UnwrapThrowExt<T>> UnreachableExt<T> for R {
-    fn unwrap_unreachable(self) -> T {
-        self.expect_throw(intern("unreachable"))
+    fn unreachable_throw(self) -> T {
+        self.expect_throw(&UNREACHABLE_MSG)
     }
+}
+
+pub(crate) fn unreachable_throw() -> ! {
+    throw_str(&UNREACHABLE_MSG)
 }
 
 /// A wrapper around [`web_sys::DomStringList`] for easy iteration.

@@ -1,12 +1,14 @@
 // NOTE: all transaction operations must be started on the *same tick* (i.e. not in an async block)
 // otherwise with transaction will auto-commit before the operation is started.
 use super::{
-    errors, util::UnreachableExt, CursorDirection, CursorStream, Index, IntoKeyPath, Key, KeyPath,
-    Query, ReadOnly, ReadWrite, Request, StreamingRequest, StringList, Upgrade,
+    errors,
+    util::{unreachable_throw, UnreachableExt},
+    CursorDirection, CursorStream, Index, IntoKeyPath, Key, KeyPath, Query, ReadOnly, ReadWrite,
+    Request, StreamingRequest, StringList, Upgrade,
 };
 use serde::{Deserialize, Serialize};
 use std::{future::Future, marker::PhantomData};
-use wasm_bindgen::{prelude::*, throw_str, JsCast};
+use wasm_bindgen::{prelude::*, JsCast};
 use web_sys::{IdbIndexParameters, IdbObjectStore};
 
 /// An indexedDB object store.
@@ -109,7 +111,7 @@ impl<Ty> ObjectStore<Ty> {
         bubble_errors: bool,
     ) -> Result<(), errors::AddError> {
         // TODO handle errors
-        let value = serde_wasm_bindgen::to_value(value).unwrap_unreachable();
+        let value = serde_wasm_bindgen::to_value(value).unreachable_throw();
         self.add_raw_inner(&value, key, bubble_errors).await
     }
 
@@ -142,7 +144,7 @@ impl<Ty> ObjectStore<Ty> {
         bubble_errors: bool,
     ) -> Result<(), errors::AddError> {
         // TODO handle errors
-        let value = serde_wasm_bindgen::to_value(value).unwrap_unreachable();
+        let value = serde_wasm_bindgen::to_value(value).unreachable_throw();
         self.put_raw_inner(&value, key, bubble_errors).await
     }
 
@@ -216,7 +218,7 @@ impl<Ty> ObjectStore<Ty> {
     // Note: return value should be either null, a DOMString, or a sequence<DOMString> (from w3
     // spec)
     pub fn key_path_inner(&self) -> KeyPath {
-        let key_path = self.inner.key_path().unwrap_unreachable();
+        let key_path = self.inner.key_path().unreachable_throw();
         if key_path.is_null() {
             KeyPath::None
         } else if let Some(key_path) = key_path.as_string() {
@@ -226,7 +228,7 @@ impl<Ty> ObjectStore<Ty> {
 
             let mut out = vec![];
             for val in &key_path {
-                out.push(val.unwrap_unreachable().as_string().unwrap_unreachable());
+                out.push(val.unreachable_throw().as_string().unreachable_throw());
             }
             KeyPath::Sequence(out)
         }
@@ -249,12 +251,12 @@ impl<Ty> ObjectStore<Ty> {
         )
         .await
         .map_err(errors::CountError::from)?;
-        let result = result.as_f64().expect_throw("unreachable");
+        let result = result.as_f64().unreachable_throw();
         // From reading MDN it seems indexeddb cannot handle counts more than 2^32-1.
         if result <= u32::MAX.into() {
             Ok(result as u32)
         } else {
-            throw_str("unreachable")
+            unreachable_throw()
         }
     }
 
