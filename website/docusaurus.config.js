@@ -9,15 +9,15 @@ module.exports = {
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/Gloo-Logo.ico',
   organizationName: 'rustwasm',
   projectName: 'gloo',
   themeConfig: {
     navbar: {
       title: 'Gloo',
       logo: {
-        alt: 'My Site Logo',
-        src: 'img/logo.svg',
+        alt: 'Ferris <3 Gloo',
+        src: 'img/Gloo-Logo.svg',
       },
       items: [
         {to: '/blog', label: 'Blog', position: 'left'},
