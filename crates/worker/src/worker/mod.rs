@@ -52,6 +52,7 @@ impl<T: rkyv::Archive + rkyv::Serialize<rkyv::Infallible>> Packed for T {
     }
 
     fn unpack(data: &[u8]) -> Self {
+        use rkyv::Deserialize;
         let archived =
             rkyv::check_archived_root::<Self>(data).expect("check worker message with rkyv failed");
         archived
