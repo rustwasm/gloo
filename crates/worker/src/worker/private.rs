@@ -29,11 +29,11 @@ pub trait PrivateWorker {
     fn register();
 }
 
-impl<W, F> PrivateWorker for W
+impl<W> PrivateWorker for W
 where
     W: Worker<Reach = Private<W>>,
-    <W as Worker>::Input: SerDe<F>,
-    <W as Worker>::Output: SerDe<F>,
+    <W as Worker>::Input: SerDe,
+    <W as Worker>::Output: SerDe,
 {
     fn register() {
         let scope = WorkerScope::<W>::new();
@@ -72,11 +72,11 @@ where
     }
 }
 
-impl<W, F> Discoverer for Private<W>
+impl<W> Discoverer for Private<W>
 where
     W: Worker,
-    <W as Worker>::Input: SerDe<F>,
-    <W as Worker>::Output: SerDe<F>,
+    <W as Worker>::Input: SerDe,
+    <W as Worker>::Output: SerDe,
 {
     type Worker = W;
 
@@ -131,11 +131,11 @@ where
 }
 
 /// A connection manager for components interaction with workers.
-pub struct PrivateBridge<W, HNDL, F>
+pub struct PrivateBridge<W, HNDL>
 where
     W: Worker,
-    <W as Worker>::Input: SerDe<F>,
-    <W as Worker>::Output: SerDe<F>,
+    <W as Worker>::Input: SerDe,
+    <W as Worker>::Output: SerDe,
     HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     handler_cell: Rc<RefCell<Option<HNDL>>>,
@@ -144,11 +144,11 @@ where
     id: usize,
 }
 
-impl<W, HNDL, F> PrivateBridge<W, HNDL, F>
+impl<W, HNDL> PrivateBridge<W, HNDL>
 where
     W: Worker,
-    <W as Worker>::Input: SerDe<F>,
-    <W as Worker>::Output: SerDe<F>,
+    <W as Worker>::Input: SerDe,
+    <W as Worker>::Output: SerDe,
     HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     /// Send a message to the worker, queuing the message if necessary
@@ -163,11 +163,11 @@ where
     }
 }
 
-impl<W, HNDL, F> fmt::Debug for PrivateBridge<W, HNDL, F>
+impl<W, HNDL> fmt::Debug for PrivateBridge<W, HNDL>
 where
     W: Worker,
-    <W as Worker>::Input: SerDe<F>,
-    <W as Worker>::Output: SerDe<F>,
+    <W as Worker>::Input: SerDe,
+    <W as Worker>::Output: SerDe,
     HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -175,11 +175,11 @@ where
     }
 }
 
-impl<W, HNDL, F> Bridge<W> for PrivateBridge<W, HNDL, F>
+impl<W, HNDL> Bridge<W> for PrivateBridge<W, HNDL>
 where
     W: Worker,
-    <W as Worker>::Input: SerDe<F>,
-    <W as Worker>::Output: SerDe<F>,
+    <W as Worker>::Input: SerDe,
+    <W as Worker>::Output: SerDe,
     HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     fn send(&mut self, msg: W::Input) {
@@ -188,11 +188,11 @@ where
     }
 }
 
-impl<W, HNDL, F> Drop for PrivateBridge<W, HNDL, F>
+impl<W, HNDL> Drop for PrivateBridge<W, HNDL>
 where
     W: Worker,
-    <W as Worker>::Input: SerDe<F>,
-    <W as Worker>::Output: SerDe<F>,
+    <W as Worker>::Input: SerDe,
+    <W as Worker>::Output: SerDe,
     HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     fn drop(&mut self) {
