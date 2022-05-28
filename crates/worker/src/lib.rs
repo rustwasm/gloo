@@ -45,7 +45,6 @@ pub use pool::{Dispatched, Dispatcher};
 use std::cell::RefCell;
 pub use worker::{Private, PrivateWorker, Public, PublicWorker};
 
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
@@ -108,7 +107,12 @@ pub trait Worker: Sized + 'static {
 }
 
 /// Id of responses handler.
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash, Clone, Copy)]
+#[cfg_attr(feature = "bincode", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone, Copy)]
 pub struct HandlerId(usize, bool);
 
 impl HandlerId {

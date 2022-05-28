@@ -3,7 +3,6 @@ use crate::{
     Bridge, Callback, Discoverer, HandlerId, Worker, WorkerLifecycleEvent, WorkerLink, WorkerScope,
 };
 use queue::Queue;
-use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::fmt;
 use std::marker::PhantomData;
@@ -30,11 +29,11 @@ pub trait PrivateWorker {
     fn register();
 }
 
-impl<W> PrivateWorker for W
+impl<W, F> PrivateWorker for W
 where
     W: Worker<Reach = Private<W>>,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     fn register() {
         let scope = WorkerScope::<W>::new();
@@ -73,11 +72,11 @@ where
     }
 }
 
-impl<W> Discoverer for Private<W>
+impl<W, F> Discoverer for Private<W>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     type Worker = W;
 
@@ -132,11 +131,11 @@ where
 }
 
 /// A connection manager for components interaction with workers.
-pub struct PrivateBridge<W, HNDL>
+pub struct PrivateBridge<W, HNDL, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
     HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     handler_cell: Rc<RefCell<Option<HNDL>>>,
@@ -145,11 +144,11 @@ where
     id: usize,
 }
 
-impl<W, HNDL> PrivateBridge<W, HNDL>
+impl<W, HNDL, F> PrivateBridge<W, HNDL, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
     HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     /// Send a message to the worker, queuing the message if necessary
@@ -164,11 +163,11 @@ where
     }
 }
 
-impl<W, HNDL> fmt::Debug for PrivateBridge<W, HNDL>
+impl<W, HNDL, F> fmt::Debug for PrivateBridge<W, HNDL, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
     HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -176,11 +175,11 @@ where
     }
 }
 
-impl<W, HNDL> Bridge<W> for PrivateBridge<W, HNDL>
+impl<W, HNDL, F> Bridge<W> for PrivateBridge<W, HNDL, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
     HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     fn send(&mut self, msg: W::Input) {
@@ -189,11 +188,11 @@ where
     }
 }
 
-impl<W, HNDL> Drop for PrivateBridge<W, HNDL>
+impl<W, HNDL, F> Drop for PrivateBridge<W, HNDL, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
     HNDL: Fn(Vec<u8>, &web_sys::Worker),
 {
     fn drop(&mut self) {

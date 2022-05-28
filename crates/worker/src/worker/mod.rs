@@ -7,26 +7,10 @@ pub use public::{Public, PublicWorker};
 
 use crate::{HandlerId, Responder, Worker};
 use js_sys::{Array, Reflect, Uint8Array};
-use serde::{Deserialize, Serialize};
 use wasm_bindgen::{closure::Closure, JsCast, JsValue, UnwrapThrowExt};
 use web_sys::{
     Blob, BlobPropertyBag, DedicatedWorkerGlobalScope, MessageEvent, Url, WorkerOptions,
 };
-
-pub(crate) struct WorkerResponder;
-
-impl<W> Responder<W> for WorkerResponder
-where
-    W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
-{
-    fn respond(&self, id: HandlerId, output: W::Output) {
-        let msg = FromWorker::ProcessOutput(id, output);
-        let data = msg.pack();
-        worker_self().post_message_vec(data);
-    }
-}
 
 /// Message packager, based on serde::Serialize/Deserialize
 pub trait Packed {
@@ -36,18 +20,62 @@ pub trait Packed {
     fn unpack(data: &[u8]) -> Self;
 }
 
-impl<T: Serialize + for<'de> Deserialize<'de>> Packed for T {
+#[cfg(not(any(feature = "bincode", feature = "rkyv")))]
+compile_error!("feature \"bincode\" or feature \"rkyv\" must be enabled");
+
+#[cfg(all(feature = "bincode", feature = "rkyv"))]
+compile_error!("feature \"bincode\" and feature \"rkyv\" cannot be enabled at the same time");
+
+#[cfg(feature = "bincode")]
+pub trait SerDe<F>: serde::Serialize + for<'de> serde::Deserialize<'de> {}
+
+#[cfg(feature = "rkyv")]
+pub trait SerDe<F>:
+    rkyv::Archive + rkyv::Serialize<rkyv::Infallible> + rkyv::Deserialize<Self, F>
+{
+}
+
+#[cfg(feature = "bincode")]
+impl<T: serde::Serialize + for<'de> serde::Deserialize<'de>> Packed for T {
     fn pack(&self) -> Vec<u8> {
-        bincode::serialize(&self).expect("can't serialize an worker message")
+        bincode::serialize(&self).expect("can't serialize a worker message with bincode")
     }
 
     fn unpack(data: &[u8]) -> Self {
-        bincode::deserialize(data).expect("can't deserialize an worker message")
+        bincode::deserialize(data).expect("can't deserialize a worker message with bincode")
+    }
+}
+
+#[cfg(feature = "rkyv")]
+impl<
+        T: rkyv::Archive
+            + rkyv::Serialize<rkyv::Infallible>
+            + rkyv::Deserialize<Self, rkyv::Infallible>,
+    > Packed for T
+{
+    fn pack(&self) -> Vec<u8> {
+        rkyv::to_bytes::<_, 256>(self)
+            .expect("can't serialize a worker message with rkyv")
+            .to_vec()
+    }
+
+    fn unpack(data: &[u8]) -> Self {
+        let archived =
+            rkyv::check_archived_root::<Self>(data).expect("check worker message with rkyv failed");
+        archived
+            .deserialize(&mut rkyv::Infallible)
+            .expect("can't deserialize a worker message with rkyv")
     }
 }
 
 /// Serializable messages to worker
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
+#[cfg_attr(feature = "bincode", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
+#[cfg_attr(feature = "rkyv", derive(bytecheck::CheckBytes))]
 enum ToWorker<T> {
     /// Client is connected
     Connected(HandlerId),
@@ -59,8 +87,26 @@ enum ToWorker<T> {
     Destroy,
 }
 
+#[cfg(feature = "bincode")]
+impl<T: serde::Serialize + for<'de> serde::Deserialize<'de>, F> SerDe<F> for ToWorker<T> {}
+
+#[cfg(feature = "rkyv")]
+impl<
+        T: rkyv::Archive
+            + rkyv::Serialize<rkyv::Infallible>
+            + rkyv::Deserialize<Self, rkyv::Infallible>,
+    > SerDe for ToWorker<T>
+{
+}
+
 /// Serializable messages sent by worker to consumer
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
+#[cfg_attr(feature = "bincode", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "rkyv",
+    derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)
+)]
+#[cfg_attr(feature = "rkyv", derive(bytecheck::CheckBytes))]
 enum FromWorker<T> {
     /// Worker sends this message when `wasm` bundle has loaded.
     WorkerLoaded,
@@ -68,11 +114,23 @@ enum FromWorker<T> {
     ProcessOutput(HandlerId, T),
 }
 
-fn send_to_remote<W>(worker: &web_sys::Worker, msg: ToWorker<W::Input>)
+#[cfg(feature = "bincode")]
+impl<T: serde::Serialize + for<'de> serde::Deserialize<'de>, F> SerDe<F> for FromWorker<T> {}
+
+#[cfg(feature = "rkyv")]
+impl<
+        T: rkyv::Archive
+            + rkyv::Serialize<rkyv::Infallible>
+            + rkyv::Deserialize<Self, rkyv::Infallible>,
+    > SerDe for FromWorker<T>
+{
+}
+
+fn send_to_remote<W, F>(worker: &web_sys::Worker, msg: ToWorker<W::Input>)
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     let msg = msg.pack();
     worker.post_message_vec(msg);
@@ -130,6 +188,21 @@ fn worker_new(
         web_sys::Worker::new_with_options(&url, &options).expect("failed to spawn worker")
     } else {
         web_sys::Worker::new(&url).expect("failed to spawn worker")
+    }
+}
+
+pub(crate) struct WorkerResponder;
+
+impl<W> Responder<W> for WorkerResponder
+where
+    W: Worker,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
+{
+    fn respond(&self, id: HandlerId, output: W::Output) {
+        let msg = FromWorker::ProcessOutput(id, output);
+        let data = msg.pack();
+        worker_self().post_message_vec(data);
     }
 }
 

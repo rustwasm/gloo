@@ -23,11 +23,11 @@ pub struct Public<W> {
     _worker: PhantomData<W>,
 }
 
-impl<W> Discoverer for Public<W>
+impl<W, F> Discoverer for Public<W>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     type Worker = W;
 
@@ -82,42 +82,42 @@ where
     }
 }
 
-impl<W> Dispatchable for Public<W>
+impl<W, F> Dispatchable for Public<W>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
 }
 
 /// A connection manager for components interaction with workers.
-pub struct PublicBridge<W>
+pub struct PublicBridge<W, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     worker: web_sys::Worker,
     id: HandlerId,
     _worker: PhantomData<W>,
 }
 
-impl<W> fmt::Debug for PublicBridge<W>
+impl<W, F> fmt::Debug for PublicBridge<W, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("PublicBridge<_>")
     }
 }
 
-impl<W> PublicBridge<W>
+impl<W, F> PublicBridge<W, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     /// Send a message to the worker, queuing the message if necessary
     fn send_message(&self, msg: ToWorker<W::Input>) {
@@ -131,11 +131,11 @@ where
     }
 }
 
-impl<W> Bridge<W> for PublicBridge<W>
+impl<W, F> Bridge<W> for PublicBridge<W, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     fn send(&mut self, msg: W::Input) {
         let msg = ToWorker::ProcessInput(self.id, msg);
@@ -143,11 +143,11 @@ where
     }
 }
 
-impl<W> Drop for PublicBridge<W>
+impl<W, F> Drop for PublicBridge<W, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     fn drop(&mut self) {
         let terminate_worker = REMOTE_WORKERS_POOL.with(|pool| {
@@ -188,11 +188,11 @@ pub trait PublicWorker {
     fn register();
 }
 
-impl<W> PublicWorker for W
+impl<W, F> PublicWorker for W
 where
     W: Worker<Reach = Public<W>>,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     fn register() {
         let scope = WorkerScope::<W>::new();
@@ -231,27 +231,27 @@ where
     }
 }
 
-struct RemoteWorker<W>
+struct RemoteWorker<W, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     worker: web_sys::Worker,
     slab: SharedOutputSlab<W>,
 }
 
-impl<W> RemoteWorker<W>
+impl<W, F> RemoteWorker<W, F>
 where
     W: Worker,
-    <W as Worker>::Input: Serialize + for<'de> Deserialize<'de>,
-    <W as Worker>::Output: Serialize + for<'de> Deserialize<'de>,
+    <W as Worker>::Input: SerDe<F>,
+    <W as Worker>::Output: SerDe<F>,
 {
     pub fn new(worker: web_sys::Worker, slab: SharedOutputSlab<W>) -> Self {
         RemoteWorker { worker, slab }
     }
 
-    fn create_bridge(&mut self, callback: Option<Callback<W::Output>>) -> PublicBridge<W> {
+    fn create_bridge(&mut self, callback: Option<Callback<W::Output>>) -> PublicBridge<W, F> {
         let respondable = callback.is_some();
         let mut slab = self.slab.borrow_mut();
         let id: usize = slab.insert(callback);
@@ -266,7 +266,7 @@ where
         bridge
     }
 
-    fn remove_bridge(&mut self, bridge: &PublicBridge<W>) -> Last {
+    fn remove_bridge(&mut self, bridge: &PublicBridge<W, F>) -> Last {
         let mut slab = self.slab.borrow_mut();
         let _ = slab.remove(bridge.id.raw_id());
         slab.is_empty()
