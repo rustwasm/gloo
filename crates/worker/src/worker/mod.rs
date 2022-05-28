@@ -27,13 +27,10 @@ compile_error!("feature \"bincode\" or feature \"rkyv\" must be enabled");
 compile_error!("feature \"bincode\" and feature \"rkyv\" cannot be enabled at the same time");
 
 #[cfg(feature = "bincode")]
-pub trait SerDe<F>: serde::Serialize + for<'de> serde::Deserialize<'de> {}
+pub trait SerDe: serde::Serialize + for<'de> serde::Deserialize<'de> {}
 
 #[cfg(feature = "rkyv")]
-pub trait SerDe<F>:
-    rkyv::Archive + rkyv::Serialize<rkyv::Infallible> + rkyv::Deserialize<Self, F>
-{
-}
+pub trait SerDe: rkyv::Archive + rkyv::Serialize<rkyv::Infallible> {}
 
 #[cfg(feature = "bincode")]
 impl<T: serde::Serialize + for<'de> serde::Deserialize<'de>> Packed for T {
@@ -47,12 +44,7 @@ impl<T: serde::Serialize + for<'de> serde::Deserialize<'de>> Packed for T {
 }
 
 #[cfg(feature = "rkyv")]
-impl<
-        T: rkyv::Archive
-            + rkyv::Serialize<rkyv::Infallible>
-            + rkyv::Deserialize<Self, rkyv::Infallible>,
-    > Packed for T
-{
+impl<T: rkyv::Archive + rkyv::Serialize<rkyv::Infallible>> Packed for T {
     fn pack(&self) -> Vec<u8> {
         rkyv::to_bytes::<_, 256>(self)
             .expect("can't serialize a worker message with rkyv")
@@ -88,16 +80,10 @@ enum ToWorker<T> {
 }
 
 #[cfg(feature = "bincode")]
-impl<T: serde::Serialize + for<'de> serde::Deserialize<'de>, F> SerDe<F> for ToWorker<T> {}
+impl<T: serde::Serialize + for<'de> serde::Deserialize<'de>> SerDe for ToWorker<T> {}
 
 #[cfg(feature = "rkyv")]
-impl<
-        T: rkyv::Archive
-            + rkyv::Serialize<rkyv::Infallible>
-            + rkyv::Deserialize<Self, rkyv::Infallible>,
-    > SerDe for ToWorker<T>
-{
-}
+impl<T: rkyv::Archive + rkyv::Serialize<rkyv::Infallible>> SerDe for ToWorker<T> {}
 
 /// Serializable messages sent by worker to consumer
 #[derive(Debug)]
@@ -115,22 +101,16 @@ enum FromWorker<T> {
 }
 
 #[cfg(feature = "bincode")]
-impl<T: serde::Serialize + for<'de> serde::Deserialize<'de>, F> SerDe<F> for FromWorker<T> {}
+impl<T: serde::Serialize + for<'de> serde::Deserialize<'de>> SerDe for FromWorker<T> {}
 
 #[cfg(feature = "rkyv")]
-impl<
-        T: rkyv::Archive
-            + rkyv::Serialize<rkyv::Infallible>
-            + rkyv::Deserialize<Self, rkyv::Infallible>,
-    > SerDe for FromWorker<T>
-{
-}
+impl<T: rkyv::Archive + rkyv::Serialize<rkyv::Infallible>> SerDe for FromWorker<T> {}
 
-fn send_to_remote<W, F>(worker: &web_sys::Worker, msg: ToWorker<W::Input>)
+fn send_to_remote<W>(worker: &web_sys::Worker, msg: ToWorker<W::Input>)
 where
     W: Worker,
-    <W as Worker>::Input: SerDe<F>,
-    <W as Worker>::Output: SerDe<F>,
+    <W as Worker>::Input: SerDe,
+    <W as Worker>::Output: SerDe,
 {
     let msg = msg.pack();
     worker.post_message_vec(msg);
@@ -196,8 +176,8 @@ pub(crate) struct WorkerResponder;
 impl<W> Responder<W> for WorkerResponder
 where
     W: Worker,
-    <W as Worker>::Input: SerDe<F>,
-    <W as Worker>::Output: SerDe<F>,
+    <W as Worker>::Input: SerDe,
+    <W as Worker>::Output: SerDe,
 {
     fn respond(&self, id: HandlerId, output: W::Output) {
         let msg = FromWorker::ProcessOutput(id, output);
