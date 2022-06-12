@@ -4,6 +4,7 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::rc::{Rc, Weak};
 
+use gloo_utils::window;
 use js_sys::Array;
 use web_sys::{Blob, BlobPropertyBag, Url};
 
@@ -15,9 +16,23 @@ use crate::traits::Worker;
 use crate::{Callback, Shared};
 
 fn create_worker(path: &str) -> DedicatedWorker {
-    let wasm_url = path.replace(".js", "_bg.wasm");
+    let js_shim_url = Url::new_with_base(
+        path,
+        &window().location().href().expect("failed to read href."),
+    )
+    .expect("failed to create url for javascript entrypoint")
+    .to_string();
+
+    let wasm_url = js_shim_url.replace(".js", "_bg.wasm");
+
     let array = Array::new();
-    array.push(&format!(r#"importScripts("{}");wasm_bindgen("{}");"#, path, wasm_url).into());
+    array.push(
+        &format!(
+            r#"importScripts("{}");wasm_bindgen("{}");"#,
+            js_shim_url, wasm_url
+        )
+        .into(),
+    );
     let blob = Blob::new_with_str_sequence_and_options(
         &array,
         BlobPropertyBag::new().type_("application/javascript"),
