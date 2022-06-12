@@ -9,7 +9,7 @@ use web_sys::{Blob, BlobPropertyBag, Url};
 
 use crate::bridge::{CallbackMap, WorkerBridge};
 use crate::handler_id::HandlerId;
-use crate::messages::{FromWorker, Packed};
+use crate::messages::FromWorker;
 use crate::native_worker::{DedicatedWorker, NativeWorkerExt};
 use crate::traits::Worker;
 use crate::{Callback, Shared};
@@ -78,9 +78,7 @@ where
     /// Spawns a Worker.
     pub fn spawn(&self, path: &str) -> WorkerBridge<W> {
         let pending_queue = Rc::new(RefCell::new(Some(Vec::new())));
-
         let handler_id = HandlerId::new();
-
         let mut callbacks = HashMap::new();
 
         if let Some(m) = self.callback.as_ref().map(Rc::downgrade) {
@@ -89,13 +87,15 @@ where
 
         let callbacks: Shared<CallbackMap<W>> = Rc::new(RefCell::new(callbacks));
 
-        let handler = {
+        let worker = {
             let pending_queue = pending_queue.clone();
             let callbacks = callbacks.clone();
+            let worker = create_worker(path);
 
-            move |data: Vec<u8>, worker: &web_sys::Worker| {
-                let msg = FromWorker::<W>::unpack(&data);
-                match msg {
+            let handler = {
+                let worker = worker.clone();
+
+                move |msg: FromWorker<W>| match msg {
                     FromWorker::WorkerLoaded => {
                         if let Some(pending_queue) = pending_queue.borrow_mut().take() {
                             for to_worker in pending_queue.into_iter() {
@@ -115,20 +115,9 @@ where
                         }
                     }
                 }
-            }
-        };
+            };
 
-        let handler_cell = Rc::new(RefCell::new(Some(handler)));
-
-        let worker = {
-            let handler_cell = handler_cell.clone();
-            let worker = create_worker(path);
-            let worker_clone = worker.clone();
-            worker.set_on_packed_message(move |data: Vec<u8>| {
-                if let Some(handler) = handler_cell.borrow().as_ref() {
-                    handler(data, &worker_clone)
-                }
-            });
+            worker.set_on_packed_message(handler);
             worker
         };
 
