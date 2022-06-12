@@ -14,7 +14,7 @@ pub trait Worker: Sized + 'static {
     type Output: Serialize + for<'de> Deserialize<'de>;
 
     /// Creates an instance of an worker.
-    fn create(link: WorkerScope<Self>) -> Self;
+    fn create(scope: WorkerScope<Self>) -> Self;
 
     /// Receives an update.
     fn update(&mut self, msg: Self::Message);

@@ -119,11 +119,11 @@ where
         FU: Future<Output = M> + 'static,
         FN: Fn(IN) -> FU + 'static,
     {
-        let link = self.clone();
+        let scope = self.clone();
 
         let closure = move |input: IN| {
             let future: FU = function(input);
-            link.send_future(future);
+            scope.send_future(future);
         };
 
         Rc::new(closure)
@@ -140,10 +140,10 @@ where
         M: Into<W::Message>,
         F: Future<Output = M> + 'static,
     {
-        let link = self.clone();
+        let scope = self.clone();
         let js_future = async move {
             let message: W::Message = future.await.into();
-            let cb = link.callback(|m: W::Message| m);
+            let cb = scope.callback(|m: W::Message| m);
             (*cb)(message);
         };
         wasm_bindgen_futures::spawn_local(js_future);

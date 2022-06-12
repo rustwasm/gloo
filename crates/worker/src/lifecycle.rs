@@ -23,7 +23,7 @@ impl<W> WorkerState<W> {
 /// Internal Worker lifecycle events
 #[derive(Debug)]
 pub(crate) enum WorkerLifecycleEvent<W: Worker> {
-    /// Request to create link
+    /// Request to create the scope
     Create(WorkerScope<W>),
     /// Internal Worker message
     Message(W::Message),
@@ -51,11 +51,11 @@ where
 
         // We should block all event other than message after a worker is destroyed.
         match self.event {
-            WorkerLifecycleEvent::Create(link) => {
+            WorkerLifecycleEvent::Create(scope) => {
                 if state.destroyed {
                     return;
                 }
-                state.worker = Some(W::create(link));
+                state.worker = Some(W::create(scope));
             }
             WorkerLifecycleEvent::Message(msg) => {
                 state
