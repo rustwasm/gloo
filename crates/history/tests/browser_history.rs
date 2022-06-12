@@ -13,16 +13,18 @@ async fn history_works() {
     assert_eq!(history.location().path(), "/");
 
     history.push("/path-a");
+    sleep(Duration::from_millis(200)).await;
     assert_eq!(history.location().path(), "/path-a");
 
     history.replace("/path-b");
+    sleep(Duration::from_millis(200)).await;
     assert_eq!(history.location().path(), "/path-b");
 
     history.back();
-    sleep(Duration::from_millis(100)).await;
+    sleep(Duration::from_millis(200)).await;
     assert_eq!(history.location().path(), "/");
 
     history.forward();
-    sleep(Duration::from_millis(100)).await;
+    sleep(Duration::from_millis(200)).await;
     assert_eq!(history.location().path(), "/path-b");
 }

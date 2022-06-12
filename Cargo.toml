@@ -5,24 +5,24 @@ edition = "2018"
 license = "MIT/Apache-2.0"
 name = "gloo"
 readme = "README.md"
-version = "0.6.1"
+version = "0.7.0"
 repository = "https://github.com/rustwasm/gloo"
 homepage = "https://gloo-rs.web.app/"
 documentation = "https://docs.rs/gloo/"
 categories = ["api-bindings", "wasm"]
 
 [dependencies]
-gloo-timers = { version = "0.2.0", path = "crates/timers" }
-gloo-events = { version = "0.1.0", path = "crates/events" }
-gloo-file = { version = "0.2.0", path = "crates/file" }
-gloo-dialogs = { version = "0.1.0", path = "crates/dialogs" }
-gloo-storage = { version = "0.2.0", path = "crates/storage" }
-gloo-render = { version = "0.1.0", path = "crates/render" }
-gloo-console = { version = "0.2.1", path = "crates/console" }
-gloo-utils = { version = "0.1.1", path = "crates/utils" }
-gloo-history = { version = "0.1.0", path = "crates/history" }
-gloo-worker = { version = "0.1.0", path = "crates/worker" }
-gloo-net = { version = "0.1.0", path = "crates/net" }
+gloo-timers = { version = "0.2", path = "crates/timers" }
+gloo-events = { version = "0.1", path = "crates/events" }
+gloo-file = { version = "0.2", path = "crates/file" }
+gloo-dialogs = { version = "0.1", path = "crates/dialogs" }
+gloo-storage = { version = "0.2", path = "crates/storage" }
+gloo-render = { version = "0.1", path = "crates/render" }
+gloo-console = { version = "0.2", path = "crates/console" }
+gloo-utils = { version = "0.1", path = "crates/utils" }
+gloo-history = { version = "0.1", path = "crates/history" }
+gloo-worker = { version = "0.1", path = "crates/worker" }
+gloo-net = { version = "0.2", path = "crates/net" }
 
 [features]
 default = []

@@ -1,7 +1,7 @@
 [package]
 name = "gloo-dialogs"
 description = "Convenience crate for working with dialogs in browser"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Rust and WebAssembly Working Group"]
 edition = "2018"
 license = "MIT OR Apache-2.0"

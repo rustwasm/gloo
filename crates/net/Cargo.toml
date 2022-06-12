@@ -1,6 +1,6 @@
 [package]
 name = "gloo-net"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Rust and WebAssembly Working Group", "Muhammad Hamza <muhammadhamza1311@gmail.com>"]
 edition = "2018"
 license = "MIT OR Apache-2.0"
@@ -59,6 +59,8 @@ websocket = [
 # Enables the HTTP API
 http = [
     'web-sys/Headers',
+    'web-sys/UrlSearchParams',
+    'web-sys/Url',
     'web-sys/Request',
     'web-sys/RequestInit',
     'web-sys/RequestMode',

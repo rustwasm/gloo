@@ -1,6 +1,7 @@
+use gloo_utils::iter::UncheckedIter;
 use js_sys::{Array, Map};
 use std::fmt;
-use wasm_bindgen::{JsCast, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 // I experimented with using `js_sys::Object` for the headers, since this object is marked
 // experimental in MDN. However it's in the fetch spec, and it's necessary for appending headers.
@@ -68,7 +69,7 @@ impl Headers {
         // and everything works. Is there a better way? Should there be a `MapLike` or
         // `MapIterator` type in `js_sys`?
         let fake_map: &Map = self.raw.unchecked_ref();
-        UncheckedIter(fake_map.entries()).map(|entry| {
+        UncheckedIter::from(fake_map.entries()).map(|entry| {
             let entry: Array = entry.unchecked_into();
             let key = entry.get(0);
             let value = entry.get(1);
@@ -82,13 +83,13 @@ impl Headers {
     /// Iterate over the names of the headers.
     pub fn keys(&self) -> impl Iterator<Item = String> {
         let fake_map: &Map = self.raw.unchecked_ref();
-        UncheckedIter(fake_map.keys()).map(|key| key.as_string().unwrap_throw())
+        UncheckedIter::from(fake_map.keys()).map(|key| key.as_string().unwrap_throw())
     }
 
     /// Iterate over the values of the headers.
     pub fn values(&self) -> impl Iterator<Item = String> {
         let fake_map: &Map = self.raw.unchecked_ref();
-        UncheckedIter(fake_map.values()).map(|v| v.as_string().unwrap_throw())
+        UncheckedIter::from(fake_map.values()).map(|v| v.as_string().unwrap_throw())
     }
 }
 
@@ -99,22 +100,5 @@ impl fmt::Debug for Headers {
             dbg.field(&key, &value);
         }
         dbg.finish()
-    }
-}
-
-struct UncheckedIter(js_sys::Iterator);
-
-impl Iterator for UncheckedIter {
-    type Item = JsValue;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        // we don't check for errors. Only use this type on things we know conform to the iterator
-        // interface.
-        let next = self.0.next().unwrap_throw();
-        if next.done() {
-            None
-        } else {
-            Some(next.value())
-        }
     }
 }
