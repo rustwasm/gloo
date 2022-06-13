@@ -1,8 +1,9 @@
 [package]
-name = "clock"
+name = "example-clock"
 version = "0.1.0"
 authors = ["Rust and WebAssembly Working Group"]
 edition = "2018"
+publish = false
 
 [lib]
 crate-type = ["cdylib"]
@@ -24,5 +25,3 @@ features = [
     "Element",
     "Node",
 ]
-
-[workspace]

@@ -4,6 +4,7 @@ use std::fmt;
 use std::future::Future;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use wasm_bindgen_futures::spawn_local;
 
 use crate::lifecycle::{WorkerLifecycleEvent, WorkerRunnable, WorkerState};
 
@@ -49,11 +50,13 @@ where
 
     /// Schedule message for sending to worker
     pub(crate) fn send(&self, event: WorkerLifecycleEvent<W>) {
-        WorkerRunnable {
-            state: self.state.clone(),
-            event,
-        }
-        .run();
+        let state = self.state.clone();
+
+        // We can implement a scheduler outself,
+        // but it's easier to just borrow the one from wasm-bindgen-futures.
+        spawn_local(async move {
+            WorkerRunnable { state, event }.run();
+        });
     }
 
     /// Send response to a worker bridge.
