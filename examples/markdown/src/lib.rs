@@ -40,10 +40,9 @@ impl Worker for MarkdownWorker {
     }
 }
 
-
 // wasm-bindgen-test does not support serving additional files
 // and trunk serve does not support CORS.
-// 
+//
 // To run tests against web workers, a test server with CORS support needs to be set up
 // with the following commands:
 //
