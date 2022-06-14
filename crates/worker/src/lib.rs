@@ -24,6 +24,7 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod bridge;
+mod codec;
 mod handler_id;
 mod lifecycle;
 mod messages;
@@ -34,6 +35,7 @@ mod spawner;
 mod traits;
 
 pub use bridge::WorkerBridge;
+pub use codec::{Bincode, Codec};
 pub use handler_id::HandlerId;
 pub use registrar::Registrable;
 pub use scope::WorkerScope;

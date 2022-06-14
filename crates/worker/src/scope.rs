@@ -4,11 +4,12 @@ use std::fmt;
 use std::future::Future;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
+
 use wasm_bindgen_futures::spawn_local;
 
-use crate::lifecycle::{WorkerLifecycleEvent, WorkerRunnable, WorkerState};
-
+use crate::codec::Codec;
 use crate::handler_id::HandlerId;
+use crate::lifecycle::{WorkerLifecycleEvent, WorkerRunnable, WorkerState};
 use crate::messages::FromWorker;
 use crate::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
 use crate::traits::Worker;
@@ -18,6 +19,7 @@ use crate::Shared;
 pub struct WorkerScope<W: Worker> {
     state: Shared<WorkerState<W>>,
     closable: Rc<AtomicBool>,
+    post_msg: Rc<dyn Fn(FromWorker<W>)>,
 }
 
 impl<W: Worker> fmt::Debug for WorkerScope<W> {
@@ -31,6 +33,7 @@ impl<W: Worker> Clone for WorkerScope<W> {
         WorkerScope {
             state: self.state.clone(),
             closable: self.closable.clone(),
+            post_msg: self.post_msg.clone(),
         }
     }
 }
@@ -40,9 +43,17 @@ where
     W: Worker,
 {
     /// Create worker scope
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new<CODEC>() -> Self
+    where
+        CODEC: Codec,
+    {
+        let post_msg = move |msg: FromWorker<W>| {
+            DedicatedWorker::worker_self().post_packed_message::<_, CODEC>(msg)
+        };
+
         let state = Rc::new(RefCell::new(WorkerState::new()));
         WorkerScope {
+            post_msg: Rc::new(post_msg),
             state,
             closable: AtomicBool::new(false).into(),
         }
@@ -62,7 +73,7 @@ where
     /// Send response to a worker bridge.
     pub fn respond(&self, id: HandlerId, output: W::Output) {
         let msg = FromWorker::<W>::ProcessOutput(id, output);
-        DedicatedWorker::worker_self().post_packed_message(msg);
+        (self.post_msg)(msg);
     }
 
     /// Send a message to the worker
@@ -150,11 +161,5 @@ where
             (*cb)(message);
         };
         wasm_bindgen_futures::spawn_local(js_future);
-    }
-}
-
-impl<W: Worker> Default for WorkerScope<W> {
-    fn default() -> Self {
-        Self::new()
     }
 }

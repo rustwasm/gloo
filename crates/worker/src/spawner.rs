@@ -9,6 +9,7 @@ use js_sys::Array;
 use web_sys::{Blob, BlobPropertyBag, Url};
 
 use crate::bridge::{CallbackMap, WorkerBridge};
+use crate::codec::{Bincode, Codec};
 use crate::handler_id::HandlerId;
 use crate::messages::FromWorker;
 use crate::native_worker::{DedicatedWorker, NativeWorkerExt};
@@ -45,38 +46,56 @@ fn create_worker(path: &str) -> DedicatedWorker {
 
 /// A spawner to create workers.
 #[derive(Clone)]
-pub struct WorkerSpawner<W>
+pub struct WorkerSpawner<W, CODEC = Bincode>
 where
     W: Worker,
+    CODEC: Codec,
 {
-    _marker: PhantomData<W>,
+    _marker: PhantomData<(W, CODEC)>,
     callback: Option<Callback<W::Output>>,
 }
 
-impl<W: Worker> fmt::Debug for WorkerSpawner<W> {
+impl<W, CODEC> fmt::Debug for WorkerSpawner<W, CODEC>
+where
+    W: Worker,
+    CODEC: Codec,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("WorkerScope<_>")
     }
 }
 
-impl<W> Default for WorkerSpawner<W>
+impl<W, CODEC> Default for WorkerSpawner<W, CODEC>
 where
     W: Worker,
+    CODEC: Codec,
 {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<W> WorkerSpawner<W>
+impl<W, CODEC> WorkerSpawner<W, CODEC>
 where
     W: Worker,
+    CODEC: Codec,
 {
     /// Creates a [WorkerSpawner].
     pub fn new() -> Self {
         Self {
             _marker: PhantomData,
             callback: None,
+        }
+    }
+
+    /// Sets a new message encoding
+    pub fn encoding<C>(&mut self) -> WorkerSpawner<W, C>
+    where
+        C: Codec,
+    {
+        WorkerSpawner {
+            _marker: PhantomData,
+            callback: self.callback.clone(),
         }
     }
 
@@ -114,7 +133,7 @@ where
                     FromWorker::WorkerLoaded => {
                         if let Some(pending_queue) = pending_queue.borrow_mut().take() {
                             for to_worker in pending_queue.into_iter() {
-                                worker.post_packed_message(to_worker);
+                                worker.post_packed_message::<_, CODEC>(to_worker);
                             }
                         }
                     }
@@ -132,11 +151,11 @@ where
                 }
             };
 
-            worker.set_on_packed_message(handler);
+            worker.set_on_packed_message::<_, CODEC, _>(handler);
             worker
         };
 
-        WorkerBridge::<W>::new(
+        WorkerBridge::<W>::new::<CODEC>(
             handler_id,
             worker,
             pending_queue,

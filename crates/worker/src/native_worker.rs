@@ -1,11 +1,10 @@
-use js_sys::Uint8Array;
+use crate::codec::Codec;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::{JsCast, JsValue};
 pub(crate) use web_sys::Worker as DedicatedWorker;
 use web_sys::{DedicatedWorkerGlobalScope, MessageEvent};
-
-use crate::messages::Packed;
 
 pub(crate) trait WorkerSelf {
     type GlobalScope;
@@ -22,25 +21,29 @@ impl WorkerSelf for DedicatedWorker {
 }
 
 pub(crate) trait NativeWorkerExt {
-    fn set_on_packed_message<T>(&self, handler: impl 'static + Fn(T))
+    fn set_on_packed_message<T, CODEC, F>(&self, handler: F)
     where
-        T: Packed;
+        T: Serialize + for<'de> Deserialize<'de>,
+        CODEC: Codec,
+        F: 'static + Fn(T);
 
-    fn post_packed_message<T>(&self, data: T)
+    fn post_packed_message<T, CODEC>(&self, data: T)
     where
-        T: Packed;
+        T: Serialize + for<'de> Deserialize<'de>,
+        CODEC: Codec;
 }
 
 macro_rules! worker_ext_impl {
     ($($type:path),+) => {$(
         impl NativeWorkerExt for $type {
-            fn set_on_packed_message<T>(&self, handler: impl 'static + Fn(T))
+            fn set_on_packed_message<T, CODEC, F>(&self, handler: F)
             where
-                T: Packed
+                T: Serialize + for<'de> Deserialize<'de>,
+                CODEC: Codec,
+                F: 'static + Fn(T)
             {
                 let handler = move |message: MessageEvent| {
-                    let data = Uint8Array::from(message.data()).to_vec();
-                    let msg = T::unpack(&data);
+                    let msg = CODEC::decode(message.data());
                     handler(msg);
                 };
                 let closure = Closure::wrap(Box::new(handler) as Box<dyn Fn(MessageEvent)>);
@@ -49,11 +52,12 @@ macro_rules! worker_ext_impl {
                 closure.forget();
             }
 
-            fn post_packed_message<T>(&self, data: T)
+            fn post_packed_message<T, CODEC>(&self, data: T)
             where
-                T: Packed
+                T: Serialize + for<'de> Deserialize<'de>,
+                CODEC: Codec
             {
-                self.post_message(&Uint8Array::from(data.pack().as_slice()))
+                self.post_message(&CODEC::encode(data))
                     .expect_throw("failed to post message");
             }
         }

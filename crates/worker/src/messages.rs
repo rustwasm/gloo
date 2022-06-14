@@ -30,24 +30,3 @@ where
     /// Outgoing message to consumer
     ProcessOutput(HandlerId, W::Output),
 }
-
-/// Message packager, based on serde::Serialize/Deserialize
-pub(crate) trait Packed {
-    /// Pack serializable message into Vec<u8>
-    fn pack(&self) -> Vec<u8>;
-    /// Unpack deserializable message of byte slice
-    fn unpack(data: &[u8]) -> Self;
-}
-
-impl<T> Packed for T
-where
-    T: Serialize + for<'de> Deserialize<'de>,
-{
-    fn pack(&self) -> Vec<u8> {
-        bincode::serialize(&self).expect("can't serialize an worker message")
-    }
-
-    fn unpack(data: &[u8]) -> Self {
-        bincode::deserialize(data).expect("can't deserialize an worker message")
-    }
-}

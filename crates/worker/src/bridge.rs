@@ -5,9 +5,10 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 use std::rc::Weak;
 
+use crate::codec::Codec;
 use crate::handler_id::HandlerId;
 use crate::messages::ToWorker;
-use crate::native_worker::{DedicatedWorker, NativeWorkerExt};
+use crate::native_worker::NativeWorkerExt;
 use crate::traits::Worker;
 use crate::{Callback, Shared};
 
@@ -18,11 +19,10 @@ struct WorkerBridgeInner<W>
 where
     W: Worker,
 {
-    worker: DedicatedWorker,
     // When worker is loaded, queue becomes None.
     pending_queue: Shared<Option<ToWorkerQueue<W>>>,
-
     callbacks: Shared<CallbackMap<W>>,
+    post_msg: Rc<dyn Fn(ToWorker<W>)>,
 }
 
 impl<W> fmt::Debug for WorkerBridgeInner<W>
@@ -47,7 +47,7 @@ where
                 m.push(msg);
             }
             None => {
-                self.worker.post_packed_message(msg);
+                (self.post_msg)(msg);
             }
         }
     }
@@ -78,18 +78,24 @@ impl<W> WorkerBridge<W>
 where
     W: Worker,
 {
-    pub(crate) fn new(
+    pub(crate) fn new<CODEC>(
         id: HandlerId,
         native_worker: web_sys::Worker,
         pending_queue: Rc<RefCell<Option<ToWorkerQueue<W>>>>,
         callbacks: Rc<RefCell<CallbackMap<W>>>,
         callback: Option<Callback<W::Output>>,
-    ) -> Self {
+    ) -> Self
+    where
+        CODEC: Codec,
+    {
+        let post_msg =
+            { move |msg: ToWorker<W>| native_worker.post_packed_message::<_, CODEC>(msg) };
+
         Self {
             inner: WorkerBridgeInner {
-                worker: native_worker,
                 pending_queue,
                 callbacks,
+                post_msg: Rc::new(post_msg),
             }
             .into(),
             id,
