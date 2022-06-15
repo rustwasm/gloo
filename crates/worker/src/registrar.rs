@@ -9,8 +9,7 @@ use crate::traits::Worker;
 
 /// A trait to enable public workers being registered in a web worker.
 pub trait Registrable: Worker {
-    /// Executes an worker in the current environment.
-    /// Uses in `main` function of a worker.
+    /// Creates a registrar for the current worker.
     fn registrar() -> Registrar<Self>;
 }
 
@@ -25,6 +24,7 @@ where
     }
 }
 
+/// A Worker Registrar.
 pub struct Registrar<W, CODEC = Bincode>
 where
     W: Worker,
@@ -39,7 +39,7 @@ where
     CODEC: Codec,
 {
     /// Sets a new message encoding
-    pub fn encoding<C>(&mut self) -> Registrar<W, C>
+    pub fn encoding<C>(&self) -> Registrar<W, C>
     where
         C: Codec,
     {
@@ -48,6 +48,7 @@ where
         }
     }
 
+    /// Executes an worker in the current environment.
     pub fn register(&self)
     where
         CODEC: Codec,
@@ -55,23 +56,9 @@ where
         let scope = WorkerScope::<W>::new::<CODEC>();
         let upd = WorkerLifecycleEvent::Create(scope.clone());
         scope.send(upd);
-        let handler = move |msg: ToWorker<W>| match msg {
-            ToWorker::Connected(id) => {
-                let upd = WorkerLifecycleEvent::Connected(id);
-                scope.send(upd);
-            }
-            ToWorker::ProcessInput(id, value) => {
-                let upd = WorkerLifecycleEvent::Input(value, id);
-                scope.send(upd);
-            }
-            ToWorker::Disconnected(id) => {
-                let upd = WorkerLifecycleEvent::Disconnected(id);
-                scope.send(upd);
-            }
-            ToWorker::Destroy => {
-                let upd = WorkerLifecycleEvent::Destroy(scope.clone());
-                scope.send(upd);
-            }
+        let handler = move |msg: ToWorker<W>| {
+            let upd = WorkerLifecycleEvent::Remote(msg);
+            scope.send(upd);
         };
         let loaded: FromWorker<W> = FromWorker::WorkerLoaded;
         let worker = DedicatedWorker::worker_self();

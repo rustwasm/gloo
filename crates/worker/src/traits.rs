@@ -14,19 +14,19 @@ pub trait Worker: Sized + 'static {
     type Output: Serialize + for<'de> Deserialize<'de>;
 
     /// Creates an instance of an worker.
-    fn create(scope: WorkerScope<Self>) -> Self;
+    fn create(scope: &WorkerScope<Self>) -> Self;
 
     /// Receives an update.
-    fn update(&mut self, msg: Self::Message);
+    fn update(&mut self, scope: &WorkerScope<Self>, msg: Self::Message);
 
     /// This method called on when a new bridge created.
-    fn connected(&mut self, _id: HandlerId) {}
+    fn connected(&mut self, _scope: &WorkerScope<Self>, _id: HandlerId) {}
 
     /// Receives an input.
-    fn received(&mut self, msg: Self::Input, id: HandlerId);
+    fn received(&mut self, scope: &WorkerScope<Self>, msg: Self::Input, id: HandlerId);
 
     /// This method called on when a new bridge destroyed.
-    fn disconnected(&mut self, _id: HandlerId) {}
+    fn disconnected(&mut self, _scope: &WorkerScope<Self>, _id: HandlerId) {}
 
     /// This method called when the worker is destroyed.
     ///
@@ -34,7 +34,12 @@ pub trait Worker: Sized + 'static {
     /// When the value is `true`, it means that it can be closed immediately.
     /// When the value is `false`, the worker itself is responsible to close it with
     /// [`WorkerScope::close`].
-    fn destroy(&mut self) -> bool {
+    ///
+    /// # Note
+    ///
+    /// The worker will not receive any updates / messages after the destroy method regardless of
+    /// whether it has declared to close itself at a later time.
+    fn destroy(&mut self, _scope: &WorkerScope<Self>) -> bool {
         true
     }
 }

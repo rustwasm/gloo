@@ -1,17 +1,23 @@
 use wasm_bindgen::prelude::*;
 
-use crate::handler_id::HandlerId;
+use crate::messages::ToWorker;
 use crate::scope::WorkerScope;
 use crate::traits::Worker;
 use crate::Shared;
 
-pub(crate) struct WorkerState<W> {
-    worker: Option<W>,
+pub(crate) struct WorkerState<W>
+where
+    W: Worker,
+{
+    worker: Option<(W, WorkerScope<W>)>,
     // TODO: Use worker field to control create message this flag
     destroyed: bool,
 }
 
-impl<W> WorkerState<W> {
+impl<W> WorkerState<W>
+where
+    W: Worker,
+{
     pub fn new() -> Self {
         WorkerState {
             worker: None,
@@ -21,20 +27,15 @@ impl<W> WorkerState<W> {
 }
 
 /// Internal Worker lifecycle events
-#[derive(Debug)]
 pub(crate) enum WorkerLifecycleEvent<W: Worker> {
     /// Request to create the scope
     Create(WorkerScope<W>),
+
     /// Internal Worker message
     Message(W::Message),
-    /// Client connected
-    Connected(HandlerId),
-    /// Received message from Client
-    Input(W::Input, HandlerId),
-    /// Client disconnected
-    Disconnected(HandlerId),
-    /// Request to destroy worker
-    Destroy(WorkerScope<W>),
+
+    /// External Messages from bridges
+    Remote(ToWorker<W>),
 }
 
 pub(crate) struct WorkerRunnable<W: Worker> {
@@ -55,55 +56,65 @@ where
                 if state.destroyed {
                     return;
                 }
-                state.worker = Some(W::create(scope));
+                state.worker = Some((W::create(&scope), scope));
             }
             WorkerLifecycleEvent::Message(msg) => {
-                state
-                    .worker
-                    .as_mut()
-                    .expect_throw("worker was not created to process messages")
-                    .update(msg);
-            }
-            WorkerLifecycleEvent::Connected(id) => {
                 if state.destroyed {
                     return;
                 }
 
-                state
+                let (worker, scope) = state
                     .worker
                     .as_mut()
-                    .expect_throw("worker was not created to send a connected message")
-                    .connected(id);
+                    .expect_throw("worker was not created to process messages");
+
+                worker.update(scope, msg);
             }
-            WorkerLifecycleEvent::Input(inp, id) => {
+            WorkerLifecycleEvent::Remote(ToWorker::Connected(id)) => {
                 if state.destroyed {
                     return;
                 }
-                state
+
+                let (worker, scope) = state
                     .worker
                     .as_mut()
-                    .expect_throw("worker was not created to process inputs")
-                    .received(inp, id);
+                    .expect_throw("worker was not created to process connected messages");
+
+                worker.connected(scope, id);
             }
-            WorkerLifecycleEvent::Disconnected(id) => {
+            WorkerLifecycleEvent::Remote(ToWorker::ProcessInput(id, inp)) => {
                 if state.destroyed {
                     return;
                 }
-                state
+
+                let (worker, scope) = state
                     .worker
                     .as_mut()
-                    .expect_throw("worker was not created to send a disconnected message")
-                    .disconnected(id);
+                    .expect_throw("worker was not created to process inputs");
+
+                worker.received(scope, inp, id);
             }
-            WorkerLifecycleEvent::Destroy(scope) => {
+            WorkerLifecycleEvent::Remote(ToWorker::Disconnected(id)) => {
                 if state.destroyed {
                     return;
                 }
-                let mut worker = state
+
+                let (worker, scope) = state
+                    .worker
+                    .as_mut()
+                    .expect_throw("worker was not created to process disconnected messages");
+
+                worker.disconnected(scope, id);
+            }
+            WorkerLifecycleEvent::Remote(ToWorker::Destroy) => {
+                if state.destroyed {
+                    return;
+                }
+                let (mut worker, scope) = state
                     .worker
                     .take()
                     .expect_throw("trying to destroy not existent worker");
-                let should_terminate_now = worker.destroy();
+                let should_terminate_now = worker.destroy(&scope);
 
                 scope.set_closable();
 
