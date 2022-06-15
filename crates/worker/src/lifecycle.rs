@@ -59,10 +59,6 @@ where
                 state.worker = Some((W::create(&scope), scope));
             }
             WorkerLifecycleEvent::Message(msg) => {
-                if state.destroyed {
-                    return;
-                }
-
                 let (worker, scope) = state
                     .worker
                     .as_mut()
@@ -110,11 +106,12 @@ where
                 if state.destroyed {
                     return;
                 }
-                let (mut worker, scope) = state
+
+                let (worker, scope) = state
                     .worker
-                    .take()
+                    .as_mut()
                     .expect_throw("trying to destroy not existent worker");
-                let should_terminate_now = worker.destroy(&scope);
+                let should_terminate_now = worker.destroy(scope);
 
                 scope.set_closable();
 

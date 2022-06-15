@@ -34,11 +34,6 @@ pub trait Worker: Sized + 'static {
     /// When the value is `true`, it means that it can be closed immediately.
     /// When the value is `false`, the worker itself is responsible to close it with
     /// [`WorkerScope::close`].
-    ///
-    /// # Note
-    ///
-    /// The worker will not receive any updates / messages after the destroy method regardless of
-    /// whether it has declared to close itself at a later time.
     fn destroy(&mut self, _scope: &WorkerScope<Self>) -> bool {
         true
     }
