@@ -20,13 +20,19 @@ pub trait Worker: Sized + 'static {
     fn update(&mut self, scope: &WorkerScope<Self>, msg: Self::Message);
 
     /// This method called on when a new bridge created.
-    fn connected(&mut self, _scope: &WorkerScope<Self>, _id: HandlerId) {}
+    fn connected(&mut self, scope: &WorkerScope<Self>, id: HandlerId) {
+        let _scope = scope;
+        let _id = id;
+    }
 
     /// Receives an input.
     fn received(&mut self, scope: &WorkerScope<Self>, msg: Self::Input, id: HandlerId);
 
     /// This method called on when a new bridge destroyed.
-    fn disconnected(&mut self, _scope: &WorkerScope<Self>, _id: HandlerId) {}
+    fn disconnected(&mut self, scope: &WorkerScope<Self>, id: HandlerId) {
+        let _scope = scope;
+        let _id = id;
+    }
 
     /// This method called when the worker is destroyed.
     ///
@@ -34,7 +40,8 @@ pub trait Worker: Sized + 'static {
     /// When the value is `true`, it means that it can be closed immediately.
     /// When the value is `false`, the worker itself is responsible to close it with
     /// [`WorkerScope::close`].
-    fn destroy(&mut self, _scope: &WorkerScope<Self>) -> bool {
+    fn destroy(&mut self, scope: &WorkerScope<Self>) -> bool {
+        let _scope = scope;
         true
     }
 }

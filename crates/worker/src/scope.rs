@@ -63,8 +63,8 @@ where
     pub(crate) fn send(&self, event: WorkerLifecycleEvent<W>) {
         let state = self.state.clone();
 
-        // We can implement a scheduler outself,
-        // but it's easier to just borrow the one from wasm-bindgen-futures.
+        // We can implement a custom scheduler,
+        // but it's easier to borrow the one from wasm-bindgen-futures.
         spawn_local(async move {
             WorkerRunnable { state, event }.run();
         });
@@ -116,7 +116,7 @@ where
             "a worker can only be closed after its destroy method is notified."
         );
 
-        DedicatedWorker::worker_self().close();
+        self.send(WorkerLifecycleEvent::Destroy);
     }
 
     /// This method creates a callback which returns a Future which

@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 use crate::messages::ToWorker;
+use crate::native_worker::{DedicatedWorker, WorkerSelf};
 use crate::scope::WorkerScope;
 use crate::traits::Worker;
 use crate::Shared;
@@ -10,8 +11,7 @@ where
     W: Worker,
 {
     worker: Option<(W, WorkerScope<W>)>,
-    // TODO: Use worker field to control create message this flag
-    destroyed: bool,
+    to_destroy: bool,
 }
 
 impl<W> WorkerState<W>
@@ -21,7 +21,7 @@ where
     pub fn new() -> Self {
         WorkerState {
             worker: None,
-            destroyed: false,
+            to_destroy: false,
         }
     }
 }
@@ -36,6 +36,9 @@ pub(crate) enum WorkerLifecycleEvent<W: Worker> {
 
     /// External Messages from bridges
     Remote(ToWorker<W>),
+
+    /// Destroy the Worker
+    Destroy,
 }
 
 pub(crate) struct WorkerRunnable<W: Worker> {
@@ -53,7 +56,7 @@ where
         // We should block all event other than message after a worker is destroyed.
         match self.event {
             WorkerLifecycleEvent::Create(scope) => {
-                if state.destroyed {
+                if state.to_destroy {
                     return;
                 }
                 state.worker = Some((W::create(&scope), scope));
@@ -67,7 +70,7 @@ where
                 worker.update(scope, msg);
             }
             WorkerLifecycleEvent::Remote(ToWorker::Connected(id)) => {
-                if state.destroyed {
+                if state.to_destroy {
                     return;
                 }
 
@@ -79,7 +82,7 @@ where
                 worker.connected(scope, id);
             }
             WorkerLifecycleEvent::Remote(ToWorker::ProcessInput(id, inp)) => {
-                if state.destroyed {
+                if state.to_destroy {
                     return;
                 }
 
@@ -91,7 +94,7 @@ where
                 worker.received(scope, inp, id);
             }
             WorkerLifecycleEvent::Remote(ToWorker::Disconnected(id)) => {
-                if state.destroyed {
+                if state.to_destroy {
                     return;
                 }
 
@@ -103,7 +106,7 @@ where
                 worker.disconnected(scope, id);
             }
             WorkerLifecycleEvent::Remote(ToWorker::Destroy) => {
-                if state.destroyed {
+                if state.to_destroy {
                     return;
                 }
 
@@ -118,7 +121,16 @@ where
                 if should_terminate_now {
                     scope.close();
                 }
-                state.destroyed = true;
+                state.to_destroy = true;
+            }
+
+            WorkerLifecycleEvent::Destroy => {
+                state
+                    .worker
+                    .take()
+                    .expect_throw("worker is not initialised");
+
+                DedicatedWorker::worker_self().close();
             }
         }
     }
