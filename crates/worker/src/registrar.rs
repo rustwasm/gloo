@@ -38,6 +38,16 @@ where
     W: Worker,
     CODEC: Codec,
 {
+    /// Sets a new message encoding
+    pub fn encoding<C>(&mut self) -> Registrar<W, C>
+    where
+        C: Codec,
+    {
+        Registrar {
+            _marker: PhantomData,
+        }
+    }
+
     pub fn register(&self)
     where
         CODEC: Codec,
