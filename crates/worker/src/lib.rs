@@ -37,6 +37,7 @@ mod traits;
 pub use bridge::WorkerBridge;
 pub use codec::{Bincode, Codec};
 pub use handler_id::HandlerId;
+pub use registrar::WorkerRegistrar;
 pub use scope::{WorkerDestroyHandle, WorkerScope};
 pub use spawner::WorkerSpawner;
 pub use traits::Registrable;
