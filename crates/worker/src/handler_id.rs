@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde::{Deserialize, Serialize};
 
-/// Id of responses handler.
+/// Identifier to send output to bridges.
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Hash, Clone, Copy)]
 pub struct HandlerId(usize);
 

@@ -34,7 +34,7 @@ pub trait Worker: Sized + 'static {
 
     /// Receives an input from a connected bridge.
     ///
-    /// When a bridge sends an input via [`WorkerBridge::send`], the worker will receive the
+    /// When a bridge sends an input via [`WorkerBridge::send`](crate::WorkerBridge::send), the worker will receive the
     /// input via this method.
     fn received(&mut self, scope: &WorkerScope<Self>, msg: Self::Input, id: HandlerId);
 

@@ -88,7 +88,7 @@ where
         }
     }
 
-    /// Sets a new message encoding
+    /// Sets a new message encoding.
     pub fn encoding<C>(&mut self) -> WorkerSpawner<W, C>
     where
         C: Codec,

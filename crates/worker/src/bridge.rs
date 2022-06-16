@@ -112,7 +112,7 @@ where
 
     /// Forks the bridge with a different callback.
     ///
-    /// This creates a new HandlerID that helps the worker to differentiate bridges.
+    /// This creates a new [HandlerID] that helps the worker to differentiate bridges.
     pub fn fork<F>(&self, cb: Option<F>) -> Self
     where
         F: 'static + Fn(W::Output),

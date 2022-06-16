@@ -1,3 +1,4 @@
+use std::fmt;
 use std::marker::PhantomData;
 
 use crate::codec::{Bincode, Codec};
@@ -16,6 +17,12 @@ where
     _marker: PhantomData<(W, CODEC)>,
 }
 
+impl<W: Worker> fmt::Debug for WorkerRegistrar<W> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("WorkerRegistrar<_>")
+    }
+}
+
 impl<W, CODEC> WorkerRegistrar<W, CODEC>
 where
     W: Worker,
@@ -27,7 +34,7 @@ where
         }
     }
 
-    /// Sets a new message encoding
+    /// Sets a new message encoding.
     pub fn encoding<C>(&self) -> WorkerRegistrar<W, C>
     where
         C: Codec,

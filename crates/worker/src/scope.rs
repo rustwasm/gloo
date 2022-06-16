@@ -19,6 +19,12 @@ pub struct WorkerDestroyHandle<W: Worker> {
     scope: WorkerScope<W>,
 }
 
+impl<W: Worker> fmt::Debug for WorkerDestroyHandle<W> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("WorkerDestroyHandle<_>")
+    }
+}
+
 impl<W> WorkerDestroyHandle<W>
 where
     W: Worker,

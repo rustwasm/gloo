@@ -16,6 +16,7 @@ pub trait Codec {
 }
 
 /// Default message encoding with [bincode].
+#[derive(Debug)]
 pub struct Bincode {}
 
 impl Codec for Bincode {
