@@ -62,12 +62,9 @@ where
                 state.worker = Some((W::create(&scope), scope));
             }
             WorkerLifecycleEvent::Message(msg) => {
-                let (worker, scope) = state
-                    .worker
-                    .as_mut()
-                    .expect_throw("worker was not created to process messages");
-
-                worker.update(scope, msg);
+                if let Some((worker, scope)) = state.worker.as_mut() {
+                    worker.update(scope, msg);
+                }
             }
             WorkerLifecycleEvent::Remote(ToWorker::Connected(id)) => {
                 if state.to_destroy {
@@ -126,7 +123,7 @@ where
                 state
                     .worker
                     .take()
-                    .expect_throw("worker is not initialised");
+                    .expect_throw("worker is not initialised or already destroyed");
 
                 DedicatedWorker::worker_self().close();
             }
