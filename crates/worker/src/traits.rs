@@ -65,30 +65,40 @@ pub trait Worker: Sized + 'static {
 }
 
 /// A Worker that can be spawned by a spawner.
-pub trait Spawnable: Worker {
+pub trait Spawnable {
+    /// Spawner Type.
+    type Spawner;
+
     /// Creates a spawner.
-    fn spawner() -> WorkerSpawner<Self>;
+    fn spawner() -> Self::Spawner;
 }
 
 impl<T> Spawnable for T
 where
     T: Worker,
 {
+    type Spawner = WorkerSpawner<Self>;
+
     fn spawner() -> WorkerSpawner<Self> {
         WorkerSpawner::new()
     }
 }
 
 /// A trait to enable public workers being registered in a web worker.
-pub trait Registrable: Worker {
+pub trait Registrable {
+    /// Registrar Type.
+    type Registrar;
+
     /// Creates a registrar for the current worker.
-    fn registrar() -> WorkerRegistrar<Self>;
+    fn registrar() -> Self::Registrar;
 }
 
 impl<W> Registrable for W
 where
     W: Worker,
 {
+    type Registrar = WorkerRegistrar<Self>;
+
     fn registrar() -> WorkerRegistrar<Self> {
         WorkerRegistrar::new()
     }
