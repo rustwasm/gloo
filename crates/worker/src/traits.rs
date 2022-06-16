@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::handler_id::HandlerId;
-use crate::scope::WorkerScope;
+use crate::registrar::WorkerRegistrar;
+use crate::scope::{WorkerDestroyHandle, WorkerScope};
 use crate::spawner::WorkerSpawner;
 
 /// Declares the behaviour of a worker.
@@ -13,36 +14,53 @@ pub trait Worker: Sized + 'static {
     /// Outgoing message type.
     type Output: Serialize + for<'de> Deserialize<'de>;
 
-    /// Creates an instance of an worker.
+    /// Creates an instance of a worker.
     fn create(scope: &WorkerScope<Self>) -> Self;
 
     /// Receives an update.
+    ///
+    /// This method is called when the worker send messages to itself via [`WorkerScope::send_message`].
     fn update(&mut self, scope: &WorkerScope<Self>, msg: Self::Message);
 
-    /// This method called on when a new bridge created.
+    /// New bridge created.
+    ///
+    /// When a new bridge is created by [`WorkerSpawner::spawn`](crate::spawner::WorkerSpawner)
+    /// or [`WorkerBridge::fork`](crate::WorkerBridge::fork),
+    /// the worker will be notified the [`HandlerId`] of the created bridge via this method.
     fn connected(&mut self, scope: &WorkerScope<Self>, id: HandlerId) {
         let _scope = scope;
         let _id = id;
     }
 
-    /// Receives an input.
+    /// Receives an input from a connected bridge.
+    ///
+    /// When a bridge sends an input via [`WorkerBridge::send`], the worker will receive the
+    /// input via this method.
     fn received(&mut self, scope: &WorkerScope<Self>, msg: Self::Input, id: HandlerId);
 
-    /// This method called on when a new bridge destroyed.
+    /// Existing bridge destroyed.
+    ///
+    /// When a bridge is dropped, the worker will be notified with this method.
     fn disconnected(&mut self, scope: &WorkerScope<Self>, id: HandlerId) {
         let _scope = scope;
         let _id = id;
     }
 
-    /// This method called when the worker is destroyed.
+    /// Destroys the current worker.
     ///
-    /// Returns a boolean indicating whether a worker is going to close itself afterwards.
-    /// When the value is `true`, it means that it can be closed immediately.
-    /// When the value is `false`, the worker itself is responsible to close it with
-    /// [`WorkerScope::close`].
-    fn destroy(&mut self, scope: &WorkerScope<Self>) -> bool {
+    /// When all bridges are dropped, the method will be invoked.
+    ///
+    /// This method is provided a destroy handle where when it is dropped, the worker is closed.
+    /// If the worker is closed immediately, then it can ignore the destroy handle.
+    /// Otherwise hold the destroy handle until the clean up task is finished.
+    ///
+    /// # Note
+    ///
+    /// This method will only be called after all bridges are disconnected.
+    /// Attempting to send messages after this method is called will have no effect.
+    fn destroy(&mut self, scope: &WorkerScope<Self>, destruct: WorkerDestroyHandle<Self>) {
         let _scope = scope;
-        true
+        let _destruct = destruct;
     }
 }
 
@@ -58,5 +76,20 @@ where
 {
     fn spawner() -> WorkerSpawner<Self> {
         WorkerSpawner::new()
+    }
+}
+
+/// A trait to enable public workers being registered in a web worker.
+pub trait Registrable: Worker {
+    /// Creates a registrar for the current worker.
+    fn registrar() -> WorkerRegistrar<Self>;
+}
+
+impl<W> Registrable for W
+where
+    W: Worker,
+{
+    fn registrar() -> WorkerRegistrar<Self> {
+        WorkerRegistrar::new()
     }
 }

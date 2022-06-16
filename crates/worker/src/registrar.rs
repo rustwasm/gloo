@@ -7,25 +7,8 @@ use crate::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
 use crate::scope::WorkerScope;
 use crate::traits::Worker;
 
-/// A trait to enable public workers being registered in a web worker.
-pub trait Registrable: Worker {
-    /// Creates a registrar for the current worker.
-    fn registrar() -> Registrar<Self>;
-}
-
-impl<W> Registrable for W
-where
-    W: Worker,
-{
-    fn registrar() -> Registrar<Self> {
-        Registrar {
-            _marker: PhantomData,
-        }
-    }
-}
-
 /// A Worker Registrar.
-pub struct Registrar<W, CODEC = Bincode>
+pub struct WorkerRegistrar<W, CODEC = Bincode>
 where
     W: Worker,
     CODEC: Codec,
@@ -33,17 +16,23 @@ where
     _marker: PhantomData<(W, CODEC)>,
 }
 
-impl<W, CODEC> Registrar<W, CODEC>
+impl<W, CODEC> WorkerRegistrar<W, CODEC>
 where
     W: Worker,
     CODEC: Codec,
 {
+    pub(crate) fn new() -> Self {
+        Self {
+            _marker: PhantomData,
+        }
+    }
+
     /// Sets a new message encoding
-    pub fn encoding<C>(&self) -> Registrar<W, C>
+    pub fn encoding<C>(&self) -> WorkerRegistrar<W, C>
     where
         C: Codec,
     {
-        Registrar {
+        WorkerRegistrar {
             _marker: PhantomData,
         }
     }

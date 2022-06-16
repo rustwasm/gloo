@@ -37,9 +37,9 @@ mod traits;
 pub use bridge::WorkerBridge;
 pub use codec::{Bincode, Codec};
 pub use handler_id::HandlerId;
-pub use registrar::Registrable;
-pub use scope::WorkerScope;
+pub use scope::{WorkerDestroyHandle, WorkerScope};
 pub use spawner::WorkerSpawner;
+pub use traits::Registrable;
 pub use traits::{Spawnable, Worker};
 
 use std::cell::RefCell;

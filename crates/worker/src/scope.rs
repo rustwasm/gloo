@@ -3,7 +3,6 @@ use std::fmt;
 #[cfg(feature = "futures")]
 use std::future::Future;
 use std::rc::Rc;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 use wasm_bindgen_futures::spawn_local;
 
@@ -15,10 +14,32 @@ use crate::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
 use crate::traits::Worker;
 use crate::Shared;
 
+/// A handle that closes the worker when it is dropped.
+pub struct WorkerDestroyHandle<W: Worker> {
+    scope: WorkerScope<W>,
+}
+
+impl<W> WorkerDestroyHandle<W>
+where
+    W: Worker,
+{
+    pub(crate) fn new(scope: WorkerScope<W>) -> Self {
+        Self { scope }
+    }
+}
+
+impl<W> Drop for WorkerDestroyHandle<W>
+where
+    W: Worker,
+{
+    fn drop(&mut self) {
+        self.scope.send(WorkerLifecycleEvent::Destroy);
+    }
+}
+
 /// This struct holds a reference to a component and to a global scheduler.
 pub struct WorkerScope<W: Worker> {
     state: Shared<WorkerState<W>>,
-    closable: Rc<AtomicBool>,
     post_msg: Rc<dyn Fn(FromWorker<W>)>,
 }
 
@@ -32,7 +53,6 @@ impl<W: Worker> Clone for WorkerScope<W> {
     fn clone(&self) -> Self {
         WorkerScope {
             state: self.state.clone(),
-            closable: self.closable.clone(),
             post_msg: self.post_msg.clone(),
         }
     }
@@ -55,7 +75,6 @@ where
         WorkerScope {
             post_msg: Rc::new(post_msg),
             state,
-            closable: AtomicBool::new(false).into(),
         }
     }
 
@@ -96,27 +115,6 @@ where
             scope.send(WorkerLifecycleEvent::Message(output));
         };
         Rc::new(closure)
-    }
-
-    /// Notifies the scope that close can be called.
-    pub(crate) fn set_closable(&self) {
-        self.closable.store(true, Ordering::Relaxed);
-    }
-
-    /// Closes the current worker.
-    ///
-    /// Note: You can only call this method after the `destroy` lifecycle event is notified.
-    ///
-    /// # Panics
-    ///
-    /// This method would panic if it is called before the `destroy` lifecycle event.
-    pub fn close(&self) {
-        assert!(
-            self.closable.load(Ordering::Relaxed),
-            "a worker can only be closed after its destroy method is notified."
-        );
-
-        self.send(WorkerLifecycleEvent::Destroy);
     }
 
     /// This method creates a callback which returns a Future which

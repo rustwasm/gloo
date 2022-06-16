@@ -2,7 +2,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::messages::ToWorker;
 use crate::native_worker::{DedicatedWorker, WorkerSelf};
-use crate::scope::WorkerScope;
+use crate::scope::{WorkerDestroyHandle, WorkerScope};
 use crate::traits::Worker;
 use crate::Shared;
 
@@ -110,18 +110,16 @@ where
                     return;
                 }
 
+                state.to_destroy = true;
+
                 let (worker, scope) = state
                     .worker
                     .as_mut()
                     .expect_throw("trying to destroy not existent worker");
-                let should_terminate_now = worker.destroy(scope);
 
-                scope.set_closable();
+                let destruct = WorkerDestroyHandle::new(scope.clone());
 
-                if should_terminate_now {
-                    scope.close();
-                }
-                state.to_destroy = true;
+                worker.destroy(scope, destruct);
             }
 
             WorkerLifecycleEvent::Destroy => {
