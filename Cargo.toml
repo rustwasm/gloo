@@ -33,15 +33,14 @@ features = ["futures"]
 
 [workspace]
 members = [
-    "crates/timers",
-    "crates/events",
-    "crates/net",
-    "crates/file",
-    "crates/dialogs",
-    "crates/storage",
     "crates/console",
-    "crates/utils",
+    "crates/dialogs",
+    "crates/events",
+    "crates/file",
     "crates/history",
-    "crates/worker",
     "crates/net",
+    "crates/storage",
+    "crates/timers",
+    "crates/utils",
+    "crates/worker",
 ]
