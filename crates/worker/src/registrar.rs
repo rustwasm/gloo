@@ -39,9 +39,7 @@ where
     where
         C: Codec,
     {
-        WorkerRegistrar {
-            _marker: PhantomData,
-        }
+        WorkerRegistrar::new()
     }
 
     /// Executes an worker in the current environment.

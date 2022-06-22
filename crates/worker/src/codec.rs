@@ -17,7 +17,7 @@ pub trait Codec {
 
 /// Default message encoding with [bincode].
 #[derive(Debug)]
-pub struct Bincode {}
+pub struct Bincode;
 
 impl Codec for Bincode {
     fn encode<I>(input: I) -> JsValue

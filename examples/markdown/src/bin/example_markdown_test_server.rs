@@ -2,6 +2,10 @@
 
 use warp::Filter;
 
+// This server is purely to faclitate testing.
+// Please read the instruction in lib.rs about how to run tests.
+//
+// If you are not running tests, you can simply ignore this file.
 #[tokio::main]
 async fn main() {
     let dir = std::env::args().nth(1).expect("expected a target dir.");

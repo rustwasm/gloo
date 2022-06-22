@@ -46,10 +46,8 @@ macro_rules! worker_ext_impl {
                     let msg = CODEC::decode(message.data());
                     handler(msg);
                 };
-                let closure = Closure::wrap(Box::new(handler) as Box<dyn Fn(MessageEvent)>);
+                let closure = Closure::wrap(Box::new(handler) as Box<dyn Fn(MessageEvent)>).into_js_value();
                 self.set_onmessage(Some(closure.as_ref().unchecked_ref()));
-                // Memory leak?
-                closure.forget();
             }
 
             fn post_packed_message<T, CODEC>(&self, data: T)
