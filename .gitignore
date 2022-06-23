@@ -2,6 +2,8 @@
 **/*.rs.bk
 Cargo.lock
 
+examples/*/dist
+
 # editor configs
 .vscode
 .idea

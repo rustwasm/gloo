@@ -49,6 +49,11 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
+      - name: Setup trunk
+        uses: jetli/trunk-action@v0.1.0
+        with:
+          version: 'latest'
+
       - uses: actions/cache@v2
         with:
           path: |
@@ -70,6 +75,14 @@ jobs:
             wasm-pack test --headless --firefox --chrome crates/$x --all-features
             wasm-pack test --headless --firefox --chrome crates/$x --no-default-features
           done
+
+      - name: Run tests for gloo worker
+        run: |
+          trunk build examples/markdown/index.html
+          nohup cargo run -p example-markdown --bin example_markdown_test_server -- examples/markdown/dist &
+
+          wasm-pack test --headless --firefox --chrome examples/markdown
+
 
   test-net:
     name: Test gloo-net

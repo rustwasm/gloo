@@ -44,4 +44,7 @@ members = [
     "crates/history",
     "crates/worker",
     "crates/net",
+
+    "examples/markdown",
+    "examples/clock",
 ]
