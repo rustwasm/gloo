@@ -76,3 +76,5 @@ impl fmt::Debug for JsError {
             .finish()
     }
 }
+
+impl std::error::Error for JsError {}
