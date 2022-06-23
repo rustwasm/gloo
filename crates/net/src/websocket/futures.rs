@@ -105,7 +105,10 @@ impl WebSocket {
         Self::setup(web_sys::WebSocket::new_with_str_sequence(
             url,
             &JsValue::from_serde(protocols).map_err(|err| {
-                js_sys::Error::new(&format!("Failed to convert protocols to JSON: {}", err))
+                js_sys::Error::new(&format!(
+                    "Failed to convert protocols to Javascript value: {}",
+                    err
+                ))
             })?,
         ))
     }
