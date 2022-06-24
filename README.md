@@ -18,7 +18,7 @@ and Wasm.**
 
 Gloo is a collection of libraries, and those libraries provide ergonomic Rust 
 wrappers for browser APIs. `web-sys`/`js-sys` are very difficult/inconvenient 
-to use directly so provides wrappers around the raw bindngs which makes it easier
+to use directly so gloo provides wrappers around the raw bindngs which makes it easier
 to consume those APIs. This is why it is called a "toolkit", instead of "library"
 or "framework".
 
