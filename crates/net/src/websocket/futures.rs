@@ -70,8 +70,52 @@ impl WebSocket {
     /// [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket#exceptions_thrown)
     /// to learn more.
     pub fn open(url: &str) -> Result<Self, JsError> {
+        Self::setup(web_sys::WebSocket::new(url))
+    }
+
+    /// Establish a WebSocket connection.
+    ///
+    /// This function may error in the following cases:
+    /// - The port to which the connection is being attempted is being blocked.
+    /// - The URL is invalid.
+    /// - The specified protocol is not supported
+    ///
+    /// The error returned is [`JsError`]. See the
+    /// [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket#exceptions_thrown)
+    /// to learn more.
+    pub fn open_with_protocol(url: &str, protocol: &str) -> Result<Self, JsError> {
+        Self::setup(web_sys::WebSocket::new_with_str(url, protocol))
+    }
+
+    /// Establish a WebSocket connection.
+    ///
+    /// This function may error in the following cases:
+    /// - The port to which the connection is being attempted is being blocked.
+    /// - The URL is invalid.
+    /// - The specified protocols are not supported
+    /// - The protocols cannot be converted to a JSON string list
+    ///
+    /// The error returned is [`JsError`]. See the
+    /// [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket#exceptions_thrown)
+    /// to learn more.
+    pub fn open_with_protocols<S: AsRef<str> + serde::Serialize>(
+        url: &str,
+        protocols: &[S],
+    ) -> Result<Self, JsError> {
+        Self::setup(web_sys::WebSocket::new_with_str_sequence(
+            url,
+            &JsValue::from_serde(protocols).map_err(|err| {
+                js_sys::Error::new(&format!(
+                    "Failed to convert protocols to Javascript value: {}",
+                    err
+                ))
+            })?,
+        ))
+    }
+
+    fn setup(ws: Result<web_sys::WebSocket, JsValue>) -> Result<Self, JsError> {
         let waker: Rc<RefCell<Option<Waker>>> = Rc::new(RefCell::new(None));
-        let ws = web_sys::WebSocket::new(url).map_err(js_to_js_error)?;
+        let ws = ws.map_err(js_to_js_error)?;
 
         // We rely on this because the other type Blob can be converted to Vec<u8> only through a
         // promise which makes it awkward to use in our event callbacks where we want to guarantee
