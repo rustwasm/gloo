@@ -61,4 +61,11 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --all-targets -- -D warnings
+          args: --all-targets --all-features -- -D warnings
+
+      - name: Run clippy for gloo-net
+        working-directory: crates/net
+        run: |
+          cargo clippy --features "http"
+          cargo clippy --features "http,json"
+          cargo clippy --features "websocket"
