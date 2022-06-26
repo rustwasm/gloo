@@ -177,7 +177,7 @@ impl Request {
         let json = serde_json::to_string(value)?;
         Result::Ok(self.header("Content-Type", "application/json").body(json))
     }
-    
+
     /// The request method, e.g., GET, POST.
     pub fn method(mut self, method: Method) -> Self {
         self.options.method(&method.to_string());
