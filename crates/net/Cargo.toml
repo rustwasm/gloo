@@ -55,6 +55,8 @@ websocket = [
     "pin-project",
     "futures-core",
     "futures-sink",
+    "wasm-bindgen/serde-serialize",
+    "serde",
 ]
 # Enables the HTTP API
 http = [
