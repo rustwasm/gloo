@@ -9,7 +9,14 @@
 mod blob;
 mod file_list;
 mod file_reader;
+mod object_url;
 
 pub use blob::*;
 pub use file_list::*;
 pub use file_reader::*;
+pub use object_url::*;
+
+mod sealed {
+    pub trait Sealed {}
+}
+use sealed::Sealed;
