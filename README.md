@@ -1,5 +1,9 @@
 # Gloo
 
+<p align="center">
+  <img src="https://github.com/rustwasm/gloo/blob/master/website/static/img/Gloo-Logo.svg" width="400" height="300" />
+</p>
+
 **A toolkit for building fast, reliable Web applications and libraries with Rust
 and Wasm.**
 
