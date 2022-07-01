@@ -112,7 +112,7 @@ const PNG_FILE_DATA: &'static str = "data:image/png;base64,iVBORw0KGgoAAAANSUhEU
 #[wasm_bindgen_test]
 async fn blob_to_url() {
     let blob = Blob::new("hello world");
-    let object_url = ObjectUrl::new(&blob);
+    let object_url = ObjectUrl::from(blob);
     // simulate a fetch, and expect to get a string containing the content back
     let request: JsFuture = window().unwrap().fetch_with_str(&object_url).into();
     let response = request.await.unwrap().unchecked_into::<Response>();
