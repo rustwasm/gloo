@@ -2,9 +2,12 @@
 
 use futures_rs::channel::mpsc;
 use futures_rs::prelude::*;
+use wasm_bindgen::JsCast;
+use wasm_bindgen_futures::JsFuture;
 use wasm_bindgen_test::*;
 
-use gloo_file::{callbacks::read_as_text, Blob, File};
+use gloo_file::{callbacks::read_as_text, Blob, File, ObjectUrl};
+use web_sys::{window, Response};
 
 wasm_bindgen_test_configure!(run_in_browser);
 
@@ -104,3 +107,20 @@ const PNG_FILE: &'static [u8] = &[
 #[cfg(feature = "futures")]
 const PNG_FILE_DATA: &'static str = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAA\
      Al21bKAAAAA1BMVEX/TQBcNTh/AAAAAXRSTlPM0jRW/QAAAApJREFUeJxjYgAAAAYAAzY3fKgAAAAASUVORK5CYII=";
+
+#[cfg(feature = "futures")]
+#[wasm_bindgen_test]
+async fn blob_to_url() {
+    let blob = Blob::new("hello world");
+    let object_url = ObjectUrl::from(blob);
+    // simulate a fetch, and expect to get a string containing the content back
+    let request: JsFuture = window().unwrap().fetch_with_str(&object_url).into();
+    let response = request.await.unwrap().unchecked_into::<Response>();
+    let body: JsFuture = response.blob().unwrap().into();
+    let body = body.await.unwrap().unchecked_into::<web_sys::Blob>();
+
+    let body = gloo_file::futures::read_as_text(&body.into())
+        .await
+        .unwrap();
+    assert_eq!(&body, "hello world");
+}

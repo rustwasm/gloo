@@ -31,12 +31,18 @@ features = [
     "BlobPropertyBag",
     "FilePropertyBag",
     "DomException",
+    "Url",
 ]
 
 [dev-dependencies]
 futures_rs = { version = "0.3", package = "futures" }
 wasm-bindgen-test = "0.3.4"
+wasm-bindgen-futures = "0.4"
 chrono = { version = "0.4.10", features = ["wasmbind"] }
+
+[dev-dependencies.web-sys]
+version = "0.3.31"
+features = ["Window", "Response"]
 
 [features]
 default = []
