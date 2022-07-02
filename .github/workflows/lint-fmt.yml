@@ -66,6 +66,9 @@ jobs:
       - name: Run clippy for gloo-net
         working-directory: crates/net
         run: |
+          cargo clippy --features "http" --no-default-features
+          cargo clippy --features "http,json" --no-default-features
+          cargo clippy --features "websocket" --no-default-features
           cargo clippy --features "http"
           cargo clippy --features "http,json"
           cargo clippy --features "websocket"
