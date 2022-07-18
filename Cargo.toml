@@ -26,7 +26,11 @@ gloo-net = { version = "0.2", path = "crates/net" }
 
 [features]
 default = []
-futures = ["gloo-timers/futures", "gloo-file/futures"]
+futures = [
+    "gloo-timers/futures",
+    "gloo-file/futures",
+    "gloo-worker/futures"
+]
 
 [package.metadata.docs.rs]
 features = ["futures"]
