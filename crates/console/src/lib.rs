@@ -38,7 +38,7 @@ pub mod __macro {
         data: impl serde::Serialize,
         columns: impl IntoIterator<Item = &'a str>,
     ) {
-        let data = JsValue::from_serde(&data).unwrap_throw();
+        let data = js_sys::JSON::parse(&serde_json::to_string(&data).unwrap_throw()).unwrap_throw();
         let columns = columns.into_iter().map(JsValue::from_str).collect();
 
         crate::externs::table_with_data_and_columns(data, columns);

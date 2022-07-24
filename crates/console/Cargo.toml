@@ -12,9 +12,10 @@ documentation = "https://docs.rs/gloo-console/"
 categories = ["api-bindings", "development-tools::profiling", "wasm"]
 
 [dependencies]
-wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+wasm-bindgen = "0.2"
 js-sys = "0.3"
 serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
 [dependencies.web-sys]
 version = "0.3"
 features = [
