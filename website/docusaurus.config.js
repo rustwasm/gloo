@@ -22,9 +22,55 @@ module.exports = {
       items: [
         {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://docs.rs/gloo',
+          type: 'dropdown',
           label: 'docs.rs',
           position: 'right',
+          items: [
+            {
+              label: 'gloo',
+              href: 'https://docs.rs/gloo',
+            },
+            {
+              label: 'dialogs',
+              href: 'https://docs.rs/gloo-dialogs/',
+            },
+            {
+              label: 'events',
+              href: 'https://docs.rs/gloo-events/',
+            },
+            {
+              label: 'file',
+              href: 'https://docs.rs/gloo-file/',
+            },
+            {
+              label: 'history',
+              href: 'https://docs.rs/gloo-history/',
+            },
+            {
+              label: 'net',
+              href: 'https://docs.rs/gloo-net/',
+            },
+            {
+              label: 'render',
+              href: 'https://docs.rs/gloo-render/',
+            },
+            {
+              label: 'storage',
+              href: 'https://docs.rs/gloo-storage/',
+            },
+            {
+              label: 'timers',
+              href: 'https://docs.rs/gloo-timers/',
+            },
+            {
+              label: 'utils',
+              href: 'https://docs.rs/gloo-utils/',
+            },
+            {
+              label: 'worker',
+              href: 'https://docs.rs/gloo-worker/',
+            }
+          ],
         },
         {
           href: 'https://github.com/rustwasm/gloo',
