@@ -40,7 +40,7 @@ futures = "0.3"
 default = ["json", "websocket", "http"]
 
 # Enables `.json()` on `Response`
-json = ["wasm-bindgen/serde-serialize", "serde", "serde_json"]
+json = ["serde", "serde_json"]
 # Enables the WebSocket API
 websocket = [
     'web-sys/WebSocket',
