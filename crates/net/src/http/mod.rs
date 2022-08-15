@@ -391,16 +391,8 @@ impl Response {
     #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
     pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
         let promise = self.response.json().map_err(js_to_error)?;
-        let json = JsFuture::from(promise)
-            .await
-            .map_err(js_to_error)
-            .and_then(|json| {
-                js_sys::JSON::stringify(&json)
-                    .map(String::from)
-                    .map_err(js_to_error)
-            })?;
-
-        Ok(serde_json::from_str(&json)?)
+        let json = JsFuture::from(promise).await.map_err(js_to_error)?;
+        Ok(gloo_utils::json::into_serde(&json)?)
     }
 
     /// Reads the response as a String.

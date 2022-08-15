@@ -106,16 +106,12 @@ impl WebSocket {
         url: &str,
         protocols: &[S],
     ) -> Result<Self, JsError> {
-        let map_err = |err| {
+        let json = gloo_utils::json::from_serde(protocols).map_err(|err| {
             js_sys::Error::new(&format!(
                 "Failed to convert protocols to Javascript value: {}",
                 err
             ))
-        };
-        let json = serde_json::to_string(protocols)
-            .map_err(|e| map_err(e.to_string()))
-            .map(|d| js_sys::JSON::parse(&d).unwrap_throw())?;
-
+        })?;
         Self::setup(web_sys::WebSocket::new_with_str_sequence(url, &json))
     }
 

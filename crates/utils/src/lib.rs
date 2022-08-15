@@ -1,5 +1,6 @@
 pub mod errors;
 pub mod iter;
+pub mod json;
 use wasm_bindgen::UnwrapThrowExt;
 
 /// Convenience function to avoid repeating expect logic.
