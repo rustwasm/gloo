@@ -18,8 +18,8 @@ use wasm_bindgen::{JsValue, UnwrapThrowExt};
 ///
 /// # Panics
 ///
-/// Panics if `serde_json` generated json that couldn't be parsed by `js_sys`.
-/// Uses `unwrap_throw` from `wasm_bindgen::UnwrapThrowExt`.
+/// Panics if [`serde_json`](serde_json::to_string) generated JSON that couldn't be parsed by [`js_sys`].
+/// Uses [`unwrap_throw`](UnwrapThrowExt::unwrap_throw) from [`wasm_bindgen::UnwrapThrowExt`].
 #[cfg(feature = "serde-serialize")]
 pub fn from_serde<T>(t: &T) -> serde_json::Result<JsValue>
 where
