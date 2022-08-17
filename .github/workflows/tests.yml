@@ -120,7 +120,7 @@ jobs:
 
       - name: Run tests for gloo worker
         run: |
-          wasm-pack test --headless --firefox examples/markdown
+          wasm-pack test --headless --firefox --chrome  examples/markdown
 
 
   test-net:
