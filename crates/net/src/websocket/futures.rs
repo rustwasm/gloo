@@ -99,7 +99,7 @@ impl WebSocket {
     /// [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/WebSocket#exceptions_thrown)
     /// to learn more.
     ///
-    /// This function requires `json` features because protocols are parsed by `serde` into `JsValue`. 
+    /// This function requires `json` features because protocols are parsed by `serde` into `JsValue`.
     #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
     #[cfg(feature = "json")]
     pub fn open_with_protocols<S: AsRef<str> + serde::Serialize>(
