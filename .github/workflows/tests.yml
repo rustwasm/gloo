@@ -109,15 +109,18 @@ jobs:
             cargo-${{ runner.os }}-test-worker-
             cargo-${{ runner.os }}-
 
-      - name: Run tests for gloo worker
+      - name: Build and Run Test Server
+        run: |
+          cargo build -p example-markdown --bin example_markdown_test_server
+          nohup target/debug/example_markdown_test_server examples/markdown/dist &
+
+      - name: Build Test Worker
         run: |
           trunk build examples/markdown/index.html
-          cargo build -p example-markdown --bin example_markdown_test_server
 
-          nohup target/debug/example_markdown_test_server examples/markdown/dist &
-          sleep 5
-
-          wasm-pack test --headless --firefox --chrome examples/markdown
+      - name: Run tests for gloo worker
+        run: |
+          wasm-pack test --headless --firefox examples/markdown
 
 
   test-net:
