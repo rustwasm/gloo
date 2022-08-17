@@ -45,8 +45,8 @@ where
 ///
 /// # Panics
 ///
-/// Panics if `js_sys` couldn't stringify the JsValue. Uses `unwrap_throw`
-/// from `wasm_bindgen::UnwrapThrowExt`.
+/// Panics if [`js_sys`] couldn't stringify the JsValue. Uses [`unwrap_throw`](UnwrapThrowExt::unwrap_throw)
+/// from [`wasm_bindgen::UnwrapThrowExt`].
 #[cfg(feature = "serde-serialize")]
 pub fn into_serde<T>(src: &JsValue) -> serde_json::Result<T>
 where
