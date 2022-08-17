@@ -79,7 +79,10 @@ jobs:
       - name: Run tests for gloo worker
         run: |
           trunk build examples/markdown/index.html
-          nohup cargo run -p example-markdown --bin example_markdown_test_server -- examples/markdown/dist &
+          cargo build -p example-markdown --bin example_markdown_test_server
+
+          nohup target/debug/example_markdown_test_server examples/markdown/dist &
+          sleep 2
 
           wasm-pack test --headless --firefox --chrome examples/markdown
 
