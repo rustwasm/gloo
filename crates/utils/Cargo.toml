@@ -31,7 +31,7 @@ features = [
 
 [features]
 default = ["serde-serialize"]
-serde-serialize = ["serde", "serde_json"]
+serde-serialize = ["dep:serde", "dep:serde_json"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
