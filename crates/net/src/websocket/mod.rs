@@ -11,7 +11,7 @@ use gloo_utils::errors::JsError;
 use std::fmt;
 
 /// Message sent to and received from WebSocket.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Message {
     /// String message
     Text(String),
