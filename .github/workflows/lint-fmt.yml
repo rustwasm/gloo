@@ -61,7 +61,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: --all-targets --all-features -- -D warnings
+          args: --all-targets --all-features
 
       - name: Run clippy for gloo-net
         working-directory: crates/net

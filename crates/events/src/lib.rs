@@ -7,6 +7,8 @@ See the documentation for [`EventListener`] for more information.
 [`EventListener`]: struct.EventListener.html
 */
 #![deny(missing_docs, missing_debug_implementations)]
+// Clippy doesn't like the callback types passed to raw web-sys
+#![allow(clippy::type_complexity)]
 
 use std::borrow::Cow;
 use wasm_bindgen::closure::Closure;

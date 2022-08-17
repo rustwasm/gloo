@@ -5,14 +5,15 @@
 use futures_channel::{mpsc, oneshot};
 use futures_util::{
     future::{select, Either, FutureExt},
-    stream::{self, StreamExt},
+    stream::StreamExt,
 };
 use gloo_timers::{
     callback::{Interval, Timeout},
-    future::{IntervalStream, TimeoutFuture},
+    future::{sleep, IntervalStream, TimeoutFuture},
 };
 use std::cell::Cell;
 use std::rc::Rc;
+use std::time::Duration;
 use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
@@ -101,21 +102,13 @@ async fn interval() {
 
 #[wasm_bindgen_test]
 async fn interval_cancel() {
-    let (mut i_sender, i_receiver) = mpsc::channel(1);
-
-    let i = Interval::new(1, move || i_sender.try_send(()).unwrap());
+    let i = Interval::new(10, move || {
+        panic!("This should never be called");
+    });
     i.cancel();
 
     // This keeps us live for long enough that if any erroneous Interval callbacks fired, we'll have seen them.
-    let (mut sender, receiver) = mpsc::channel(1);
-    Timeout::new(50, move || {
-        sender.try_send(()).unwrap();
-    })
-    .forget();
-
-    let results: Vec<_> = stream::select(receiver, i_receiver).take(2).collect().await;
-    // Should only be 1 item - and that's from the timeout. Anything more means interval spuriously fired.
-    assert_eq!(results.len(), 1);
+    sleep(Duration::from_millis(100)).await;
 }
 
 #[wasm_bindgen_test]
