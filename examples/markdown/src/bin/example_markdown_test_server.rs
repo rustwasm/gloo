@@ -19,5 +19,7 @@ async fn main() {
             .allow_any_origin(),
     );
 
+    println!("Test server is running at: http://127.0.0.1:9999/");
+
     warp::serve(route).run(([127, 0, 0, 1], 9999)).await;
 }
