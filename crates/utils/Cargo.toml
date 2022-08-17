@@ -30,9 +30,13 @@ features = [
 ]
 
 [features]
-default = ["serde-serialize"]
-serde-serialize = ["dep:serde", "dep:serde_json"]
+default = ["serde"]
+serde = ["dep:serde", "dep:serde_json"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 serde_derive = "1.0"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

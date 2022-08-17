@@ -27,6 +27,10 @@ use wasm_bindgen_futures::JsFuture;
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 use serde::de::DeserializeOwned;
 
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
+use gloo_utils::format::JsValueSerdeExt;
+
 pub use headers::Headers;
 pub use query::QueryParams;
 pub use web_sys::{
@@ -392,7 +396,7 @@ impl Response {
     pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
         let promise = self.response.json().map_err(js_to_error)?;
         let json = JsFuture::from(promise).await.map_err(js_to_error)?;
-        Ok(gloo_utils::json::into_serde(&json)?)
+        Ok(JsValueSerdeExt::into_serde(&json)?)
     }
 
     /// Reads the response as a String.

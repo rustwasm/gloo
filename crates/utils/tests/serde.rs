@@ -1,12 +1,13 @@
 #![cfg(target_arch = "wasm32")]
-
+#![cfg(feature = "serde")]
 extern crate wasm_bindgen;
 extern crate wasm_bindgen_test;
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_test::*;
 
-use gloo_utils::json::{from_serde, into_serde};
+use gloo_utils::format::JsValueSerdeExt;
+
 use serde_derive::{Deserialize, Serialize};
 
 #[wasm_bindgen(start)]
@@ -16,30 +17,30 @@ pub fn start() {
 
 #[wasm_bindgen(module = "/tests/serde.js")]
 extern "C" {
-    fn verify_serde(val: JsValue) -> JsValue;
+    fn verify_serde(val: JsValue);
+    fn make_js_value() -> JsValue;
 }
 
-#[cfg(feature = "serde-serialize")]
+#[derive(Deserialize, Serialize, Debug)]
+pub struct SerdeFoo {
+    a: u32,
+    b: String,
+    c: Option<SerdeBar>,
+    d: SerdeBar,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct SerdeBar {
+    a: u32,
+}
+
 #[wasm_bindgen_test]
-fn it_works() {
-    #[derive(Deserialize, Serialize, Debug)]
-    pub struct SerdeFoo {
-        a: u32,
-        b: String,
-        c: Option<SerdeBar>,
-        d: SerdeBar,
-    }
-
-    #[derive(Deserialize, Serialize, Debug)]
-    pub struct SerdeBar {
-        a: u32,
-    }
-
-    let js = from_serde("foo").unwrap();
+fn from_serde() {
+    let js = JsValue::from_serde("foo").unwrap();
     assert_eq!(js.as_string(), Some("foo".to_string()));
 
-    let ret = verify_serde(
-        from_serde(&SerdeFoo {
+    verify_serde(
+        JsValue::from_serde(&SerdeFoo {
             a: 0,
             b: "foo".to_string(),
             c: None,
@@ -47,13 +48,19 @@ fn it_works() {
         })
         .unwrap(),
     );
-    let foo = into_serde::<SerdeFoo>(&ret).unwrap();
+}
+
+#[wasm_bindgen_test]
+fn into_serde() {
+    let js_value = make_js_value();
+    let foo = js_value.into_serde::<SerdeFoo>().unwrap();
     assert_eq!(foo.a, 2);
     assert_eq!(foo.b, "bar");
     assert!(foo.c.is_some());
     assert_eq!(foo.c.as_ref().unwrap().a, 3);
     assert_eq!(foo.d.a, 4);
-    assert_eq!(into_serde::<String>(&JsValue::from("bar")).unwrap(), "bar");
-    assert_eq!(into_serde::<i32>(&JsValue::undefined()).ok(), None);
-    assert_eq!(into_serde::<i32>(&JsValue::null()).ok(), None);
+
+    assert_eq!(JsValue::from("bar").into_serde::<String>().unwrap(), "bar");
+    assert_eq!(JsValue::undefined().into_serde::<i32>().ok(), None);
+    assert_eq!(JsValue::null().into_serde::<i32>().ok(), None);
 }

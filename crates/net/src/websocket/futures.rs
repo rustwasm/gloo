@@ -33,6 +33,7 @@ use futures_channel::mpsc;
 use futures_core::{ready, Stream};
 use futures_sink::Sink;
 use gloo_utils::errors::JsError;
+use gloo_utils::format::JsValueSerdeExt;
 use pin_project::{pin_project, pinned_drop};
 use std::cell::RefCell;
 use std::pin::Pin;
@@ -106,7 +107,7 @@ impl WebSocket {
         url: &str,
         protocols: &[S],
     ) -> Result<Self, JsError> {
-        let json = gloo_utils::json::from_serde(protocols).map_err(|err| {
+        let json = <JsValue as JsValueSerdeExt>::from_serde(protocols).map_err(|err| {
             js_sys::Error::new(&format!(
                 "Failed to convert protocols to Javascript value: {}",
                 err

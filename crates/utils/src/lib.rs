@@ -1,6 +1,11 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 pub mod errors;
 pub mod iter;
-pub mod json;
+pub mod format {
+    mod json;
+    pub use json::JsValueSerdeExt;
+}
 use wasm_bindgen::UnwrapThrowExt;
 
 /// Convenience function to avoid repeating expect logic.

@@ -8,7 +8,9 @@ exports.verify_serde = function(a) {
     c: null,
     d: { a: 1 }
   });
+};
 
+exports.make_js_value = function() {
   return {
     a: 2,
     b: 'bar',
