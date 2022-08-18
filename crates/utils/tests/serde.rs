@@ -10,6 +10,8 @@ use gloo_utils::format::JsValueSerdeExt;
 
 use serde_derive::{Deserialize, Serialize};
 
+wasm_bindgen_test_configure!(run_in_browser);
+
 #[wasm_bindgen(start)]
 pub fn start() {
     panic!();

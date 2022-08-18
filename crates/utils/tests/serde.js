@@ -1,8 +1,13 @@
-const wasm = require('wasm-bindgen-test.js');
-const assert = require('assert');
+function deepStrictEqual(left, right) {
+  var left_json = JSON.stringify(left);
+  var right_json = JSON.stringify(right);
+  if (left_json !== right_json) {
+    throw Error(`${left_json} != ${right_json}`)
+  }
+}
 
-exports.verify_serde = function(a) {
-  assert.deepStrictEqual(a, {
+export function verify_serde (a) {
+  deepStrictEqual(a, {
     a: 0,
     b: 'foo',
     c: null,
@@ -10,7 +15,7 @@ exports.verify_serde = function(a) {
   });
 };
 
-exports.make_js_value = function() {
+export function make_js_value() {
   return {
     a: 2,
     b: 'bar',

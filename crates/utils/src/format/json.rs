@@ -1,9 +1,21 @@
 #![cfg(feature = "serde")]
 
-use wasm_bindgen::{JsValue, UnwrapThrowExt};
+use js_sys::JsString;
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue, UnwrapThrowExt};
 mod private {
     pub trait Sealed {}
     impl Sealed for wasm_bindgen::JsValue {}
+}
+
+// Turns out `JSON.stringify(undefined) === undefined`, so if
+// we're passed `undefined` reinterpret it as `null` for JSON
+// purposes.
+#[wasm_bindgen(
+    inline_js = "export function serialize(obj) { return JSON.stringify(obj === undefined ? null : obj) }"
+)]
+extern "C" {
+    #[wasm_bindgen(catch)]
+    fn serialize(obj: &JsValue) -> Result<JsString, JsValue>;
 }
 
 /// Extenstion trait to provide conversion between [`JsValue`](wasm_bindgen::JsValue) and [`serde`].
@@ -22,7 +34,16 @@ pub trait JsValueSerdeExt: private::Sealed {
     ///
     /// Usage of this API requires activating the `serde` feature of
     /// the `gloo-utils` crate.
+    /// # Example
     ///
+    /// ```rust
+    /// use wasm_bindgen::JsValue;
+    /// use gloo_utils::format::JsValueSerdeExt;
+    ///
+    /// # fn no_run() {
+    /// assert_eq!(JsValue::from("bar").into_serde::<String>().unwrap(), "bar");
+    /// # }
+    /// ```
     /// # Errors
     ///
     /// Returns any error encountered when serializing `T` into JSON.
@@ -41,10 +62,23 @@ pub trait JsValueSerdeExt: private::Sealed {
     ///
     /// This function will first call `JSON.stringify` on the `JsValue` itself.
     /// The resulting string is then passed into Rust which then parses it as
-    /// JSON into the resulting value.
+    /// JSON into the resulting value. If given `undefined`, object will be silentrly changed to
+    /// null to avoid panic.
     ///
     /// Usage of this API requires activating the `serde` feature of
     /// the `gloo-utils` crate.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use wasm_bindgen::JsValue;
+    /// use gloo_utils::format::JsValueSerdeExt;
+    ///
+    /// # fn no_run() {
+    /// let array = vec![1,2,3];
+    /// let obj = JsValue::from_serde(&array);
+    /// # }
+    /// ```
     ///
     /// # Errors
     ///
@@ -74,13 +108,7 @@ impl JsValueSerdeExt for JsValue {
     where
         T: for<'a> serde::de::Deserialize<'a>,
     {
-        let s = if self.is_undefined() {
-            String::new()
-        } else {
-            js_sys::JSON::stringify(self)
-                .map(String::from)
-                .unwrap_throw()
-        };
+        let s = serialize(self).map(String::from).unwrap_throw();
         serde_json::from_str(&s)
     }
 }
