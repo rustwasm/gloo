@@ -76,12 +76,51 @@ jobs:
             wasm-pack test --headless --firefox --chrome crates/$x --no-default-features
           done
 
-      - name: Run tests for gloo worker
+
+
+  test-worker:
+    name: Test gloo-worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+          profile: minimal
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Setup trunk
+        uses: jetli/trunk-action@v0.1.0
+        with:
+          version: 'latest'
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-browser-tests-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-test-worker-
+            cargo-${{ runner.os }}-
+
+      - name: Build and Run Test Server
+        run: |
+          cargo build -p example-markdown --bin example_markdown_test_server
+          nohup target/debug/example_markdown_test_server examples/markdown/dist &
+
+      - name: Build Test Worker
         run: |
           trunk build examples/markdown/index.html
-          nohup cargo run -p example-markdown --bin example_markdown_test_server -- examples/markdown/dist &
 
-          wasm-pack test --headless --firefox --chrome examples/markdown
+      - name: Run tests for gloo worker
+        run: |
+          wasm-pack test --headless --firefox --chrome  examples/markdown
 
 
   test-net:
