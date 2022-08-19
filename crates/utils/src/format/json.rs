@@ -1,21 +1,10 @@
 #![cfg(feature = "serde")]
 
 use js_sys::JsString;
-use wasm_bindgen::{prelude::wasm_bindgen, JsValue, UnwrapThrowExt};
+use wasm_bindgen::{JsValue, UnwrapThrowExt};
 mod private {
     pub trait Sealed {}
     impl Sealed for wasm_bindgen::JsValue {}
-}
-
-// Turns out `JSON.stringify(undefined) === undefined`, so if
-// we're passed `undefined` reinterpret it as `null` for JSON
-// purposes.
-#[wasm_bindgen(
-    inline_js = "export function serialize(obj) { return JSON.stringify(obj === undefined ? null : obj) }"
-)]
-extern "C" {
-    #[wasm_bindgen(catch)]
-    fn serialize(obj: &JsValue) -> Result<JsString, JsValue>;
 }
 
 /// Extenstion trait to provide conversion between [`JsValue`](wasm_bindgen::JsValue) and [`serde`].
@@ -108,7 +97,14 @@ impl JsValueSerdeExt for JsValue {
     where
         T: for<'a> serde::de::Deserialize<'a>,
     {
-        let s = serialize(self).map(String::from).unwrap_throw();
+        // Turns out `JSON.stringify(undefined) === undefined`, so if
+        // we're passed `undefined` reinterpret it as `null` for JSON
+        // purposes.
+        let s = if self.is_undefined() {
+          String::from("null")
+        } else {
+          js_sys::JSON::stringify(self).map(String::from).unwrap_throw();
+        };
         serde_json::from_str(&s)
     }
 }
