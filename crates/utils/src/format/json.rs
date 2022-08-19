@@ -100,9 +100,11 @@ impl JsValueSerdeExt for JsValue {
         // we're passed `undefined` reinterpret it as `null` for JSON
         // purposes.
         let s = if self.is_undefined() {
-          String::from("null")
+            String::from("null")
         } else {
-          js_sys::JSON::stringify(self).map(String::from).unwrap_throw()
+            js_sys::JSON::stringify(self)
+                .map(String::from)
+                .unwrap_throw()
         };
         serde_json::from_str(&s)
     }
