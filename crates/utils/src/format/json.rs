@@ -1,6 +1,5 @@
 #![cfg(feature = "serde")]
 
-use js_sys::JsString;
 use wasm_bindgen::{JsValue, UnwrapThrowExt};
 mod private {
     pub trait Sealed {}
