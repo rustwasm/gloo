@@ -313,11 +313,11 @@ mod tests {
 
     wasm_bindgen_test_configure!(run_in_browser);
 
-    const ECHO_SERVER_URL: &str = env!("ECHO_SERVER_URL");
+    const WS_ECHO_SERVER_URL: &str = env!("WS_ECHO_SERVER_URL");
 
     #[wasm_bindgen_test]
     fn websocket_works() {
-        let ws = WebSocket::open(ECHO_SERVER_URL).unwrap();
+        let ws = WebSocket::open(WS_ECHO_SERVER_URL).unwrap();
         let (mut sender, mut receiver) = ws.split();
 
         spawn_local(async move {
@@ -333,8 +333,8 @@ mod tests {
 
         spawn_local(async move {
             // ignore first message
-            // the echo-server used sends it's info in the first message
-            // let _ = ws.next().await;
+            // the echo-server uses it to send it's info in the first message
+            let _ = receiver.next().await;
 
             assert_eq!(
                 receiver.next().await.unwrap().unwrap(),

@@ -19,6 +19,7 @@ wasm-bindgen = "0.2"
 web-sys = "0.3"
 js-sys = "0.3"
 gloo-utils = { version = "0.1", path = "../utils", features = ["serde"] }
+gloo-console = { path = "../console" }
 
 wasm-bindgen-futures = "0.4"
 futures-core = { version = "0.3", optional = true }
@@ -37,7 +38,7 @@ wasm-bindgen-test = "0.3"
 futures = "0.3"
 
 [features]
-default = ["json", "websocket", "http"]
+default = ["json", "websocket", "http", "eventsource"]
 
 # Enables `.json()` on `Response`
 json = ["serde", "serde_json"]
@@ -78,4 +79,14 @@ http = [
     'web-sys/ReadableStream',
     'web-sys/Blob',
     'web-sys/FormData',
+]
+# Enables the EventSource API
+eventsource = [
+    "futures-channel",
+    "futures-core",
+    "pin-project",
+    'web-sys/Event',
+    'web-sys/EventTarget',
+    'web-sys/EventSource',
+    'web-sys/MessageEvent',
 ]

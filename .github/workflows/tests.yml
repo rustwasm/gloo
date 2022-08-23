@@ -132,7 +132,7 @@ jobs:
         ports:
           - 8080:80
       echo_server:
-        image: jmalloc/echo-server@sha256:c461e7e54d947a8777413aaf9c624b4ad1f1bac5d8272475da859ae82c1abd7d
+        image: jmalloc/echo-server@sha256:e43a10c9ecbd025df7ed6dac1e45551ce7bd676142600b0734fe7dcd10a47abe
         ports:
           - 8081:8080
 
@@ -162,7 +162,8 @@ jobs:
       - name: Run browser tests
         env:
           HTTPBIN_URL: "http://localhost:8080"
-          ECHO_SERVER_URL: "ws://localhost:8081"
+          WS_ECHO_SERVER_URL: "ws://localhost:8081"
+          SSE_ECHO_SERVER_URL: "http://localhost:8081/.sse"
         run: |
           cd crates/net
           wasm-pack test --chrome --firefox --headless --all-features
@@ -177,7 +178,8 @@ jobs:
       - name: Run native tests
         env:
           HTTPBIN_URL: "http://localhost:8080"
-          ECHO_SERVER_URL: "ws://localhost:8081"
+          WS_ECHO_SERVER_URL: "ws://localhost:8081"
+          SSE_ECHO_SERVER_URL: "http://localhost:8081/.sse"
         uses: actions-rs/cargo@v1
         with:
           command: test

@@ -19,7 +19,7 @@
 <sub>Built with 🦀🕸 by <a href="https://rustwasm.github.io/">The Rust and WebAssembly Working Group</a></sub>
 </div>
 
-HTTP requests library for WASM Apps. It provides idiomatic Rust bindings for the `web_sys` `fetch` and `WebSocket` API
+HTTP requests library for WASM Apps. It provides idiomatic Rust bindings for the `web_sys` `EventSource`, `fetch` and `WebSocket` APIs.
 
 ## Examples
 
@@ -53,5 +53,24 @@ spawn_local(async move {
         console_log!(format!("1. {:?}", msg))
     }
     console_log!("WebSocket Closed")
+})
+```
+
+### EventSource
+
+```rust
+use gloo_net::eventsource::futures::EventSource;
+use wasm_bindgen_futures::spawn_local;
+use futures::StreamExt;
+
+let mut es = EventSource::new("http://api.example.com/ssedemo.php").unwrap();
+es.subscribe_event("some-event-type").unwrap();
+es.subscribe_event("another-event-type").unwrap();
+
+spawn_local(async move {
+    while let Some(Ok((event_type, msg))) = es.next().await {
+        console_log!(format!("1. {}: {:?}", event_type, msg))
+    }
+    console_log!("EventSource Closed");
 })
 ```
