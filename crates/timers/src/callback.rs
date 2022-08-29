@@ -6,17 +6,17 @@ use wasm_bindgen::{JsCast, JsValue};
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_name = "setTimeout", js_namespace = window, catch)]
+    #[wasm_bindgen(js_name = "setTimeout", catch)]
     fn set_timeout(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
 
-    #[wasm_bindgen(js_name = "setInterval", js_namespace = window, catch)]
+    #[wasm_bindgen(js_name = "setInterval", catch)]
     fn set_interval(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
 
-    #[wasm_bindgen(js_name = "clearTimeout", js_namespace = window)]
-    fn clear_timeout(handle: i32);
+    #[wasm_bindgen(js_name = "clearTimeout", catch)]
+    fn clear_timeout(handle: i32) -> Result<(), JsValue>;
 
-    #[wasm_bindgen(js_name = "clearInterval", js_namespace = window)]
-    fn clear_interval(handle: i32);
+    #[wasm_bindgen(js_name = "clearInterval", catch)]
+    fn clear_interval(handle: i32) -> Result<(), JsValue>;
 }
 
 /// A scheduled timeout.
@@ -35,7 +35,7 @@ pub struct Timeout {
 impl Drop for Timeout {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            clear_timeout(id);
+            clear_timeout(id).unwrap_throw();
         }
     }
 }
@@ -135,7 +135,7 @@ pub struct Interval {
 impl Drop for Interval {
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            clear_interval(id);
+            clear_interval(id).unwrap_throw();
         }
     }
 }
