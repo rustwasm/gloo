@@ -6,16 +6,16 @@ use wasm_bindgen::{JsCast, JsValue};
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_name = "setTimeout", catch)]
+    #[wasm_bindgen(js_name = "setTimeout", js_namespace = window, catch)]
     fn set_timeout(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
 
-    #[wasm_bindgen(js_name = "setInterval", catch)]
+    #[wasm_bindgen(js_name = "setInterval", js_namespace = window, catch)]
     fn set_interval(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
 
-    #[wasm_bindgen(js_name = "clearTimeout")]
+    #[wasm_bindgen(js_name = "clearTimeout", js_namespace = window)]
     fn clear_timeout(handle: i32);
 
-    #[wasm_bindgen(js_name = "clearInterval")]
+    #[wasm_bindgen(js_name = "clearInterval", js_namespace = window)]
     fn clear_interval(handle: i32);
 }
 
