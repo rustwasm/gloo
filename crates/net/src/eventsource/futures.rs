@@ -82,7 +82,7 @@ impl EventSource {
                 let sender = sender.clone();
                 let is_connecting = e
                     .current_target()
-                    .and_then(|target| target.dyn_into::<web_sys::EventSource>().ok())
+                    .map(|target| target.unchecked_into::<web_sys::EventSource>())
                     .map(|es| es.ready_state() == web_sys::EventSource::CONNECTING)
                     .unwrap_or(false);
                 if !is_connecting {
