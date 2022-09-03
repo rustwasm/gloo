@@ -22,8 +22,9 @@ pub enum State {
 }
 
 /// Error returned by the EventSource
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
+#[allow(missing_copy_implementations)]
 pub enum EventSourceError {
     /// The `error` event
     ConnectionError,
