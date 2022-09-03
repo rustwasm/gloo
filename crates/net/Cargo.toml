@@ -19,7 +19,6 @@ wasm-bindgen = "0.2"
 web-sys = "0.3"
 js-sys = "0.3"
 gloo-utils = { version = "0.1", path = "../utils", features = ["serde"] }
-gloo-console = { path = "../console" }
 
 wasm-bindgen-futures = "0.4"
 futures-core = { version = "0.3", optional = true }
