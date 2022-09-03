@@ -22,8 +22,8 @@
 //! # }
 //! # fn no_run() {
 //! let mut es = EventSource::new("http://api.example.com/ssedemo.php").unwrap();
-//! es.subscribe_event("some-event-type").unwrap();
-//! es.subscribe_event("another-event-type").unwrap();
+//! es.subscribe("some-event-type").unwrap();
+//! es.subscribe("another-event-type").unwrap();
 //!
 //! spawn_local(async move {
 //!     while let Some(Ok((event_type, msg))) = es.next().await {
@@ -116,7 +116,7 @@ impl EventSource {
     /// events without an event field as well as events that have the
     /// specific type `event: message`. It will not trigger on any
     /// other event type.
-    pub fn subscribe_event(&mut self, event_type: &str) -> Result<(), JsError> {
+    pub fn subscribe(&mut self, event_type: &str) -> Result<(), JsError> {
         let event_type = event_type.to_string();
         match self.closures.lock() {
             Ok(mut closures) => {
@@ -149,7 +149,7 @@ impl EventSource {
 
     /// Unsubscribes from listening for a specific type of event. Unsubscribing
     /// multiple times is benign.
-    pub fn unsubscribe_event(&mut self, event_type: &str) -> Result<(), JsError> {
+    pub fn unsubscribe(&mut self, event_type: &str) -> Result<(), JsError> {
         match self.closures.lock() {
             Ok(mut closures) => {
                 let (message_callbacks, _) = closures.deref_mut();
@@ -232,13 +232,13 @@ mod tests {
     #[wasm_bindgen_test]
     fn eventsource_works() {
         let mut es = EventSource::new(SSE_ECHO_SERVER_URL).unwrap();
-        es.subscribe_event("server").unwrap();
-        es.subscribe_event("request").unwrap();
+        es.subscribe("server").unwrap();
+        es.subscribe("request").unwrap();
 
         spawn_local(async move {
             assert_eq!(es.next().await.unwrap().unwrap().0, "server");
             assert_eq!(es.next().await.unwrap().unwrap().0, "request");
-            es.unsubscribe_event("request").unwrap();
+            es.unsubscribe("request").unwrap();
         });
     }
 
