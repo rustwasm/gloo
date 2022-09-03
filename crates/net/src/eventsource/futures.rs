@@ -41,9 +41,7 @@ use gloo_utils::errors::JsError;
 use pin_project::{pin_project, pinned_drop};
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
-use std::ops::DerefMut;
 use std::pin::Pin;
-use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -58,12 +56,10 @@ pub struct EventSource {
     #[pin]
     message_receiver: mpsc::UnboundedReceiver<StreamMessage>,
     #[allow(clippy::type_complexity)]
-    closures: Arc<
-        Mutex<(
-            HashMap<String, Closure<dyn FnMut(MessageEvent)>>,
-            Closure<dyn FnMut(web_sys::Event)>,
-        )>,
-    >,
+    closures: (
+        HashMap<String, Closure<dyn FnMut(MessageEvent)>>,
+        Closure<dyn FnMut(web_sys::Event)>,
+    ),
 }
 
 impl EventSource {
@@ -101,7 +97,7 @@ impl EventSource {
             es,
             message_sender,
             message_receiver,
-            closures: Arc::new(Mutex::new((HashMap::new(), error_callback))),
+            closures: (HashMap::new(), error_callback),
         })
     }
 
@@ -118,54 +114,44 @@ impl EventSource {
     /// other event type.
     pub fn subscribe(&mut self, event_type: &str) -> Result<(), JsError> {
         let event_type = event_type.to_string();
-        match self.closures.lock() {
-            Ok(mut closures) => {
-                let (message_callbacks, _) = closures.deref_mut();
+        let (message_callbacks, _) = &mut self.closures;
 
-                if let Entry::Vacant(entry) = message_callbacks.entry(event_type.clone()) {
-                    let message_callback: Closure<dyn FnMut(MessageEvent)> = {
-                        let sender = self.message_sender.clone();
-                        Closure::wrap(Box::new(move |e: MessageEvent| {
-                            let sender = sender.clone();
-                            let event_type = event_type.clone();
-                            let _ = sender.unbounded_send(StreamMessage::Message(event_type, e));
-                        }) as Box<dyn FnMut(MessageEvent)>)
-                    };
+        if let Entry::Vacant(entry) = message_callbacks.entry(event_type.clone()) {
+            let message_callback: Closure<dyn FnMut(MessageEvent)> = {
+                let sender = self.message_sender.clone();
+                Closure::wrap(Box::new(move |e: MessageEvent| {
+                    let sender = sender.clone();
+                    let event_type = event_type.clone();
+                    let _ = sender.unbounded_send(StreamMessage::Message(event_type, e));
+                }) as Box<dyn FnMut(MessageEvent)>)
+            };
 
-                    self.es
-                        .add_event_listener_with_callback(
-                            entry.key(),
-                            message_callback.as_ref().unchecked_ref(),
-                        )
-                        .map_err(js_to_js_error)?;
+            self.es
+                .add_event_listener_with_callback(
+                    entry.key(),
+                    message_callback.as_ref().unchecked_ref(),
+                )
+                .map_err(js_to_js_error)?;
 
-                    entry.insert(message_callback);
-                }
-                Ok(())
-            }
-            Err(e) => Err(js_sys::Error::new(&format!("Failed to subscribe: {}", e)).into()),
+            entry.insert(message_callback);
         }
+        Ok(())
     }
 
     /// Unsubscribes from listening for a specific type of event. Unsubscribing
     /// multiple times is benign.
     pub fn unsubscribe(&mut self, event_type: &str) -> Result<(), JsError> {
-        match self.closures.lock() {
-            Ok(mut closures) => {
-                let (message_callbacks, _) = closures.deref_mut();
+        let (message_callbacks, _) = &mut self.closures;
 
-                if let Some(message_callback) = message_callbacks.remove(event_type) {
-                    self.es
-                        .remove_event_listener_with_callback(
-                            event_type,
-                            message_callback.as_ref().unchecked_ref(),
-                        )
-                        .map_err(js_to_js_error)?;
-                }
-                Ok(())
-            }
-            Err(e) => Err(js_sys::Error::new(&format!("Failed to subscribe: {}", e)).into()),
+        if let Some(message_callback) = message_callbacks.remove(event_type) {
+            self.es
+                .remove_event_listener_with_callback(
+                    event_type,
+                    message_callback.as_ref().unchecked_ref(),
+                )
+                .map_err(js_to_js_error)?;
         }
+        Ok(())
     }
 
     /// Closes the EventSource.
