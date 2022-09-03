@@ -101,7 +101,7 @@ impl EventSource {
         })
     }
 
-    /// Subscribes to listening for a specific type of event. Can be
+    /// Subscribes to listening for a specific type of event. This method can be
     /// called multiple times. Subscribing again with an event type
     /// that has already been subscribed is benign.
     ///
