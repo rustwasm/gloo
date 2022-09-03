@@ -128,7 +128,7 @@ impl EventSource {
 
         self.es
             .add_event_listener_with_callback("error", error_callback.as_ref().unchecked_ref())
-            .unwrap();
+            .map_err(js_to_js_error)?;
 
         Ok(EventSourceSubscription {
             error_callback,
