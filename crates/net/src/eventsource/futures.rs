@@ -229,7 +229,7 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    fn eventsource_close_works() {
+    fn eventsource_connect_failure_works() {
         let mut es = EventSource::new("rubbish").unwrap();
 
         spawn_local(async move {
