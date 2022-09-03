@@ -15,18 +15,19 @@
 //! ```rust
 //! use gloo_net::eventsource::futures::EventSource;
 //! use wasm_bindgen_futures::spawn_local;
-//! use futures::StreamExt;
+//! use futures::{stream, StreamExt};
 //!
 //! # macro_rules! console_log {
 //! #    ($($expr:expr),*) => {{}};
 //! # }
 //! # fn no_run() {
 //! let mut es = EventSource::new("http://api.example.com/ssedemo.php").unwrap();
-//! es.subscribe("some-event-type").unwrap();
-//! es.subscribe("another-event-type").unwrap();
+//! let stream_1 = es.subscribe("some-event-type").unwrap();
+//! let stream_2 = es.subscribe("another-event-type").unwrap();
 //!
 //! spawn_local(async move {
-//!     while let Some(Ok((event_type, msg))) = es.next().await {
+//!     let mut all_streams = stream::select(stream_1, stream_2);
+//!     while let Some(Ok((event_type, msg))) = all_streams.next().await {
 //!         console_log!(format!("1. {}: {:?}", event_type, msg))
 //!     }
 //!     console_log!("EventSource Closed");
@@ -39,8 +40,6 @@ use futures_channel::mpsc;
 use futures_core::{ready, Stream};
 use gloo_utils::errors::JsError;
 use pin_project::{pin_project, pinned_drop};
-use std::collections::hash_map::Entry;
-use std::collections::HashMap;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use wasm_bindgen::prelude::*;
@@ -49,17 +48,21 @@ use web_sys::MessageEvent;
 
 /// Wrapper around browser's EventSource API.
 #[allow(missing_debug_implementations)]
-#[pin_project(PinnedDrop)]
 pub struct EventSource {
     es: web_sys::EventSource,
-    message_sender: mpsc::UnboundedSender<StreamMessage>,
+}
+
+/// Wrapper around browser's EventSource API.
+#[allow(missing_debug_implementations)]
+#[pin_project(PinnedDrop)]
+pub struct EventSourceSubscription {
+    #[allow(clippy::type_complexity)]
+    error_callback: Closure<dyn FnMut(web_sys::Event)>,
+    es: web_sys::EventSource,
+    event_type: String,
+    message_callback: Closure<dyn FnMut(MessageEvent)>,
     #[pin]
     message_receiver: mpsc::UnboundedReceiver<StreamMessage>,
-    #[allow(clippy::type_complexity)]
-    closures: (
-        HashMap<String, Closure<dyn FnMut(MessageEvent)>>,
-        Closure<dyn FnMut(web_sys::Event)>,
-    ),
 }
 
 impl EventSource {
@@ -74,7 +77,39 @@ impl EventSource {
     pub fn new(url: &str) -> Result<Self, JsError> {
         let es = web_sys::EventSource::new(url).map_err(js_to_js_error)?;
 
+        Ok(Self { es })
+    }
+
+    /// Subscribes to listening for a specific type of event.
+    ///
+    /// All events for this type are streamed back given the subscription
+    /// returned.
+    ///
+    /// The event type of "message" is a special case, as it will capture
+    /// events without an event field as well as events that have the
+    /// specific type `event: message`. It will not trigger on any
+    /// other event type.
+    pub fn subscribe(&mut self, event_type: &str) -> Result<EventSourceSubscription, JsError> {
+        let event_type = event_type.to_string();
+
         let (message_sender, message_receiver) = mpsc::unbounded();
+
+        let message_callback: Closure<dyn FnMut(MessageEvent)> = {
+            let event_type = event_type.clone();
+            let sender = message_sender.clone();
+            Closure::wrap(Box::new(move |e: MessageEvent| {
+                let sender = sender.clone();
+                let event_type = event_type.clone();
+                let _ = sender.unbounded_send(StreamMessage::Message(event_type, e));
+            }) as Box<dyn FnMut(MessageEvent)>)
+        };
+
+        self.es
+            .add_event_listener_with_callback(
+                &event_type,
+                message_callback.as_ref().unchecked_ref(),
+            )
+            .map_err(js_to_js_error)?;
 
         let error_callback: Closure<dyn FnMut(web_sys::Event)> = {
             let sender = message_sender.clone();
@@ -91,67 +126,17 @@ impl EventSource {
             }) as Box<dyn FnMut(web_sys::Event)>)
         };
 
-        es.set_onerror(Some(error_callback.as_ref().unchecked_ref()));
+        self.es
+            .add_event_listener_with_callback("error", error_callback.as_ref().unchecked_ref())
+            .unwrap();
 
-        Ok(Self {
-            es,
-            message_sender,
+        Ok(EventSourceSubscription {
+            error_callback,
+            es: self.es.clone(),
+            event_type,
+            message_callback,
             message_receiver,
-            closures: (HashMap::new(), error_callback),
         })
-    }
-
-    /// Subscribes to listening for a specific type of event. This method can be
-    /// called multiple times. Subscribing again with an event type
-    /// that has already been subscribed is benign.
-    ///
-    /// All event types are streamed back with the element of the stream
-    /// being a tuple of event type and message event.
-    ///
-    /// The event type of "message" is a special case, as it will capture
-    /// events without an event field as well as events that have the
-    /// specific type `event: message`. It will not trigger on any
-    /// other event type.
-    pub fn subscribe(&mut self, event_type: &str) -> Result<(), JsError> {
-        let event_type = event_type.to_string();
-        let (message_callbacks, _) = &mut self.closures;
-
-        if let Entry::Vacant(entry) = message_callbacks.entry(event_type.clone()) {
-            let message_callback: Closure<dyn FnMut(MessageEvent)> = {
-                let sender = self.message_sender.clone();
-                Closure::wrap(Box::new(move |e: MessageEvent| {
-                    let sender = sender.clone();
-                    let event_type = event_type.clone();
-                    let _ = sender.unbounded_send(StreamMessage::Message(event_type, e));
-                }) as Box<dyn FnMut(MessageEvent)>)
-            };
-
-            self.es
-                .add_event_listener_with_callback(
-                    entry.key(),
-                    message_callback.as_ref().unchecked_ref(),
-                )
-                .map_err(js_to_js_error)?;
-
-            entry.insert(message_callback);
-        }
-        Ok(())
-    }
-
-    /// Unsubscribes from listening for a specific type of event. Unsubscribing
-    /// multiple times is benign.
-    pub fn unsubscribe(&mut self, event_type: &str) -> Result<(), JsError> {
-        let (message_callbacks, _) = &mut self.closures;
-
-        if let Some(message_callback) = message_callbacks.remove(event_type) {
-            self.es
-                .remove_event_listener_with_callback(
-                    event_type,
-                    message_callback.as_ref().unchecked_ref(),
-                )
-                .map_err(js_to_js_error)?;
-        }
-        Ok(())
     }
 
     /// Closes the EventSource.
@@ -174,13 +159,19 @@ impl EventSource {
     }
 }
 
+impl Drop for EventSource {
+    fn drop(&mut self) {
+        self.es.close();
+    }
+}
+
 #[derive(Clone)]
 enum StreamMessage {
     ErrorEvent,
     Message(String, MessageEvent),
 }
 
-impl Stream for EventSource {
+impl Stream for EventSourceSubscription {
     type Item = Result<(String, MessageEvent), EventSourceError>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
@@ -198,9 +189,17 @@ impl Stream for EventSource {
 }
 
 #[pinned_drop]
-impl PinnedDrop for EventSource {
+impl PinnedDrop for EventSourceSubscription {
     fn drop(self: Pin<&mut Self>) {
-        self.es.close();
+        let _ = self.es.remove_event_listener_with_callback(
+            "error",
+            self.error_callback.as_ref().unchecked_ref(),
+        );
+
+        let _ = self.es.remove_event_listener_with_callback(
+            &self.event_type,
+            self.message_callback.as_ref().unchecked_ref(),
+        );
     }
 }
 
@@ -218,25 +217,25 @@ mod tests {
     #[wasm_bindgen_test]
     fn eventsource_works() {
         let mut es = EventSource::new(SSE_ECHO_SERVER_URL).unwrap();
-        es.subscribe("server").unwrap();
-        es.subscribe("request").unwrap();
+        let mut servers = es.subscribe("server").unwrap();
+        let mut requests = es.subscribe("request").unwrap();
 
         spawn_local(async move {
-            assert_eq!(es.next().await.unwrap().unwrap().0, "server");
-            assert_eq!(es.next().await.unwrap().unwrap().0, "request");
-            es.unsubscribe("request").unwrap();
+            assert_eq!(servers.next().await.unwrap().unwrap().0, "server");
+            assert_eq!(requests.next().await.unwrap().unwrap().0, "request");
         });
     }
 
     #[wasm_bindgen_test]
     fn eventsource_connect_failure_works() {
         let mut es = EventSource::new("rubbish").unwrap();
+        let mut servers = es.subscribe("server").unwrap();
 
         spawn_local(async move {
             // we should expect an immediate failure
 
             assert_eq!(
-                es.next().await,
+                servers.next().await,
                 Some(Err(EventSourceError::ConnectionError))
             );
         })

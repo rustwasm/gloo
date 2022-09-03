@@ -61,14 +61,15 @@ spawn_local(async move {
 ```rust
 use gloo_net::eventsource::futures::EventSource;
 use wasm_bindgen_futures::spawn_local;
-use futures::StreamExt;
+use futures::{stream, StreamExt};
 
 let mut es = EventSource::new("http://api.example.com/ssedemo.php").unwrap();
-es.subscribe("some-event-type").unwrap();
-es.subscribe("another-event-type").unwrap();
+let stream_1 = es.subscribe("some-event-type").unwrap();
+let stream_2 = es.subscribe("another-event-type").unwrap();
 
 spawn_local(async move {
-    while let Some(Ok((event_type, msg))) = es.next().await {
+    let mut all_streams = stream::select(stream_1, stream_2);
+    while let Some(Ok((event_type, msg))) = all_streams.next().await {
         console_log!(format!("1. {}: {:?}", event_type, msg))
     }
     console_log!("EventSource Closed");
