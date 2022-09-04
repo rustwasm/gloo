@@ -46,8 +46,10 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::MessageEvent;
 
-/// Wrapper around browser's EventSource API.
+/// Wrapper around browser's EventSource API. Dropping
+/// this will close the underlying event source.
 #[allow(missing_debug_implementations)]
+#[derive(Clone)]
 pub struct EventSource {
     es: web_sys::EventSource,
 }
