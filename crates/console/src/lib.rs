@@ -30,6 +30,7 @@ pub use timer::Timer;
 
 #[doc(hidden)]
 pub mod __macro {
+    use gloo_utils::format::JsValueSerdeExt;
     pub use js_sys::Array;
     pub use wasm_bindgen::JsValue;
     use wasm_bindgen::UnwrapThrowExt;
@@ -38,7 +39,7 @@ pub mod __macro {
         data: impl serde::Serialize,
         columns: impl IntoIterator<Item = &'a str>,
     ) {
-        let data = js_sys::JSON::parse(&serde_json::to_string(&data).unwrap_throw()).unwrap_throw();
+        let data = <JsValue as JsValueSerdeExt>::from_serde(&data).unwrap_throw();
         let columns = columns.into_iter().map(JsValue::from_str).collect();
 
         crate::externs::table_with_data_and_columns(data, columns);
