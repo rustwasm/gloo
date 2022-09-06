@@ -109,8 +109,7 @@ where
         self
     }
 
-    /// Spawns a Worker.
-    pub fn spawn(&self, path: &str) -> WorkerBridge<W> {
+    fn spawn_inner(&self, worker: DedicatedWorker) -> WorkerBridge<W> {
         let pending_queue = Rc::new(RefCell::new(Some(Vec::new())));
         let handler_id = HandlerId::new();
         let mut callbacks = HashMap::new();
@@ -121,39 +120,35 @@ where
 
         let callbacks: Shared<CallbackMap<W>> = Rc::new(RefCell::new(callbacks));
 
-        let worker = {
+        let handler = {
             let pending_queue = pending_queue.clone();
             let callbacks = callbacks.clone();
-            let worker = create_worker(path);
 
-            let handler = {
-                let worker = worker.clone();
+            let worker = worker.clone();
 
-                move |msg: FromWorker<W>| match msg {
-                    FromWorker::WorkerLoaded => {
-                        if let Some(pending_queue) = pending_queue.borrow_mut().take() {
-                            for to_worker in pending_queue.into_iter() {
-                                worker.post_packed_message::<_, CODEC>(to_worker);
-                            }
-                        }
-                    }
-                    FromWorker::ProcessOutput(id, output) => {
-                        let mut callbacks = callbacks.borrow_mut();
-
-                        if let Some(m) = callbacks.get(&id) {
-                            if let Some(m) = Weak::upgrade(m) {
-                                m(output);
-                            } else {
-                                callbacks.remove(&id);
-                            }
+            move |msg: FromWorker<W>| match msg {
+                FromWorker::WorkerLoaded => {
+                    if let Some(pending_queue) = pending_queue.borrow_mut().take() {
+                        for to_worker in pending_queue.into_iter() {
+                            worker.post_packed_message::<_, CODEC>(to_worker);
                         }
                     }
                 }
-            };
+                FromWorker::ProcessOutput(id, output) => {
+                    let mut callbacks = callbacks.borrow_mut();
 
-            worker.set_on_packed_message::<_, CODEC, _>(handler);
-            worker
+                    if let Some(m) = callbacks.get(&id) {
+                        if let Some(m) = Weak::upgrade(m) {
+                            m(output);
+                        } else {
+                            callbacks.remove(&id);
+                        }
+                    }
+                }
+            }
         };
+
+        worker.set_on_packed_message::<_, CODEC, _>(handler);
 
         WorkerBridge::<W>::new::<CODEC>(
             handler_id,
@@ -162,5 +157,19 @@ where
             callbacks,
             self.callback.clone(),
         )
+    }
+
+    /// Spawns a Worker.
+    pub fn spawn(&self, path: &str) -> WorkerBridge<W> {
+        let worker = create_worker(path);
+
+        self.spawn_inner(worker)
+    }
+
+    /// Spawns a Worker with a loader shim script.
+    pub fn spawn_with_loader(&self, loader_path: &str) -> WorkerBridge<W> {
+        let worker = DedicatedWorker::new(loader_path).expect("failed to spawn worker");
+
+        self.spawn_inner(worker)
     }
 }

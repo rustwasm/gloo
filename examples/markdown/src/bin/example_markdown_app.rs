@@ -27,7 +27,7 @@ fn main() {
         .callback(move |m| {
             root.set_inner_html(&m);
         })
-        .spawn("/example_markdown_worker.js");
+        .spawn_with_loader("/example_markdown_worker_loader.js");
 
     bridge.send(MARKDOWN_CONTENT.to_owned());
 
