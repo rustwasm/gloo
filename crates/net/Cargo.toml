@@ -78,6 +78,7 @@ http = [
     'web-sys/ReadableStream',
     'web-sys/Blob',
     'web-sys/FormData',
+    'web-sys/DedicatedWorkerGlobalScope',
 ]
 # Enables the EventSource API
 eventsource = [
