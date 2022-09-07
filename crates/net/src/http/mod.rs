@@ -264,18 +264,13 @@ impl Request {
             let window = global.dyn_into::<web_sys::Window>().unwrap();
             window.fetch_with_request(&request)
         } else {
-            let maybe_worker =
-                Reflect::get(&global, &JsValue::from_str("DedicatedWorkerGlobalScope"))
-                    .map_err(js_to_error)?;
+            let maybe_worker = Reflect::get(&global, &JsValue::from_str("WorkerGlobalScope"))
+                .map_err(js_to_error)?;
             if !maybe_worker.is_undefined() {
-                let worker = global
-                    .dyn_into::<web_sys::DedicatedWorkerGlobalScope>()
-                    .unwrap();
+                let worker = global.dyn_into::<web_sys::WorkerGlobalScope>().unwrap();
                 worker.fetch_with_request(&request)
             } else {
-                return Err(Error::GlooError(
-                    "Unsupported JavaScript global context".into(),
-                ));
+                panic!("Unsupported JavaScript global context");
             }
         };
 
