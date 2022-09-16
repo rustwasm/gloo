@@ -61,3 +61,5 @@ impl fmt::Display for WebSocketError {
         }
     }
 }
+
+impl std::error::Error for WebSocketError {}
