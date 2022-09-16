@@ -100,7 +100,6 @@ impl EventSource {
             let event_type = event_type.clone();
             let sender = message_sender.clone();
             Closure::wrap(Box::new(move |e: MessageEvent| {
-                let sender = sender.clone();
                 let event_type = event_type.clone();
                 let _ = sender.unbounded_send(StreamMessage::Message(event_type, e));
             }) as Box<dyn FnMut(MessageEvent)>)
@@ -116,7 +115,6 @@ impl EventSource {
         let error_callback: Closure<dyn FnMut(web_sys::Event)> = {
             let sender = message_sender.clone();
             Closure::wrap(Box::new(move |e: web_sys::Event| {
-                let sender = sender.clone();
                 let is_connecting = e
                     .current_target()
                     .map(|target| target.unchecked_into::<web_sys::EventSource>())
@@ -145,8 +143,17 @@ impl EventSource {
     ///
     /// See the [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/close#parameters)
     /// to learn about this function
-    pub fn close(self) {
+    pub fn close(mut self) {
+        self.close_and_notify();
+    }
+
+    fn close_and_notify(&mut self) {
         self.es.close();
+        // Fire an error event to cause all subscriber
+        // streams to close down.
+        if let Ok(event) = web_sys::Event::new("error") {
+            let _ = self.es.dispatch_event(&event);
+        }
     }
 
     /// The current state of the EventSource.
@@ -163,7 +170,7 @@ impl EventSource {
 
 impl Drop for EventSource {
     fn drop(&mut self) {
-        self.es.close();
+        self.close_and_notify();
     }
 }
 
