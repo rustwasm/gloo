@@ -40,10 +40,10 @@ use futures_channel::mpsc;
 use futures_core::{ready, Stream};
 use gloo_utils::errors::JsError;
 use pin_project::{pin_project, pinned_drop};
-use std::pin::Pin;
-use std::task::{Context, Poll};
 use std::fmt;
 use std::fmt::Formatter;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::MessageEvent;
@@ -110,7 +110,10 @@ impl EventSource {
     /// events without an event field as well as events that have the
     /// specific type `event: message`. It will not trigger on any
     /// other event type.
-    pub fn subscribe(&mut self, event_type: impl Into<String>) -> Result<EventSourceSubscription, JsError> {
+    pub fn subscribe(
+        &mut self,
+        event_type: impl Into<String>,
+    ) -> Result<EventSourceSubscription, JsError> {
         let event_type = event_type.into();
         let (message_sender, message_receiver) = mpsc::unbounded();
 
