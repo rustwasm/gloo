@@ -76,8 +76,6 @@ jobs:
             wasm-pack test --headless --firefox --chrome crates/$x --no-default-features
           done
 
-
-
   test-worker:
     name: Test gloo-worker
     runs-on: ubuntu-latest
