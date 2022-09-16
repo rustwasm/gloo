@@ -42,20 +42,30 @@ use gloo_utils::errors::JsError;
 use pin_project::{pin_project, pinned_drop};
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::fmt;
+use std::fmt::Formatter;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::MessageEvent;
 
 /// Wrapper around browser's EventSource API. Dropping
 /// this will close the underlying event source.
-#[allow(missing_debug_implementations)]
 #[derive(Clone)]
 pub struct EventSource {
     es: web_sys::EventSource,
 }
 
+impl fmt::Debug for EventSource {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("EventSource")
+            .field("url", &self.es.url())
+            .field("with_credentials", &self.es.with_credentials())
+            .field("ready_state", &self.state())
+            .finish_non_exhaustive()
+    }
+}
+
 /// Wrapper around browser's EventSource API.
-#[allow(missing_debug_implementations)]
 #[pin_project(PinnedDrop)]
 pub struct EventSourceSubscription {
     #[allow(clippy::type_complexity)]
@@ -65,6 +75,15 @@ pub struct EventSourceSubscription {
     message_callback: Closure<dyn FnMut(MessageEvent)>,
     #[pin]
     message_receiver: mpsc::UnboundedReceiver<StreamMessage>,
+}
+
+impl fmt::Debug for EventSourceSubscription {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("EventSourceSubscription")
+            .field("event_source", &self.es)
+            .field("event_type", &self.event_type)
+            .finish_non_exhaustive()
+    }
 }
 
 impl EventSource {
@@ -91,9 +110,8 @@ impl EventSource {
     /// events without an event field as well as events that have the
     /// specific type `event: message`. It will not trigger on any
     /// other event type.
-    pub fn subscribe(&mut self, event_type: &str) -> Result<EventSourceSubscription, JsError> {
-        let event_type = event_type.to_string();
-
+    pub fn subscribe(&mut self, event_type: impl Into<String>) -> Result<EventSourceSubscription, JsError> {
+        let event_type = event_type.into();
         let (message_sender, message_receiver) = mpsc::unbounded();
 
         let message_callback: Closure<dyn FnMut(MessageEvent)> = {
@@ -113,7 +131,6 @@ impl EventSource {
             .map_err(js_to_js_error)?;
 
         let error_callback: Closure<dyn FnMut(web_sys::Event)> = {
-            let sender = message_sender.clone();
             Closure::wrap(Box::new(move |e: web_sys::Event| {
                 let is_connecting = e
                     .current_target()
@@ -121,7 +138,7 @@ impl EventSource {
                     .map(|es| es.ready_state() == web_sys::EventSource::CONNECTING)
                     .unwrap_or(false);
                 if !is_connecting {
-                    let _ = sender.unbounded_send(StreamMessage::ErrorEvent);
+                    let _ = message_sender.unbounded_send(StreamMessage::ErrorEvent);
                 };
             }) as Box<dyn FnMut(web_sys::Event)>)
         };
