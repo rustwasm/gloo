@@ -37,7 +37,7 @@ wasm-bindgen-test = "0.3"
 futures = "0.3"
 
 [features]
-default = ["json", "websocket", "http"]
+default = ["json", "websocket", "http", "eventsource"]
 
 # Enables `.json()` on `Response`
 json = ["serde", "serde_json"]
@@ -78,4 +78,14 @@ http = [
     'web-sys/ReadableStream',
     'web-sys/Blob',
     'web-sys/FormData',
+]
+# Enables the EventSource API
+eventsource = [
+    "futures-channel",
+    "futures-core",
+    "pin-project",
+    'web-sys/Event',
+    'web-sys/EventTarget',
+    'web-sys/EventSource',
+    'web-sys/MessageEvent',
 ]
