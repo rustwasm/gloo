@@ -33,6 +33,8 @@ pub struct Timeout {
 }
 
 impl Drop for Timeout {
+    /// Disposes of the timeout, dually cancelling this timeout by calling
+    /// `clearTimeout` directly.
     fn drop(&mut self) {
         if let Some(id) = self.id {
             clear_timeout(id);
@@ -71,7 +73,7 @@ impl Timeout {
         }
     }
 
-    /// Make this timeout uncancel-able.
+    /// Drops this resource without clearing the timeout.
     ///
     /// Returns the identifier returned by the original `setTimeout` call, and
     /// therefore you can still cancel the timeout by calling `clearTimeout`
@@ -133,6 +135,8 @@ pub struct Interval {
 }
 
 impl Drop for Interval {
+    /// Disposes of the interval, dually cancelling this interval by calling
+    /// `clearInterval` directly.
     fn drop(&mut self) {
         if let Some(id) = self.id {
             clear_interval(id);
@@ -170,7 +174,7 @@ impl Interval {
         }
     }
 
-    /// Make this interval uncancel-able.
+    /// Drops this resource without clearing the interval.
     ///
     /// Returns the identifier returned by the original `setInterval` call, and
     /// therefore you can still cancel the interval by calling `clearInterval`
