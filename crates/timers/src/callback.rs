@@ -23,8 +23,8 @@ extern "C" {
 ///
 /// See `Timeout::new` for scheduling new timeouts.
 ///
-/// Once scheduled, you can either `cancel` so that it doesn't run or `forget`
-/// it so that it is un-cancel-able.
+/// Resource Acquisition Is Initialization (RAII). Once scheduled, you can
+/// `cancel`/`drop` it or `forget` it to free memory, remaining scheduled.
 #[derive(Debug)]
 #[must_use = "timeouts cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Timeout {
@@ -125,8 +125,8 @@ impl Timeout {
 ///
 /// See `Interval::new` for scheduling new intervals.
 ///
-/// Once scheduled, you can either `cancel` so that it ceases to fire or `forget`
-/// it so that it is un-cancel-able.
+/// Resource Acquisition Is Initialization (RAII). Once scheduled, you can
+/// `cancel`/`drop` it or `forget` it to free memory, remaining scheduled.
 #[derive(Debug)]
 #[must_use = "intervals cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Interval {
