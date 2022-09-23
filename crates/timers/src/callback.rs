@@ -125,8 +125,8 @@ impl Timeout {
 ///
 /// See `Interval::new` for scheduling new intervals.
 ///
-/// Resource Acquisition Is Initialization (RAII). Once scheduled, you can
-/// `cancel`/`drop` it or `forget` it to free memory, remaining scheduled.
+/// Once scheduled, you can [`drop`] the [`Interval`] to clear it or [`forget`](Interval::forget) to leak it. Once forgotten, the interval will keep running forever.
+/// This pattern is known as Resource Acquisition Is Initialization (RAII).
 #[derive(Debug)]
 #[must_use = "intervals cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Interval {
