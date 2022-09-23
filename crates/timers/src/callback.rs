@@ -73,7 +73,7 @@ impl Timeout {
         }
     }
 
-    /// Drops this resource without clearing the timeout.
+    /// Forgets this resource without clearing the timeout.
     ///
     /// Returns the identifier returned by the original `setTimeout` call, and
     /// therefore you can still cancel the timeout by calling `clearTimeout`
