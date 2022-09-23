@@ -23,8 +23,8 @@ extern "C" {
 ///
 /// See `Timeout::new` for scheduling new timeouts.
 ///
-/// Once scheduled, you can either `cancel` so that it doesn't run or `forget`
-/// it so that it is un-cancel-able.
+/// Once scheduled, you can [`drop`] the [`Timeout`] to clear it or [`forget`](Timeout::forget) to leak it. Once forgotten, the interval will keep running forever.
+/// This pattern is known as Resource Acquisition Is Initialization (RAII).
 #[derive(Debug)]
 #[must_use = "timeouts cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Timeout {
@@ -33,6 +33,8 @@ pub struct Timeout {
 }
 
 impl Drop for Timeout {
+    /// Disposes of the timeout, dually cancelling this timeout by calling
+    /// `clearTimeout` directly.
     fn drop(&mut self) {
         if let Some(id) = self.id {
             clear_timeout(id);
@@ -71,7 +73,7 @@ impl Timeout {
         }
     }
 
-    /// Make this timeout uncancel-able.
+    /// Forgets this resource without clearing the timeout.
     ///
     /// Returns the identifier returned by the original `setTimeout` call, and
     /// therefore you can still cancel the timeout by calling `clearTimeout`
@@ -123,8 +125,8 @@ impl Timeout {
 ///
 /// See `Interval::new` for scheduling new intervals.
 ///
-/// Once scheduled, you can either `cancel` so that it ceases to fire or `forget`
-/// it so that it is un-cancel-able.
+/// Once scheduled, you can [`drop`] the [`Interval`] to clear it or [`forget`](Interval::forget) to leak it. Once forgotten, the interval will keep running forever.
+/// This pattern is known as Resource Acquisition Is Initialization (RAII).
 #[derive(Debug)]
 #[must_use = "intervals cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Interval {
@@ -133,6 +135,8 @@ pub struct Interval {
 }
 
 impl Drop for Interval {
+    /// Disposes of the interval, dually cancelling this interval by calling
+    /// `clearInterval` directly.
     fn drop(&mut self) {
         if let Some(id) = self.id {
             clear_interval(id);
@@ -170,7 +174,7 @@ impl Interval {
         }
     }
 
-    /// Make this interval uncancel-able.
+    /// Forget this resource without clearing the interval.
     ///
     /// Returns the identifier returned by the original `setInterval` call, and
     /// therefore you can still cancel the interval by calling `clearInterval`
