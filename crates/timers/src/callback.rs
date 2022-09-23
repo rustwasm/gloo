@@ -174,7 +174,7 @@ impl Interval {
         }
     }
 
-    /// Drops this resource without clearing the interval.
+    /// Forget this resource without clearing the interval.
     ///
     /// Returns the identifier returned by the original `setInterval` call, and
     /// therefore you can still cancel the interval by calling `clearInterval`
