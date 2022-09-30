@@ -394,9 +394,7 @@ impl Response {
     #[cfg(feature = "json")]
     #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
     pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
-        let promise = self.response.json().map_err(js_to_error)?;
-        let json = JsFuture::from(promise).await.map_err(js_to_error)?;
-        Ok(JsValueSerdeExt::into_serde(&json)?)
+        serde_json::from_str::<T>(&self.text().await?).map_err(Error::from)
     }
 
     /// Reads the response as a String.
