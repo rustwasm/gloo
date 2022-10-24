@@ -27,10 +27,6 @@ use wasm_bindgen_futures::JsFuture;
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 use serde::de::DeserializeOwned;
 
-#[cfg(feature = "json")]
-#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-use gloo_utils::format::JsValueSerdeExt;
-
 pub use headers::Headers;
 pub use query::QueryParams;
 pub use web_sys::{
