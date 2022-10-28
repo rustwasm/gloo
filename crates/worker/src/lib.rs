@@ -33,6 +33,10 @@
 
 mod actor;
 mod codec;
+#[cfg(feature = "futures")]
+pub mod oneshot;
+mod traits;
 
 pub use actor::*;
 pub use codec::{Bincode, Codec};
+pub use traits::*;

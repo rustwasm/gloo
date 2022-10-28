@@ -18,8 +18,7 @@ pub use handler_id::HandlerId;
 pub use registrar::WorkerRegistrar;
 pub use scope::{WorkerDestroyHandle, WorkerScope};
 pub use spawner::WorkerSpawner;
-pub use traits::Registrable;
-pub use traits::{Spawnable, Worker};
+pub use traits::Worker;
 
 /// Alias for `Rc<RefCell<T>>`
 pub(crate) type Shared<T> = Rc<RefCell<T>>;
