@@ -73,9 +73,9 @@ pub trait Spawnable {
     fn spawner() -> Self::Spawner;
 }
 
-impl<T> Spawnable for T
+impl<W> Spawnable for W
 where
-    T: Worker,
+    W: Worker,
 {
     type Spawner = WorkerSpawner<Self>;
 
