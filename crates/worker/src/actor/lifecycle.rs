@@ -1,9 +1,9 @@
 use wasm_bindgen::prelude::*;
 
-use crate::messages::ToWorker;
-use crate::native_worker::{DedicatedWorker, WorkerSelf};
-use crate::scope::{WorkerDestroyHandle, WorkerScope};
-use crate::traits::Worker;
+use super::messages::ToWorker;
+use super::native_worker::{DedicatedWorker, WorkerSelf};
+use super::scope::{WorkerDestroyHandle, WorkerScope};
+use super::traits::Worker;
 use crate::Shared;
 
 pub(crate) struct WorkerState<W>

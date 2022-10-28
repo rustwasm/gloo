@@ -5,11 +5,11 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 use std::rc::Weak;
 
+use super::handler_id::HandlerId;
+use super::messages::ToWorker;
+use super::native_worker::NativeWorkerExt;
+use super::traits::Worker;
 use crate::codec::Codec;
-use crate::handler_id::HandlerId;
-use crate::messages::ToWorker;
-use crate::native_worker::NativeWorkerExt;
-use crate::traits::Worker;
 use crate::{Callback, Shared};
 
 pub(crate) type ToWorkerQueue<W> = Vec<ToWorker<W>>;

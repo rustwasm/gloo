@@ -8,13 +8,13 @@ use gloo_utils::window;
 use js_sys::Array;
 use web_sys::{Blob, BlobPropertyBag, Url};
 
-use crate::bridge::{CallbackMap, WorkerBridge};
+use super::bridge::{CallbackMap, WorkerBridge};
+use super::handler_id::HandlerId;
+use super::messages::FromWorker;
+use super::native_worker::{DedicatedWorker, NativeWorkerExt};
+use super::traits::Worker;
+use super::{Callback, Shared};
 use crate::codec::{Bincode, Codec};
-use crate::handler_id::HandlerId;
-use crate::messages::FromWorker;
-use crate::native_worker::{DedicatedWorker, NativeWorkerExt};
-use crate::traits::Worker;
-use crate::{Callback, Shared};
 
 fn create_worker(path: &str) -> DedicatedWorker {
     let js_shim_url = Url::new_with_base(

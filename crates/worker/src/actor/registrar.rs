@@ -1,12 +1,12 @@
 use std::fmt;
 use std::marker::PhantomData;
 
+use super::lifecycle::WorkerLifecycleEvent;
+use super::messages::{FromWorker, ToWorker};
+use super::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
+use super::scope::WorkerScope;
+use super::traits::Worker;
 use crate::codec::{Bincode, Codec};
-use crate::lifecycle::WorkerLifecycleEvent;
-use crate::messages::{FromWorker, ToWorker};
-use crate::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
-use crate::scope::WorkerScope;
-use crate::traits::Worker;
 
 /// A Worker Registrar.
 pub struct WorkerRegistrar<W, CODEC = Bincode>

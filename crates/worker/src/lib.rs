@@ -31,31 +31,8 @@
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-mod bridge;
+mod actor;
 mod codec;
-mod handler_id;
-mod lifecycle;
-mod messages;
-mod native_worker;
-mod registrar;
-mod scope;
-mod spawner;
-mod traits;
 
-pub use bridge::WorkerBridge;
+pub use actor::*;
 pub use codec::{Bincode, Codec};
-pub use handler_id::HandlerId;
-pub use registrar::WorkerRegistrar;
-pub use scope::{WorkerDestroyHandle, WorkerScope};
-pub use spawner::WorkerSpawner;
-pub use traits::Registrable;
-pub use traits::{Spawnable, Worker};
-
-use std::cell::RefCell;
-use std::rc::Rc;
-
-/// Alias for `Rc<RefCell<T>>`
-pub(crate) type Shared<T> = Rc<RefCell<T>>;
-
-/// Alias for `Rc<dyn Fn(IN)>`
-pub(crate) type Callback<IN> = Rc<dyn Fn(IN)>;

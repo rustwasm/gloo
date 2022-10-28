@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::handler_id::HandlerId;
-use crate::registrar::WorkerRegistrar;
-use crate::scope::{WorkerDestroyHandle, WorkerScope};
-use crate::spawner::WorkerSpawner;
+use super::handler_id::HandlerId;
+use super::registrar::WorkerRegistrar;
+use super::scope::{WorkerDestroyHandle, WorkerScope};
+use super::spawner::WorkerSpawner;
 
 /// Declares the behaviour of a worker.
 pub trait Worker: Sized + 'static {

@@ -6,13 +6,13 @@ use std::rc::Rc;
 
 use wasm_bindgen_futures::spawn_local;
 
+use super::handler_id::HandlerId;
+use super::lifecycle::{WorkerLifecycleEvent, WorkerRunnable, WorkerState};
+use super::messages::FromWorker;
+use super::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
+use super::traits::Worker;
+use super::Shared;
 use crate::codec::Codec;
-use crate::handler_id::HandlerId;
-use crate::lifecycle::{WorkerLifecycleEvent, WorkerRunnable, WorkerState};
-use crate::messages::FromWorker;
-use crate::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
-use crate::traits::Worker;
-use crate::Shared;
 
 /// A handle that closes the worker when it is dropped.
 pub struct WorkerDestroyHandle<W: Worker> {
