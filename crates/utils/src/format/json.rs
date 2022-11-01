@@ -6,7 +6,7 @@ mod private {
     impl Sealed for wasm_bindgen::JsValue {}
 }
 
-/// Extenstion trait to provide conversion between [`JsValue`](wasm_bindgen::JsValue) and [`serde`].
+/// Extension trait to provide conversion between [`JsValue`](wasm_bindgen::JsValue) and [`serde`].
 ///
 /// Usage of this API requires activating the `serde` feature of the `gloo-utils` crate.
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
