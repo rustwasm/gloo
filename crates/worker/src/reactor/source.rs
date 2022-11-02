@@ -4,13 +4,13 @@ use futures::stream::{FusedStream, Stream};
 use futures::task::{Context, Poll};
 use pinned::mpsc;
 
-/// A receiver for reactors.
+/// A stream that produces inputs for a reactor.
 #[derive(Debug)]
-pub struct ReactorReceiver<I> {
+pub struct ReactorSource<I> {
     rx: mpsc::UnboundedReceiver<I>,
 }
 
-impl<I> Stream for ReactorReceiver<I> {
+impl<I> Stream for ReactorSource<I> {
     type Item = I;
 
     #[inline]
@@ -24,20 +24,20 @@ impl<I> Stream for ReactorReceiver<I> {
     }
 }
 
-impl<I> FusedStream for ReactorReceiver<I> {
+impl<I> FusedStream for ReactorSource<I> {
     #[inline]
     fn is_terminated(&self) -> bool {
         self.rx.is_terminated()
     }
 }
 
-/// A trait to extract input type from [ReactorReceiver].
+/// A trait to extract input type from [ReactorSource].
 pub trait ReactorConsumable: Stream + FusedStream {
     /// Creates a ReactorReceiver.
     fn new(rx: mpsc::UnboundedReceiver<Self::Item>) -> Self;
 }
 
-impl<I> ReactorConsumable for ReactorReceiver<I> {
+impl<I> ReactorConsumable for ReactorSource<I> {
     fn new(rx: mpsc::UnboundedReceiver<I>) -> Self {
         Self { rx }
     }
