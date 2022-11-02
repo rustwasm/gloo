@@ -6,6 +6,8 @@ use std::rc::{Rc, Weak};
 
 use gloo_utils::window;
 use js_sys::Array;
+use serde::de::Deserialize;
+use serde::ser::Serialize;
 use web_sys::{Blob, BlobPropertyBag, Url};
 
 use super::bridge::{CallbackMap, WorkerBridge};
@@ -75,7 +77,7 @@ where
     CODEC: Codec,
 {
     /// Creates a [WorkerSpawner].
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             _marker: PhantomData,
             callback: None,
@@ -104,7 +106,11 @@ where
     }
 
     /// Spawns a Worker.
-    pub fn spawn(&self, path: &str) -> WorkerBridge<W> {
+    pub fn spawn(&self, path: &str) -> WorkerBridge<W>
+    where
+        W::Input: Serialize + for<'de> Deserialize<'de>,
+        W::Output: Serialize + for<'de> Deserialize<'de>,
+    {
         let pending_queue = Rc::new(RefCell::new(Some(Vec::new())));
         let handler_id = HandlerId::new();
         let mut callbacks = HashMap::new();

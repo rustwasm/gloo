@@ -1,8 +1,10 @@
-use crate::actor::WorkerSpawner;
-use crate::codec::{Bincode, Codec};
+use serde::de::Deserialize;
+use serde::ser::Serialize;
 
 use super::worker::OneshotWorker;
 use super::{Oneshot, OneshotBridge};
+use crate::actor::WorkerSpawner;
+use crate::codec::{Bincode, Codec};
 
 /// A spawner to create oneshot workers.
 #[derive(Debug, Default)]
@@ -20,14 +22,14 @@ where
     CODEC: Codec,
 {
     /// Creates a [OneshotSpawner].
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             inner: WorkerSpawner::<OneshotWorker<N>, CODEC>::new(),
         }
     }
 
     /// Sets a new message encoding.
-    pub fn encoding<C>(&mut self) -> OneshotSpawner<N, C>
+    pub const fn encoding<C>(&self) -> OneshotSpawner<N, C>
     where
         C: Codec,
     {
@@ -37,7 +39,11 @@ where
     }
 
     /// Spawns an Oneshot Worker.
-    pub fn spawn(mut self, path: &str) -> OneshotBridge<N> {
+    pub fn spawn(mut self, path: &str) -> OneshotBridge<N>
+    where
+        N::Input: Serialize + for<'de> Deserialize<'de>,
+        N::Output: Serialize + for<'de> Deserialize<'de>,
+    {
         let rx = OneshotBridge::register_callback(&mut self.inner);
 
         let inner = self.inner.spawn(path);

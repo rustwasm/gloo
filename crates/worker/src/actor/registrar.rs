@@ -1,6 +1,9 @@
 use std::fmt;
 use std::marker::PhantomData;
 
+use serde::de::Deserialize;
+use serde::ser::Serialize;
+
 use super::lifecycle::WorkerLifecycleEvent;
 use super::messages::{FromWorker, ToWorker};
 use super::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
@@ -46,6 +49,8 @@ where
     pub fn register(&self)
     where
         CODEC: Codec,
+        W::Input: Serialize + for<'de> Deserialize<'de>,
+        W::Output: Serialize + for<'de> Deserialize<'de>,
     {
         let scope = WorkerScope::<W>::new::<CODEC>();
         let upd = WorkerLifecycleEvent::Create(scope.clone());

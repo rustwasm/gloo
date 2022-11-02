@@ -1,5 +1,8 @@
 use std::fmt;
 
+use serde::de::Deserialize;
+use serde::ser::Serialize;
+
 use super::traits::Oneshot;
 use super::worker::OneshotWorker;
 use crate::actor::WorkerRegistrar;
@@ -25,20 +28,20 @@ where
     }
 }
 
-impl<T, CODEC> OneshotRegistrar<T, CODEC>
+impl<N, CODEC> OneshotRegistrar<N, CODEC>
 where
-    T: Oneshot + 'static,
+    N: Oneshot + 'static,
     CODEC: Codec + 'static,
 {
     /// Creates a new Oneshot Registrar.
     pub fn new() -> Self {
         Self {
-            inner: OneshotWorker::<T>::registrar().encoding::<CODEC>(),
+            inner: OneshotWorker::<N>::registrar().encoding::<CODEC>(),
         }
     }
 
     /// Sets the encoding.
-    pub fn encoding<C>(&self) -> OneshotRegistrar<T, C>
+    pub fn encoding<C>(&self) -> OneshotRegistrar<N, C>
     where
         C: Codec + 'static,
     {
@@ -48,7 +51,11 @@ where
     }
 
     /// Registers the agent.
-    pub fn register(&self) {
+    pub fn register(&self)
+    where
+        N::Input: Serialize + for<'de> Deserialize<'de>,
+        N::Output: Serialize + for<'de> Deserialize<'de>,
+    {
         self.inner.register()
     }
 }

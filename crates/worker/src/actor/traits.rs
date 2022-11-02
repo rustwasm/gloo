@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-
 use super::handler_id::HandlerId;
 use super::registrar::WorkerRegistrar;
 use super::scope::{WorkerDestroyHandle, WorkerScope};
@@ -11,9 +9,9 @@ pub trait Worker: Sized {
     /// Update message type.
     type Message;
     /// Incoming message type.
-    type Input: Serialize + for<'de> Deserialize<'de>;
+    type Input;
     /// Outgoing message type.
-    type Output: Serialize + for<'de> Deserialize<'de>;
+    type Output;
 
     /// Creates an instance of a worker.
     fn create(scope: &WorkerScope<Self>) -> Self;

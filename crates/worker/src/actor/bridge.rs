@@ -5,6 +5,9 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 use std::rc::Weak;
 
+use serde::Deserialize;
+use serde::Serialize;
+
 use super::handler_id::HandlerId;
 use super::messages::ToWorker;
 use super::native_worker::NativeWorkerExt;
@@ -87,6 +90,7 @@ where
     ) -> Self
     where
         CODEC: Codec,
+        W::Input: Serialize + for<'de> Deserialize<'de>,
     {
         let post_msg =
             { move |msg: ToWorker<W>| native_worker.post_packed_message::<_, CODEC>(msg) };

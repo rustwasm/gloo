@@ -4,6 +4,8 @@ use std::fmt;
 use std::future::Future;
 use std::rc::Rc;
 
+use serde::de::Deserialize;
+use serde::ser::Serialize;
 use wasm_bindgen_futures::spawn_local;
 
 use super::handler_id::HandlerId;
@@ -39,7 +41,7 @@ where
 
 impl<W> Drop for WorkerDestroyHandle<W>
 where
-    W: Worker + 'static,
+    W: Worker,
 {
     fn drop(&mut self) {
         self.scope.send(WorkerLifecycleEvent::Destroy);
@@ -75,6 +77,7 @@ where
     pub(crate) fn new<CODEC>() -> Self
     where
         CODEC: Codec,
+        W::Output: Serialize + for<'de> Deserialize<'de>,
     {
         let post_msg = move |msg: FromWorker<W>| {
             DedicatedWorker::worker_self().post_packed_message::<_, CODEC>(msg)
