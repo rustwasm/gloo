@@ -15,7 +15,6 @@ pub(crate) struct OneshotWorker<T>
 where
     T: 'static + Oneshot,
 {
-    // _marker: PhantomData<T>,
     running_tasks: usize,
     destruct_handle: Option<WorkerDestroyHandle<Self>>,
 }
@@ -30,7 +29,6 @@ where
 
     fn create(_scope: &WorkerScope<Self>) -> Self {
         Self {
-            // _marker: PhantomData,
             running_tasks: 0,
             destruct_handle: None,
         }

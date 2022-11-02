@@ -22,9 +22,11 @@ bincode = "1"
 gloo-console = { path = "../console", version = "0.2" }
 gloo-utils = { path = "../utils", version = "0.1" }
 js-sys = "0.3"
+pinned = "0.1.0"
 serde = { version = "1", features = ["derive"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = { version = "0.4" }
+futures = { version = "0.3", features = ["std"], default-features = false }
 
 [dependencies.web-sys]
 version = "0.3"
