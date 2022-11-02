@@ -48,7 +48,7 @@ pub(crate) struct WorkerRunnable<W: Worker> {
 
 impl<W> WorkerRunnable<W>
 where
-    W: Worker,
+    W: Worker + 'static,
 {
     pub fn run(self) {
         let mut state = self.state.borrow_mut();

@@ -15,7 +15,10 @@ use super::Shared;
 use crate::codec::Codec;
 
 /// A handle that closes the worker when it is dropped.
-pub struct WorkerDestroyHandle<W: Worker> {
+pub struct WorkerDestroyHandle<W>
+where
+    W: Worker + 'static,
+{
     scope: WorkerScope<W>,
 }
 
@@ -36,7 +39,7 @@ where
 
 impl<W> Drop for WorkerDestroyHandle<W>
 where
-    W: Worker,
+    W: Worker + 'static,
 {
     fn drop(&mut self) {
         self.scope.send(WorkerLifecycleEvent::Destroy);
@@ -66,7 +69,7 @@ impl<W: Worker> Clone for WorkerScope<W> {
 
 impl<W> WorkerScope<W>
 where
-    W: Worker,
+    W: Worker + 'static,
 {
     /// Create worker scope
     pub(crate) fn new<CODEC>() -> Self

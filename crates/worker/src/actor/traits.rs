@@ -7,7 +7,7 @@ use super::spawner::WorkerSpawner;
 use crate::traits::{Registrable, Spawnable};
 
 /// Declares the behaviour of a worker.
-pub trait Worker: Sized + 'static {
+pub trait Worker: Sized {
     /// Update message type.
     type Message;
     /// Incoming message type.
@@ -67,7 +67,7 @@ pub trait Worker: Sized + 'static {
 
 impl<W> Spawnable for W
 where
-    W: Worker,
+    W: Worker + 'static,
 {
     type Spawner = WorkerSpawner<Self>;
 
@@ -78,7 +78,7 @@ where
 
 impl<W> Registrable for W
 where
-    W: Worker,
+    W: Worker + 'static,
 {
     type Registrar = WorkerRegistrar<Self>;
 

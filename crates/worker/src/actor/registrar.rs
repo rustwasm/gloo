@@ -25,7 +25,7 @@ impl<W: Worker> fmt::Debug for WorkerRegistrar<W> {
 
 impl<W, CODEC> WorkerRegistrar<W, CODEC>
 where
-    W: Worker,
+    W: Worker + 'static,
     CODEC: Codec,
 {
     pub(crate) fn new() -> Self {

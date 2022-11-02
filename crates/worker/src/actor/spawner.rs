@@ -61,7 +61,7 @@ where
 
 impl<W, CODEC> Default for WorkerSpawner<W, CODEC>
 where
-    W: Worker,
+    W: Worker + 'static,
     CODEC: Codec,
 {
     fn default() -> Self {
@@ -71,7 +71,7 @@ where
 
 impl<W, CODEC> WorkerSpawner<W, CODEC>
 where
-    W: Worker,
+    W: Worker + 'static,
     CODEC: Codec,
 {
     /// Creates a [WorkerSpawner].
