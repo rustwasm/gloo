@@ -35,6 +35,7 @@ mod actor;
 mod codec;
 #[cfg(feature = "futures")]
 pub mod oneshot;
+pub mod reactor;
 mod traits;
 
 /// Creates a oneshot worker.
