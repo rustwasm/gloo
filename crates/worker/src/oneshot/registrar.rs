@@ -50,7 +50,7 @@ where
         }
     }
 
-    /// Registers the agent.
+    /// Registers the worker.
     pub fn register(&self)
     where
         N::Input: Serialize + for<'de> Deserialize<'de>,

@@ -2,7 +2,7 @@
 name = "gloo-worker"
 version = "0.2.1"
 authors = ["Rust and WebAssembly Working Group"]
-edition = "2018"
+edition = "2021"
 readme = "README.md"
 description = "Convenience crate for working with Web Workers"
 repository = "https://github.com/rustwasm/gloo/tree/master/crates/worker"
@@ -21,6 +21,7 @@ anymap2 = "0.13"
 bincode = "1"
 gloo-console = { path = "../console", version = "0.2" }
 gloo-utils = { path = "../utils", version = "0.1" }
+gloo-worker-macros = { path = "../worker-macros", version = "0.1" }
 js-sys = "0.3"
 pinned = "0.1.0"
 serde = { version = "1", features = ["derive"] }

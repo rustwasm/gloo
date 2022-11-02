@@ -1,41 +1,13 @@
-use gloo::worker::{HandlerId, Worker, WorkerScope};
-
 use pulldown_cmark::{html, Parser};
 
-#[derive(Debug)]
-pub enum Msg<T> {
-    Respond { output: T, id: HandlerId },
-}
+#[gloo::worker::oneshot]
+pub async fn MarkdownWorker(input: String) -> String {
+    let parser = Parser::new(&input);
 
-pub struct MarkdownWorker {}
+    let mut output = String::new();
+    html::push_html(&mut output, parser);
 
-impl Worker for MarkdownWorker {
-    // The Markdown Markup to Render.
-    type Input = String;
-
-    type Message = Msg<String>;
-
-    // The Rendered Html Output.
-    type Output = String;
-
-    fn create(_scope: &WorkerScope<Self>) -> Self {
-        Self {}
-    }
-
-    fn update(&mut self, scope: &WorkerScope<Self>, msg: Self::Message) {
-        let Msg::Respond { output, id } = msg;
-
-        scope.respond(id, output);
-    }
-
-    fn received(&mut self, scope: &WorkerScope<Self>, msg: Self::Input, who: HandlerId) {
-        let parser = Parser::new(&msg);
-
-        let mut output = String::new();
-        html::push_html(&mut output, parser);
-
-        scope.send_message(Msg::Respond { output, id: who });
-    }
+    output
 }
 
 // wasm-bindgen-test does not support serving additional files
@@ -55,12 +27,6 @@ mod tests {
     use gloo::worker::Spawnable;
     use wasm_bindgen_test::*;
 
-    use js_sys::Promise;
-    use wasm_bindgen_futures::{spawn_local, JsFuture};
-
-    use futures::channel::oneshot;
-    use std::cell::RefCell;
-
     wasm_bindgen_test_configure!(run_in_browser);
 
     static MARKDOWN_CONTENT: &str = r#"
@@ -72,29 +38,10 @@ This content is *rendered* by a **web worker**.
 
     #[wasm_bindgen_test]
     async fn markdown_worker_works() {
-        let (tx, rx) = oneshot::channel();
+        let mut bridge =
+            MarkdownWorker::spawner().spawn("http://127.0.0.1:9999/example_markdown_worker.js");
 
-        let tx = RefCell::new(Some(tx));
-
-        let bridge = MarkdownWorker::spawner()
-            .callback(move |m| {
-                if let Some(tx) = tx.borrow_mut().take() {
-                    let _ = tx.send(m);
-                }
-            })
-            .spawn("http://127.0.0.1:9999/example_markdown_worker.js");
-
-        bridge.send(MARKDOWN_CONTENT.to_owned());
-
-        spawn_local(async move {
-            bridge.send(MARKDOWN_CONTENT.to_owned());
-
-            // We need to hold the bridge until the worker resolves.
-            let promise = Promise::new(&mut |_, _| {});
-            let _ = JsFuture::from(promise).await;
-        });
-
-        let content = rx.await.unwrap();
+        let content = bridge.run(MARKDOWN_CONTENT.to_owned()).await;
 
         assert_eq!(
             &content,

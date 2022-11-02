@@ -37,6 +37,10 @@ mod codec;
 pub mod oneshot;
 mod traits;
 
+/// Creates a oneshot worker.
+#[doc(inline)]
+pub use gloo_worker_macros::oneshot;
+
 pub use actor::*;
 pub use codec::{Bincode, Codec};
 pub use traits::*;
