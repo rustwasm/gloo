@@ -5,7 +5,7 @@ use pinned::mpsc;
 use pinned::mpsc::UnboundedSender;
 
 use super::messages::{ReactorInput, ReactorOutput};
-use super::receiver::ReactorConsumable;
+use super::source::ReactorConsumable;
 use super::traits::Reactor;
 use crate::actor::{HandlerId, Worker, WorkerDestroyHandle, WorkerScope};
 

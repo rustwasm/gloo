@@ -2,14 +2,14 @@
 
 mod bridge;
 mod messages;
-mod receiver;
 mod registrar;
+mod source;
 mod spawner;
 mod traits;
 mod worker;
 
 pub use bridge::ReactorBridge;
-pub use receiver::{ReactorConsumable, ReactorSource};
 pub use registrar::ReactorRegistrar;
+pub use source::{ReactorConsumable, ReactorSource};
 pub use spawner::ReactorSpawner;
 pub use traits::Reactor;
