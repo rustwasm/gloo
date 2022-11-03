@@ -51,12 +51,12 @@ pub struct WebSocket {
     #[pin]
     message_receiver: mpsc::UnboundedReceiver<StreamMessage>,
     #[allow(clippy::type_complexity)]
-    closures: Rc<(
+    closures: (
         Closure<dyn FnMut()>,
         Closure<dyn FnMut(MessageEvent)>,
         Closure<dyn FnMut(web_sys::Event)>,
         Closure<dyn FnMut(web_sys::CloseEvent)>,
-    )>,
+    ),
 }
 
 impl WebSocket {
@@ -141,7 +141,6 @@ impl WebSocket {
         let message_callback: Closure<dyn FnMut(MessageEvent)> = {
             let sender = sender.clone();
             Closure::wrap(Box::new(move |e: MessageEvent| {
-                let sender = sender.clone();
                 let msg = parse_message(e);
                 let _ = sender.unbounded_send(StreamMessage::Message(msg));
             }) as Box<dyn FnMut(MessageEvent)>)
@@ -152,7 +151,6 @@ impl WebSocket {
         let error_callback: Closure<dyn FnMut(web_sys::Event)> = {
             let sender = sender.clone();
             Closure::wrap(Box::new(move |_e: web_sys::Event| {
-                let sender = sender.clone();
                 let _ = sender.unbounded_send(StreamMessage::ErrorEvent);
             }) as Box<dyn FnMut(web_sys::Event)>)
         };
@@ -160,8 +158,8 @@ impl WebSocket {
         ws.set_onerror(Some(error_callback.as_ref().unchecked_ref()));
 
         let close_callback: Closure<dyn FnMut(web_sys::CloseEvent)> = {
+            let sender = sender.clone();
             Closure::wrap(Box::new(move |e: web_sys::CloseEvent| {
-                let sender = sender.clone();
                 let close_event = CloseEvent {
                     code: e.code(),
                     reason: e.reason(),
@@ -178,12 +176,12 @@ impl WebSocket {
             ws,
             sink_waker: waker,
             message_receiver: receiver,
-            closures: Rc::new((
+            closures: (
                 open_callback,
                 message_callback,
                 error_callback,
                 close_callback,
-            )),
+            ),
         })
     }
 
