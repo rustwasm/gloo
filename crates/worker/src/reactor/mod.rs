@@ -10,6 +10,6 @@ mod worker;
 
 pub use bridge::ReactorBridge;
 pub use registrar::ReactorRegistrar;
-pub use source::{ReactorConsumable, ReactorSource};
+pub use source::{ReactorConsumable, ReactorStream};
 pub use spawner::ReactorSpawner;
 pub use traits::Reactor;
