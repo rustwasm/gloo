@@ -52,6 +52,13 @@ pub fn reactor_impl(
 ) -> syn::Result<TokenStream> {
     worker_fn.merge_worker_name(name)?;
 
+    if worker_fn.is_async {
+        return Err(syn::Error::new_spanned(
+            &worker_fn.name,
+            "reactor workers cannot be asynchronous",
+        ));
+    }
+
     let struct_attrs = worker_fn.filter_attrs_for_worker_struct();
     let reactor_impl_attrs = worker_fn.filter_attrs_for_worker_impl();
     let phantom_generics = worker_fn.phantom_generics();
@@ -66,12 +73,13 @@ pub fn reactor_impl(
         vis,
         ..
     } = worker_fn;
+
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let fn_generics = ty_generics.as_turbofish();
 
     let inputs_ident = Ident::new("inputs", Span::mixed_site());
 
-    let fn_call = quote! { #fn_name #fn_generics (#inputs_ident).await; };
+    let fn_call = quote! { #fn_name #fn_generics (#inputs_ident) };
     let crate_name = WorkerFn::<ReactorFn>::worker_crate_name();
 
     let quoted = quote! {

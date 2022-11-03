@@ -1,7 +1,0 @@
-error: oneshot functions must be async
- --> tests/oneshot/no_async-fail.rs:1:1
-  |
-1 | #[gloo::worker::oneshot]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: this error originates in the attribute macro `gloo::worker::oneshot` (in Nightly builds, run with -Z macro-backtrace for more info)

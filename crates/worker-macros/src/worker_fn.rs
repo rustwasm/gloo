@@ -75,6 +75,7 @@ where
     pub attrs: Vec<Attribute>,
     pub name: Ident,
     pub worker_name: Option<Ident>,
+    pub is_async: bool,
 
     pub func: ItemFn,
 }
@@ -114,13 +115,6 @@ where
             ));
         }
 
-        if sig.asyncness.is_none() {
-            return Err(syn::Error::new_spanned(
-                sig.asyncness,
-                format!("{} functions must be async", F::worker_type_name()),
-            ));
-        }
-
         if sig.constness.is_some() {
             return Err(syn::Error::new_spanned(
                 sig.constness,
@@ -140,10 +134,13 @@ where
         let recv_type = F::parse_recv_type(&sig)?;
         let output_type = F::parse_output_type(&sig)?;
 
+        let is_async = sig.asyncness.is_some();
+
         Ok(Self {
             recv_type,
             output_type,
             generics: sig.generics,
+            is_async,
             vis,
             attrs,
             name: sig.ident,

@@ -61,6 +61,7 @@ pub fn oneshot_impl(
         generics,
         output_type,
         vis,
+        is_async,
         ..
     } = worker_fn;
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
@@ -68,7 +69,11 @@ pub fn oneshot_impl(
 
     let in_ident = Ident::new("input", Span::mixed_site());
 
-    let fn_call = quote! { #fn_name #fn_generics (#in_ident).await };
+    let fn_call = if is_async {
+        quote! { #fn_name #fn_generics (#in_ident).await }
+    } else {
+        quote! { #fn_name #fn_generics (#in_ident) }
+    };
     let crate_name = WorkerFn::<OneshotFn>::worker_crate_name();
 
     let quoted = quote! {
