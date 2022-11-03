@@ -57,7 +57,7 @@ where
             R::InputStream::new(rx)
         };
 
-        let producer = { R::spawn(consumer) };
+        let producer = R::create(consumer);
 
         let scope_clone = scope.clone();
         scope.send_future(async move {

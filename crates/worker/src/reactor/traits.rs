@@ -10,5 +10,5 @@ pub trait Reactor {
     type OutputStream: Stream;
 
     /// Runs a reactor worker.
-    fn spawn(inputs: Self::InputStream) -> Self::OutputStream;
+    fn create(inputs: Self::InputStream) -> Self::OutputStream;
 }
