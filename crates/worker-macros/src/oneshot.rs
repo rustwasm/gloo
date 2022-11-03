@@ -1,0 +1,118 @@
+use proc_macro2::{Span, TokenStream};
+use quote::quote;
+use syn::{parse_quote, Ident, ReturnType, Signature, Type};
+
+use crate::worker_fn::{WorkerFn, WorkerFnType, WorkerName};
+
+pub struct OneshotFn {}
+
+impl WorkerFnType for OneshotFn {
+    type OutputType = Type;
+    type RecvType = Type;
+
+    fn attr_name() -> &'static str {
+        "oneshot"
+    }
+
+    fn worker_type_name() -> &'static str {
+        "oneshot"
+    }
+
+    fn parse_recv_type(sig: &Signature) -> syn::Result<Self::RecvType> {
+        let mut inputs = sig.inputs.iter();
+        let arg = inputs
+            .next()
+            .ok_or_else(|| syn::Error::new_spanned(&sig.ident, "expected 1 argument"))?;
+
+        let ty = Self::extract_fn_arg_type(arg)?;
+
+        Self::assert_no_left_argument(inputs, 1)?;
+
+        Ok(ty)
+    }
+
+    fn parse_output_type(sig: &Signature) -> syn::Result<Self::OutputType> {
+        let ty = match &sig.output {
+            ReturnType::Default => {
+                parse_quote! { () }
+            }
+            ReturnType::Type(_, ty) => *ty.clone(),
+        };
+
+        Ok(ty)
+    }
+}
+
+pub fn oneshot_impl(
+    name: WorkerName,
+    mut worker_fn: WorkerFn<OneshotFn>,
+) -> syn::Result<TokenStream> {
+    worker_fn.merge_worker_name(name)?;
+
+    let struct_attrs = worker_fn.filter_attrs_for_worker_struct();
+    let oneshot_impl_attrs = worker_fn.filter_attrs_for_worker_impl();
+    let phantom_generics = worker_fn.phantom_generics();
+    let oneshot_name = worker_fn.worker_name();
+    let fn_name = worker_fn.inner_fn_ident();
+    let inner_fn = worker_fn.print_inner_fn();
+
+    let WorkerFn {
+        recv_type: input_type,
+        generics,
+        output_type,
+        vis,
+        ..
+    } = worker_fn;
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let fn_generics = ty_generics.as_turbofish();
+
+    let in_ident = Ident::new("input", Span::mixed_site());
+
+    let fn_call = quote! { #fn_name #fn_generics (#in_ident).await };
+    let crate_name = WorkerFn::<OneshotFn>::worker_crate_name();
+
+    let quoted = quote! {
+        #(#struct_attrs)*
+        #[allow(unused_parens)]
+        #vis struct #oneshot_name #generics #where_clause {
+            _marker: ::std::marker::PhantomData<(#phantom_generics)>,
+        }
+
+        // we cannot disable any lints here because it will be applied to the function body
+        // as well.
+        #(#oneshot_impl_attrs)*
+        impl #impl_generics ::#crate_name::oneshot::Oneshot for #oneshot_name #ty_generics #where_clause {
+            type Input = #input_type;
+            type Output = #output_type;
+            type Future = ::std::pin::Pin<::std::boxed::Box<dyn ::std::future::Future<Output = Self::Output>>>;
+
+            fn run(#in_ident: Self::Input) -> Self::Future {
+                #inner_fn
+
+                ::std::boxed::Box::pin(
+                    async move {
+                        #fn_call
+                    }
+                )
+            }
+        }
+
+        impl #impl_generics ::#crate_name::Registrable for #oneshot_name #ty_generics #where_clause {
+            type Registrar = ::#crate_name::oneshot::OneshotRegistrar<Self>;
+
+            fn registrar() -> Self::Registrar {
+                ::#crate_name::oneshot::OneshotRegistrar::<Self>::new()
+            }
+        }
+
+        impl #impl_generics ::#crate_name::Spawnable for #oneshot_name #ty_generics #where_clause {
+            type Spawner = ::#crate_name::oneshot::OneshotSpawner<Self>;
+
+            fn spawner() -> Self::Spawner {
+                ::#crate_name::oneshot::OneshotSpawner::<Self>::new()
+            }
+        }
+    };
+
+    Ok(quoted)
+}
