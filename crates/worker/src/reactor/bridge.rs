@@ -132,6 +132,7 @@ where
     }
 }
 
+/// The receiver half of a [ReactorBridge].
 pub struct ReactorBridgeReceiver<R>
 where
     R: Reactor + 'static,
@@ -183,6 +184,7 @@ where
     }
 }
 
+/// The sender half of a [ReactorBridge].
 pub struct ReactorBridgeSender<R>
 where
     R: Reactor + 'static,

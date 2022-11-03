@@ -8,7 +8,7 @@ mod spawner;
 mod traits;
 mod worker;
 
-pub use bridge::ReactorBridge;
+pub use bridge::{ReactorBridge, ReactorBridgeReceiver, ReactorBridgeSender};
 pub use registrar::ReactorRegistrar;
 pub use source::{ReactorConsumable, ReactorStream};
 pub use spawner::ReactorSpawner;
