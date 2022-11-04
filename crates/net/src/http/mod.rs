@@ -17,6 +17,7 @@ mod headers;
 mod query;
 
 use crate::{js_to_error, Error};
+use js_sys::Reflect;
 use js_sys::{ArrayBuffer, Uint8Array};
 use std::fmt;
 use wasm_bindgen::prelude::*;
@@ -252,7 +253,23 @@ impl Request {
         let request =
             web_sys::Request::new_with_str_and_init(&url, &self.options).map_err(js_to_error)?;
 
-        let promise = gloo_utils::window().fetch_with_request(&request);
+        let global = js_sys::global();
+        let maybe_window =
+            Reflect::get(&global, &JsValue::from_str("Window")).map_err(js_to_error)?;
+        let promise = if !maybe_window.is_undefined() {
+            let window = global.dyn_into::<web_sys::Window>().unwrap();
+            window.fetch_with_request(&request)
+        } else {
+            let maybe_worker = Reflect::get(&global, &JsValue::from_str("WorkerGlobalScope"))
+                .map_err(js_to_error)?;
+            if !maybe_worker.is_undefined() {
+                let worker = global.dyn_into::<web_sys::WorkerGlobalScope>().unwrap();
+                worker.fetch_with_request(&request)
+            } else {
+                panic!("Unsupported JavaScript global context");
+            }
+        };
+
         let response = JsFuture::from(promise).await.map_err(js_to_error)?;
         match response.dyn_into::<web_sys::Response>() {
             Ok(response) => Ok(Response {
