@@ -1,14 +1,12 @@
-use futures::Stream;
+use std::future::Future;
 
-use super::ReactorConsumable;
+use super::ReactorScoped;
 
 /// A reactor worker.
-pub trait Reactor {
-    /// The Reactor Receiver.
-    type InputStream: ReactorConsumable;
-    /// The Reactor OutputStream.
-    type OutputStream: Stream;
+pub trait Reactor: Future<Output = ()> {
+    /// The Reactor Scope
+    type Scope: ReactorScoped;
 
-    /// Runs a reactor worker.
-    fn create(inputs: Self::InputStream) -> Self::OutputStream;
+    /// Creates a reactor worker.
+    fn create(scope: Self::Scope) -> Self;
 }

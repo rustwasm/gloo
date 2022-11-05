@@ -1,11 +1,14 @@
 use std::collections::HashMap;
+use std::convert::Infallible;
 
-use futures::stream::{Stream, StreamExt};
+use futures::sink;
+use futures::stream::StreamExt;
 use pinned::mpsc;
 use pinned::mpsc::UnboundedSender;
+use wasm_bindgen_futures::spawn_local;
 
 use super::messages::{ReactorInput, ReactorOutput};
-use super::source::ReactorConsumable;
+use super::scope::ReactorScoped;
 use super::traits::Reactor;
 use crate::actor::{HandlerId, Worker, WorkerDestroyHandle, WorkerScope};
 
@@ -17,7 +20,7 @@ pub(crate) struct ReactorWorker<R>
 where
     R: 'static + Reactor,
 {
-    senders: HashMap<HandlerId, UnboundedSender<<R::InputStream as Stream>::Item>>,
+    senders: HashMap<HandlerId, UnboundedSender<<R::Scope as ReactorScoped>::Input>>,
     destruct_handle: Option<WorkerDestroyHandle<Self>>,
 }
 
@@ -25,9 +28,9 @@ impl<R> Worker for ReactorWorker<R>
 where
     R: 'static + Reactor,
 {
-    type Input = ReactorInput<<R::InputStream as Stream>::Item>;
+    type Input = ReactorInput<<R::Scope as ReactorScoped>::Input>;
     type Message = Message;
-    type Output = ReactorOutput<<R::OutputStream as Stream>::Item>;
+    type Output = ReactorOutput<<R::Scope as ReactorScoped>::Output>;
 
     fn create(_scope: &WorkerScope<Self>) -> Self {
         Self {
@@ -51,21 +54,39 @@ where
     }
 
     fn connected(&mut self, scope: &WorkerScope<Self>, id: HandlerId) {
-        let consumer = {
+        let from_bridge = {
             let (tx, rx) = mpsc::unbounded();
             self.senders.insert(id, tx);
-            R::InputStream::new(rx)
+
+            rx
         };
 
-        let producer = R::create(consumer);
+        let to_bridge = {
+            let scope_ = scope.clone();
+            let (tx, mut rx) = mpsc::unbounded();
+            spawn_local(async move {
+                while let Some(m) = rx.next().await {
+                    scope_.respond(id, ReactorOutput::Output(m));
+                }
+            });
 
-        let scope_clone = scope.clone();
+            sink::unfold((), move |_, item: <R::Scope as ReactorScoped>::Output| {
+                let tx = tx.clone();
+
+                async move {
+                    let _ = tx.send_now(item);
+
+                    Ok::<(), Infallible>(())
+                }
+            })
+        };
+
+        let reactor_scope = ReactorScoped::new(from_bridge, to_bridge);
+
+        let reactor = R::create(reactor_scope);
+
         scope.send_future(async move {
-            futures::pin_mut!(producer);
-
-            while let Some(m) = producer.next().await {
-                scope_clone.respond(id, ReactorOutput::Output(m));
-            }
+            reactor.await;
 
             Message::ReactorExited(id)
         });

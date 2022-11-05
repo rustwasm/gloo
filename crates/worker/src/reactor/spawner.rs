@@ -1,7 +1,7 @@
-use futures::stream::Stream;
 use serde::de::Deserialize;
 use serde::ser::Serialize;
 
+use super::scope::ReactorScoped;
 use super::worker::ReactorWorker;
 use super::{Reactor, ReactorBridge};
 use crate::actor::WorkerSpawner;
@@ -42,8 +42,8 @@ where
     /// Spawns a reactor worker.
     pub fn spawn(mut self, path: &str) -> ReactorBridge<R>
     where
-        <R::InputStream as Stream>::Item: Serialize + for<'de> Deserialize<'de>,
-        <R::OutputStream as Stream>::Item: Serialize + for<'de> Deserialize<'de>,
+        <R::Scope as ReactorScoped>::Input: Serialize + for<'de> Deserialize<'de>,
+        <R::Scope as ReactorScoped>::Output: Serialize + for<'de> Deserialize<'de>,
     {
         let rx = ReactorBridge::register_callback(&mut self.inner);
 

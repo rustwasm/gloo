@@ -3,13 +3,13 @@
 mod bridge;
 mod messages;
 mod registrar;
-mod source;
+mod scope;
 mod spawner;
 mod traits;
 mod worker;
 
 pub use bridge::{ReactorBridge, ReactorBridgeSinkError};
 pub use registrar::ReactorRegistrar;
-pub use source::{ReactorConsumable, ReactorStream};
+pub use scope::{ReactorScope, ReactorScoped};
 pub use spawner::ReactorSpawner;
 pub use traits::Reactor;

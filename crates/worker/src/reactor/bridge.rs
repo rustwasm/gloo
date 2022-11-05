@@ -11,6 +11,7 @@ use thiserror::Error;
 use super::messages::{ReactorInput, ReactorOutput};
 use super::traits::Reactor;
 use super::worker::ReactorWorker;
+use super::ReactorScoped;
 use crate::actor::WorkerBridge;
 use crate::{Codec, WorkerSpawner};
 
@@ -22,7 +23,7 @@ where
     R: Reactor + 'static,
 {
     inner: WorkerBridge<ReactorWorker<R>>,
-    rx: UnboundedReceiver<<R::OutputStream as Stream>::Item>,
+    rx: UnboundedReceiver<<R::Scope as ReactorScoped>::Output>,
 }
 
 impl<R> fmt::Debug for ReactorBridge<R>
@@ -41,14 +42,14 @@ where
     #[inline(always)]
     pub(crate) fn new(
         inner: WorkerBridge<ReactorWorker<R>>,
-        rx: UnboundedReceiver<<R::OutputStream as Stream>::Item>,
+        rx: UnboundedReceiver<<R::Scope as ReactorScoped>::Output>,
     ) -> Self {
         Self { inner, rx }
     }
 
     pub(crate) fn output_callback(
-        tx: &UnboundedSender<<R::OutputStream as Stream>::Item>,
-        output: ReactorOutput<<R::OutputStream as Stream>::Item>,
+        tx: &UnboundedSender<<R::Scope as ReactorScoped>::Output>,
+        output: ReactorOutput<<R::Scope as ReactorScoped>::Output>,
     ) {
         match output {
             ReactorOutput::Output(m) => {
@@ -63,7 +64,7 @@ where
     #[inline(always)]
     pub(crate) fn register_callback<CODEC>(
         spawner: &mut WorkerSpawner<ReactorWorker<R>, CODEC>,
-    ) -> UnboundedReceiver<<R::OutputStream as Stream>::Item>
+    ) -> UnboundedReceiver<<R::Scope as ReactorScoped>::Output>
     where
         CODEC: Codec,
     {
@@ -86,7 +87,7 @@ where
     }
 
     /// Sends an input to the current reactor.
-    pub fn send_input(&self, msg: <R::InputStream as Stream>::Item) {
+    pub fn send_input(&self, msg: <R::Scope as ReactorScoped>::Input) {
         self.inner.send(ReactorInput::Input(msg));
     }
 }
@@ -95,7 +96,7 @@ impl<R> Stream for ReactorBridge<R>
 where
     R: Reactor + 'static,
 {
-    type Item = <R::OutputStream as Stream>::Item;
+    type Item = <R::Scope as ReactorScoped>::Output;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         Pin::new(&mut self.rx).poll_next(cx)
@@ -123,7 +124,7 @@ pub enum ReactorBridgeSinkError {
     AttemptClosure,
 }
 
-impl<R> Sink<<R::InputStream as Stream>::Item> for ReactorBridge<R>
+impl<R> Sink<<R::Scope as ReactorScoped>::Input> for ReactorBridge<R>
 where
     R: Reactor + 'static,
 {
@@ -143,7 +144,7 @@ where
 
     fn start_send(
         self: Pin<&mut Self>,
-        item: <R::InputStream as Stream>::Item,
+        item: <R::Scope as ReactorScoped>::Input,
     ) -> Result<(), Self::Error> {
         self.send_input(item);
 

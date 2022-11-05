@@ -1,11 +1,11 @@
 use std::fmt;
 
-use futures::stream::Stream;
 use serde::de::Deserialize;
 use serde::ser::Serialize;
 
 use super::traits::Reactor;
 use super::worker::ReactorWorker;
+use super::ReactorScoped;
 use crate::actor::WorkerRegistrar;
 use crate::codec::{Bincode, Codec};
 use crate::traits::Registrable;
@@ -54,8 +54,8 @@ where
     /// Registers the worker.
     pub fn register(&self)
     where
-        <R::InputStream as Stream>::Item: Serialize + for<'de> Deserialize<'de>,
-        <R::OutputStream as Stream>::Item: Serialize + for<'de> Deserialize<'de>,
+        <R::Scope as ReactorScoped>::Input: Serialize + for<'de> Deserialize<'de>,
+        <R::Scope as ReactorScoped>::Output: Serialize + for<'de> Deserialize<'de>,
     {
         self.inner.register()
     }
