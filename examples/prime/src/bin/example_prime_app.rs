@@ -51,7 +51,7 @@ fn main() {
             start_btn.set_text_content(Some("Start"));
             spawn_local(async move {
                 let mut bridge_sink = bridge_sink.borrow_mut();
-                bridge_sink.feed(ControlSignal::Stop).await.unwrap();
+                bridge_sink.send(ControlSignal::Stop).await.unwrap();
             });
 
             started.set(false);
@@ -61,7 +61,7 @@ fn main() {
 
             spawn_local(async move {
                 let mut bridge_sink = bridge_sink.borrow_mut();
-                bridge_sink.feed(ControlSignal::Start).await.unwrap();
+                bridge_sink.send(ControlSignal::Start).await.unwrap();
             });
 
             started.set(true);

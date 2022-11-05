@@ -96,8 +96,7 @@ where
         CODEC: Codec,
         W::Input: Serialize + for<'de> Deserialize<'de>,
     {
-        let post_msg =
-            { move |msg: ToWorker<W>| native_worker.post_packed_message::<_, CODEC>(msg) };
+        let post_msg = move |msg: ToWorker<W>| native_worker.post_packed_message::<_, CODEC>(msg);
 
         let self_ = Self {
             inner: WorkerBridgeInner {
