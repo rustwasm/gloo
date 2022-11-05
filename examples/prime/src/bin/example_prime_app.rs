@@ -2,11 +2,11 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::time::Duration;
 
+use example_prime::{ControlSignal, Prime};
 use futures::sink::SinkExt;
 use futures::stream::StreamExt;
 use gloo::timers::future::sleep;
 use gloo::worker::Spawnable;
-use prime::{ControlSignal, Prime};
 use wasm_bindgen_futures::spawn_local;
 
 fn main() {

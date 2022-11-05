@@ -20,7 +20,7 @@ pub async fn Prime(mut scope: ReactorScope<ControlSignal, u64>) {
             'inner: for i in 1.. {
                 // This is not the most efficient way to calculate prime,
                 // but this example is here to demonstrate how primes can be
-                // calculated in ascending order.
+                // sent to the application in an ascending order.
                 if primes::is_prime(i) {
                     scope.send(i).await.unwrap();
                 }
