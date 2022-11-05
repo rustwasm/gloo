@@ -7,7 +7,7 @@ use crate::worker_fn::{WorkerFn, WorkerFnType, WorkerName};
 pub struct ReactorFn {}
 
 impl WorkerFnType for ReactorFn {
-    type OutputType = Type;
+    type OutputType = ();
     type RecvType = Type;
 
     fn attr_name() -> &'static str {
@@ -32,17 +32,17 @@ impl WorkerFnType for ReactorFn {
     }
 
     fn parse_output_type(sig: &Signature) -> syn::Result<Self::OutputType> {
-        let ty = match &sig.output {
-            ReturnType::Default => {
+        match &sig.output {
+            ReturnType::Default => {}
+            ReturnType::Type(_, ty) => {
                 return Err(syn::Error::new_spanned(
-                    &sig.ident,
-                    "expected a stream as the return type",
-                ));
+                    ty,
+                    "reactor workers cannot return any value",
+                ))
             }
-            ReturnType::Type(_, ty) => *ty.clone(),
-        };
+        }
 
-        Ok(ty)
+        Ok(())
     }
 }
 
@@ -68,7 +68,6 @@ pub fn reactor_impl(
 
     let WorkerFn {
         recv_type,
-        output_type,
         generics,
         vis,
         ..
@@ -77,15 +76,16 @@ pub fn reactor_impl(
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let fn_generics = ty_generics.as_turbofish();
 
-    let inputs_ident = Ident::new("inputs", Span::mixed_site());
+    let scope_ident = Ident::new("scope", Span::mixed_site());
 
-    let fn_call = quote! { #fn_name #fn_generics (#inputs_ident) };
+    let fn_call = quote! { #fn_name #fn_generics (#scope_ident) };
     let crate_name = WorkerFn::<ReactorFn>::worker_crate_name();
 
     let quoted = quote! {
         #(#struct_attrs)*
         #[allow(unused_parens)]
         #vis struct #reactor_name #generics #where_clause {
+            inner: ::std::pin::Pin<::std::boxed::Box<dyn ::std::future::Future<Output = ()>>>,
             _marker: ::std::marker::PhantomData<(#phantom_generics)>,
         }
 
@@ -93,12 +93,19 @@ pub fn reactor_impl(
         // as well.
         #(#reactor_impl_attrs)*
         impl #impl_generics ::#crate_name::reactor::Reactor for #reactor_name #ty_generics #where_clause {
-            type InputStream = #recv_type;
-            type OutputStream = #output_type;
+            type Scope = #recv_type;
 
-            fn create(#inputs_ident: Self::InputStream) -> Self::OutputStream {
+            fn create(#scope_ident: Self::Scope) -> Self {
                 #inner_fn
                 #fn_call
+            }
+        }
+
+        impl #impl_generics ::std::future::Future for #reactor_name #ty_generics #where_clause {
+            type Output = ();
+
+            fn poll(mut self: ::std::pin::Pin<&mut Self>, cx: &mut ::std::task::Context<'_>) -> ::std::task::Poll<Self::Output> {
+                ::std::pin::Pin::new(&mut self.inner).poll(cx)
             }
         }
 
