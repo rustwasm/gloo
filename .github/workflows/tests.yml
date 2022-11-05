@@ -65,6 +65,9 @@ jobs:
             if [[ "$x" == "net" ]]; then
               continue
             fi
+            if [[ "$x" == "worker-macros" ]]; then
+              continue
+            fi
             wasm-pack test --headless --firefox --chrome crates/$x --all-features
             wasm-pack test --headless --firefox --chrome crates/$x --no-default-features
           done
