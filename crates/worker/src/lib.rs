@@ -38,9 +38,12 @@ pub mod oneshot;
 pub mod reactor;
 mod traits;
 
-/// Creates a oneshot worker.
+/// Creates an oneshot worker.
 #[doc(inline)]
 pub use gloo_worker_macros::oneshot;
+/// Creates a reactor worker.
+#[doc(inline)]
+pub use gloo_worker_macros::reactor;
 
 pub use actor::*;
 pub use codec::{Bincode, Codec};

@@ -52,10 +52,10 @@ pub fn reactor_impl(
 ) -> syn::Result<TokenStream> {
     worker_fn.merge_worker_name(name)?;
 
-    if worker_fn.is_async {
+    if !worker_fn.is_async {
         return Err(syn::Error::new_spanned(
             &worker_fn.name,
-            "reactor workers cannot be asynchronous",
+            "reactor workers must be asynchronous",
         ));
     }
 
@@ -78,7 +78,7 @@ pub fn reactor_impl(
 
     let scope_ident = Ident::new("scope", Span::mixed_site());
 
-    let fn_call = quote! { #fn_name #fn_generics (#scope_ident) };
+    let fn_call = quote! { #fn_name #fn_generics (#scope_ident).await };
     let crate_name = WorkerFn::<ReactorFn>::worker_crate_name();
 
     let quoted = quote! {
@@ -97,7 +97,15 @@ pub fn reactor_impl(
 
             fn create(#scope_ident: Self::Scope) -> Self {
                 #inner_fn
-                #fn_call
+
+                Self {
+                    inner: ::std::boxed::Box::pin(
+                        async move {
+                            #fn_call
+                        }
+                    ),
+                    _marker: ::std::marker::PhantomData,
+                }
             }
         }
 
@@ -105,7 +113,7 @@ pub fn reactor_impl(
             type Output = ();
 
             fn poll(mut self: ::std::pin::Pin<&mut Self>, cx: &mut ::std::task::Context<'_>) -> ::std::task::Poll<Self::Output> {
-                ::std::pin::Pin::new(&mut self.inner).poll(cx)
+                ::std::future::Future::poll(::std::pin::Pin::new(&mut self.inner), cx)
             }
         }
 

@@ -75,6 +75,7 @@ members = [
 
     "examples/markdown",
     "examples/clock",
+    "examples/prime",
 ]
 
 # Passing arguments to the docsrs builder in order to properly document cfg's.
