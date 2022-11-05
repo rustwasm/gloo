@@ -80,6 +80,7 @@ pub fn oneshot_impl(
         #(#struct_attrs)*
         #[allow(unused_parens)]
         #vis struct #oneshot_name #generics #where_clause {
+            inner: ::std::pin::Pin<::std::boxed::Box<dyn ::std::future::Future<Output = #output_type>>>,
             _marker: ::std::marker::PhantomData<(#phantom_generics)>,
         }
 
@@ -88,17 +89,26 @@ pub fn oneshot_impl(
         #(#oneshot_impl_attrs)*
         impl #impl_generics ::#crate_name::oneshot::Oneshot for #oneshot_name #ty_generics #where_clause {
             type Input = #input_type;
-            type Output = #output_type;
-            type Future = ::std::pin::Pin<::std::boxed::Box<dyn ::std::future::Future<Output = Self::Output>>>;
 
-            fn run(#in_ident: Self::Input) -> Self::Future {
+            fn create(#in_ident: Self::Input) -> Self {
                 #inner_fn
 
-                ::std::boxed::Box::pin(
-                    async move {
-                        #fn_call
-                    }
-                )
+                Self {
+                    inner: ::std::boxed::Box::pin(
+                        async move {
+                            #fn_call
+                        }
+                    ),
+                    _marker: ::std::marker::PhantomData,
+                }
+            }
+        }
+
+        impl #impl_generics ::std::future::Future for #oneshot_name #ty_generics #where_clause {
+            type Output = #output_type;
+
+            fn poll(mut self: ::std::pin::Pin<&mut Self>, cx: &mut ::std::task::Context<'_>) -> ::std::task::Poll<Self::Output> {
+                ::std::future::Future::poll(::std::pin::Pin::new(&mut self.inner), cx)
             }
         }
 

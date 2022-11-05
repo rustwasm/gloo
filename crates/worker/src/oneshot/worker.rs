@@ -50,7 +50,7 @@ where
         self.running_tasks += 1;
 
         scope.send_future(async move {
-            let output = T::run(input).await;
+            let output = T::create(input).await;
 
             Message::Finished { handler_id, output }
         });

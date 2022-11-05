@@ -1,15 +1,10 @@
 use std::future::Future;
 
 /// A future-based worker that for each input, one output is produced.
-pub trait Oneshot {
+pub trait Oneshot: Future {
     /// Incoming message type.
     type Input;
-    /// Outgoing message type.
-    type Output;
 
-    /// Future type created for current task.
-    type Future: 'static + Future<Output = Self::Output>;
-
-    /// Runs a oneshot worker.
-    fn run(input: Self::Input) -> Self::Future;
+    /// Creates an oneshot worker.
+    fn create(input: Self::Input) -> Self;
 }
