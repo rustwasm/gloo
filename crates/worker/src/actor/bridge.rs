@@ -81,6 +81,10 @@ impl<W> WorkerBridge<W>
 where
     W: Worker,
 {
+    fn init(&self) {
+        self.inner.send_message(ToWorker::Connected(self.id));
+    }
+
     pub(crate) fn new<CODEC>(
         id: HandlerId,
         native_worker: web_sys::Worker,
@@ -95,7 +99,7 @@ where
         let post_msg =
             { move |msg: ToWorker<W>| native_worker.post_packed_message::<_, CODEC>(msg) };
 
-        Self {
+        let self_ = Self {
             inner: WorkerBridgeInner {
                 pending_queue,
                 callbacks,
@@ -105,7 +109,10 @@ where
             id,
             _worker: PhantomData,
             cb: callback,
-        }
+        };
+        self_.init();
+
+        self_
     }
 
     /// Send a message to the current worker.
@@ -131,12 +138,15 @@ where
                 .insert(handler_id, cb_weak);
         }
 
-        Self {
+        let self_ = Self {
             inner: self.inner.clone(),
             id: handler_id,
             _worker: PhantomData,
             cb,
-        }
+        };
+        self_.init();
+
+        self_
     }
 }
 
