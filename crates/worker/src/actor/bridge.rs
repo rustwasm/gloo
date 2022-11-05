@@ -5,8 +5,7 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 use std::rc::Weak;
 
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::handler_id::HandlerId;
 use super::messages::ToWorker;

@@ -1,3 +1,5 @@
+#![cfg(not(target_arch = "wasm32"))]
+
 #[test]
 fn macro_tests() {
     let t = trybuild::TestCases::new();
