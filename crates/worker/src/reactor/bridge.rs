@@ -9,11 +9,11 @@ use pinned::mpsc::{UnboundedReceiver, UnboundedSender};
 use thiserror::Error;
 
 use super::messages::{ReactorInput, ReactorOutput};
+use super::scope::ReactorScoped;
 use super::traits::Reactor;
 use super::worker::ReactorWorker;
-use super::ReactorScoped;
-use crate::actor::WorkerBridge;
-use crate::{Codec, WorkerSpawner};
+use crate::actor::{WorkerBridge, WorkerSpawner};
+use crate::Codec;
 
 /// A connection manager for components interaction with oneshot workers.
 ///

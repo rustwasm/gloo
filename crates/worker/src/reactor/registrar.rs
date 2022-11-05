@@ -3,9 +3,9 @@ use std::fmt;
 use serde::de::Deserialize;
 use serde::ser::Serialize;
 
+use super::scope::ReactorScoped;
 use super::traits::Reactor;
 use super::worker::ReactorWorker;
-use super::ReactorScoped;
 use crate::actor::WorkerRegistrar;
 use crate::codec::{Bincode, Codec};
 use crate::traits::Registrable;

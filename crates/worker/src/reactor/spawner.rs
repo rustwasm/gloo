@@ -1,9 +1,10 @@
 use serde::de::Deserialize;
 use serde::ser::Serialize;
 
+use super::bridge::ReactorBridge;
 use super::scope::ReactorScoped;
+use super::traits::Reactor;
 use super::worker::ReactorWorker;
-use super::{Reactor, ReactorBridge};
 use crate::actor::WorkerSpawner;
 use crate::codec::{Bincode, Codec};
 

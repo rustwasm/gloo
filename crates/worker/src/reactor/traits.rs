@@ -1,6 +1,6 @@
 use std::future::Future;
 
-use super::ReactorScoped;
+use super::scope::ReactorScoped;
 
 /// A reactor worker.
 pub trait Reactor: Future<Output = ()> {

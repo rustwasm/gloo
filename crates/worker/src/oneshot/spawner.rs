@@ -1,8 +1,9 @@
 use serde::de::Deserialize;
 use serde::ser::Serialize;
 
+use super::bridge::OneshotBridge;
+use super::traits::Oneshot;
 use super::worker::OneshotWorker;
-use super::{Oneshot, OneshotBridge};
 use crate::actor::WorkerSpawner;
 use crate::codec::{Bincode, Codec};
 
