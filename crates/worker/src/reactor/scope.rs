@@ -8,8 +8,8 @@ use futures::Sink;
 
 /// A handle to communicate with bridges.
 pub struct ReactorScope<I, O> {
-    from_bridge: Pin<Box<dyn FusedStream<Item = I>>>,
-    to_bridge: Pin<Box<dyn Sink<O, Error = Infallible>>>,
+    input_stream: Pin<Box<dyn FusedStream<Item = I>>>,
+    output_sink: Pin<Box<dyn Sink<O, Error = Infallible>>>,
 }
 
 impl<I, O> fmt::Debug for ReactorScope<I, O> {
@@ -23,19 +23,19 @@ impl<I, O> Stream for ReactorScope<I, O> {
 
     #[inline(always)]
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        Pin::new(&mut self.from_bridge).poll_next(cx)
+        Pin::new(&mut self.input_stream).poll_next(cx)
     }
 
     #[inline(always)]
     fn size_hint(&self) -> (usize, Option<usize>) {
-        self.from_bridge.size_hint()
+        self.input_stream.size_hint()
     }
 }
 
 impl<I, O> FusedStream for ReactorScope<I, O> {
     #[inline(always)]
     fn is_terminated(&self) -> bool {
-        self.from_bridge.is_terminated()
+        self.input_stream.is_terminated()
     }
 }
 
@@ -47,7 +47,7 @@ pub trait ReactorScoped: Stream + FusedStream {
     type Output;
 
     /// Creates a ReactorReceiver.
-    fn new<IS, OS>(from_bridge: IS, to_bridge: OS) -> Self
+    fn new<IS, OS>(input_stream: IS, output_sink: OS) -> Self
     where
         IS: Stream<Item = Self::Input> + FusedStream + 'static,
         OS: Sink<Self::Output, Error = Infallible> + 'static;
@@ -58,14 +58,14 @@ impl<I, O> ReactorScoped for ReactorScope<I, O> {
     type Output = O;
 
     #[inline]
-    fn new<IS, OS>(from_bridge: IS, to_bridge: OS) -> Self
+    fn new<IS, OS>(input_stream: IS, output_sink: OS) -> Self
     where
         IS: Stream<Item = Self::Input> + FusedStream + 'static,
         OS: Sink<Self::Output, Error = Infallible> + 'static,
     {
         Self {
-            from_bridge: Box::pin(from_bridge),
-            to_bridge: Box::pin(to_bridge),
+            input_stream: Box::pin(input_stream),
+            output_sink: Box::pin(output_sink),
         }
     }
 }
@@ -74,18 +74,18 @@ impl<I, O> Sink<O> for ReactorScope<I, O> {
     type Error = Infallible;
 
     fn start_send(mut self: Pin<&mut Self>, item: O) -> Result<(), Self::Error> {
-        Pin::new(&mut self.to_bridge).start_send(item)
+        Pin::new(&mut self.output_sink).start_send(item)
     }
 
     fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        Pin::new(&mut self.to_bridge).poll_close(cx)
+        Pin::new(&mut self.output_sink).poll_close(cx)
     }
 
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        Pin::new(&mut self.to_bridge).poll_flush(cx)
+        Pin::new(&mut self.output_sink).poll_flush(cx)
     }
 
     fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        Pin::new(&mut self.to_bridge).poll_flush(cx)
+        Pin::new(&mut self.output_sink).poll_flush(cx)
     }
 }

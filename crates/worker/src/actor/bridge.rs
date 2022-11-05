@@ -12,8 +12,8 @@ use super::handler_id::HandlerId;
 use super::messages::ToWorker;
 use super::native_worker::NativeWorkerExt;
 use super::traits::Worker;
+use super::{Callback, Shared};
 use crate::codec::Codec;
-use crate::{Callback, Shared};
 
 pub(crate) type ToWorkerQueue<W> = Vec<ToWorker<W>>;
 pub(crate) type CallbackMap<W> = HashMap<HandlerId, Weak<dyn Fn(<W as Worker>::Output)>>;

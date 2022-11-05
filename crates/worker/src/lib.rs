@@ -35,14 +35,17 @@ mod actor;
 mod codec;
 #[cfg(feature = "futures")]
 pub mod oneshot;
+#[cfg(feature = "futures")]
 pub mod reactor;
 mod traits;
 
 /// Creates an oneshot worker.
 #[doc(inline)]
+#[cfg(feature = "futures")]
 pub use gloo_worker_macros::oneshot;
 /// Creates a reactor worker.
 #[doc(inline)]
+#[cfg(feature = "futures")]
 pub use gloo_worker_macros::reactor;
 
 pub use actor::*;

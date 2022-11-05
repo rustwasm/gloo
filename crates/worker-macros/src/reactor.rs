@@ -76,7 +76,7 @@ pub fn reactor_impl(
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let fn_generics = ty_generics.as_turbofish();
 
-    let scope_ident = Ident::new("scope", Span::mixed_site());
+    let scope_ident = Ident::new("_scope", Span::mixed_site());
 
     let fn_call = quote! { #fn_name #fn_generics (#scope_ident).await };
     let crate_name = WorkerFn::<ReactorFn>::worker_crate_name();

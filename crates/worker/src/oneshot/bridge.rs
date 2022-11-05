@@ -4,8 +4,8 @@ use pinned::mpsc::UnboundedReceiver;
 
 use super::traits::Oneshot;
 use super::worker::OneshotWorker;
-use crate::actor::WorkerBridge;
-use crate::{Codec, WorkerSpawner};
+use crate::actor::{WorkerBridge, WorkerSpawner};
+use crate::codec::Codec;
 
 /// A connection manager for components interaction with oneshot workers.
 #[derive(Debug)]

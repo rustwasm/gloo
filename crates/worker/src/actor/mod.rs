@@ -21,7 +21,7 @@ pub use spawner::WorkerSpawner;
 pub use traits::Worker;
 
 /// Alias for `Rc<RefCell<T>>`
-pub(crate) type Shared<T> = Rc<RefCell<T>>;
+type Shared<T> = Rc<RefCell<T>>;
 
 /// Alias for `Rc<dyn Fn(IN)>`
-pub(crate) type Callback<IN> = Rc<dyn Fn(IN)>;
+type Callback<IN> = Rc<dyn Fn(IN)>;

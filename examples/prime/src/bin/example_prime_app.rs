@@ -71,6 +71,7 @@ fn main() {
     spawn_local(async move {
         let _listener = listener;
 
+        // We create a loop so that listeners can be held for forever.
         loop {
             sleep(Duration::from_secs(3600)).await;
         }

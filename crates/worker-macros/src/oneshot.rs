@@ -67,7 +67,7 @@ pub fn oneshot_impl(
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let fn_generics = ty_generics.as_turbofish();
 
-    let in_ident = Ident::new("input", Span::mixed_site());
+    let in_ident = Ident::new("_input", Span::mixed_site());
 
     let fn_call = if is_async {
         quote! { #fn_name #fn_generics (#in_ident).await }

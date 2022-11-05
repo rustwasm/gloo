@@ -4,7 +4,7 @@ use super::messages::ToWorker;
 use super::native_worker::{DedicatedWorker, WorkerSelf};
 use super::scope::{WorkerDestroyHandle, WorkerScope};
 use super::traits::Worker;
-use crate::Shared;
+use super::Shared;
 
 pub(crate) struct WorkerState<W>
 where
