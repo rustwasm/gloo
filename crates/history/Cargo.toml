@@ -1,6 +1,6 @@
 [package]
 name = "gloo-history"
-version = "0.1.1"
+version = "0.1.2"
 description = "Universal Session History"
 authors = ["Rust and WebAssembly Working Group"]
 edition = "2018"
@@ -12,7 +12,7 @@ categories = ["api-bindings", "history", "wasm"]
 
 [dependencies]
 wasm-bindgen = "0.2"
-gloo-utils = { version = "0.1.0", path = "../utils" }
+gloo-utils = { version = "0.1.6", path = "../utils" }
 gloo-events = { version = "0.1.0", path = "../events" }
 serde = "1"
 serde-wasm-bindgen = "0.3.1"
@@ -31,7 +31,7 @@ features = [
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
 serde = { version = "1", features = ["derive"] }
-gloo-timers = { version = "0.2.0", features = ["futures"], path = "../timers" }
+gloo-timers = { version = "0.2.5", features = ["futures"], path = "../timers" }
 
 [features]
 query = ["thiserror", "serde_urlencoded"]
