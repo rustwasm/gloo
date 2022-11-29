@@ -51,12 +51,12 @@ pub struct WebSocket {
     #[pin]
     message_receiver: mpsc::UnboundedReceiver<StreamMessage>,
     #[allow(clippy::type_complexity)]
-    closures: Rc<(
+    closures: (
         Closure<dyn FnMut()>,
         Closure<dyn FnMut(MessageEvent)>,
         Closure<dyn FnMut(web_sys::Event)>,
         Closure<dyn FnMut(web_sys::CloseEvent)>,
-    )>,
+    ),
 }
 
 impl WebSocket {
@@ -136,32 +136,37 @@ impl WebSocket {
             }) as Box<dyn FnMut()>)
         };
 
-        ws.set_onopen(Some(open_callback.as_ref().unchecked_ref()));
+        ws.add_event_listener_with_callback_and_add_event_listener_options(
+            "open",
+            open_callback.as_ref().unchecked_ref(),
+            web_sys::AddEventListenerOptions::new().once(true),
+        )
+        .map_err(js_to_js_error)?;
 
         let message_callback: Closure<dyn FnMut(MessageEvent)> = {
             let sender = sender.clone();
             Closure::wrap(Box::new(move |e: MessageEvent| {
-                let sender = sender.clone();
                 let msg = parse_message(e);
                 let _ = sender.unbounded_send(StreamMessage::Message(msg));
             }) as Box<dyn FnMut(MessageEvent)>)
         };
 
-        ws.set_onmessage(Some(message_callback.as_ref().unchecked_ref()));
+        ws.add_event_listener_with_callback("message", message_callback.as_ref().unchecked_ref())
+            .map_err(js_to_js_error)?;
 
         let error_callback: Closure<dyn FnMut(web_sys::Event)> = {
             let sender = sender.clone();
             Closure::wrap(Box::new(move |_e: web_sys::Event| {
-                let sender = sender.clone();
                 let _ = sender.unbounded_send(StreamMessage::ErrorEvent);
             }) as Box<dyn FnMut(web_sys::Event)>)
         };
 
-        ws.set_onerror(Some(error_callback.as_ref().unchecked_ref()));
+        ws.add_event_listener_with_callback("error", error_callback.as_ref().unchecked_ref())
+            .map_err(js_to_js_error)?;
 
         let close_callback: Closure<dyn FnMut(web_sys::CloseEvent)> = {
+            let sender = sender.clone();
             Closure::wrap(Box::new(move |e: web_sys::CloseEvent| {
-                let sender = sender.clone();
                 let close_event = CloseEvent {
                     code: e.code(),
                     reason: e.reason(),
@@ -172,18 +177,23 @@ impl WebSocket {
             }) as Box<dyn FnMut(web_sys::CloseEvent)>)
         };
 
-        ws.set_onclose(Some(close_callback.as_ref().unchecked_ref()));
+        ws.add_event_listener_with_callback_and_add_event_listener_options(
+            "close",
+            close_callback.as_ref().unchecked_ref(),
+            web_sys::AddEventListenerOptions::new().once(true),
+        )
+        .map_err(js_to_js_error)?;
 
         Ok(Self {
             ws,
             sink_waker: waker,
             message_receiver: receiver,
-            closures: Rc::new((
+            closures: (
                 open_callback,
                 message_callback,
                 error_callback,
                 close_callback,
-            )),
+            ),
         })
     }
 
@@ -301,6 +311,25 @@ impl Stream for WebSocket {
 impl PinnedDrop for WebSocket {
     fn drop(self: Pin<&mut Self>) {
         self.ws.close().unwrap();
+
+        for (ty, cb) in [
+            ("open", self.closures.0.as_ref()),
+            ("message", &self.closures.1.as_ref()),
+            ("error", &self.closures.2.as_ref()),
+        ] {
+            let _ = self
+                .ws
+                .remove_event_listener_with_callback(ty, cb.unchecked_ref());
+        }
+
+        if let Ok(close_event) = web_sys::CloseEvent::new_with_event_init_dict(
+            "close",
+            web_sys::CloseEventInit::new()
+                .code(1000)
+                .reason("client dropped"),
+        ) {
+            let _ = self.ws.dispatch_event(&close_event);
+        }
     }
 }
 

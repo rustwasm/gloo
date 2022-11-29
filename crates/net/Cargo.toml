@@ -45,11 +45,13 @@ json = ["serde", "serde_json", "gloo-utils/serde"]
 # Enables the WebSocket API
 websocket = [
     'web-sys/WebSocket',
+    'web-sys/AddEventListenerOptions',
     'web-sys/ErrorEvent',
     'web-sys/FileReader',
     'web-sys/MessageEvent',
     'web-sys/ProgressEvent',
     'web-sys/CloseEvent',
+    'web-sys/CloseEventInit',
     'web-sys/BinaryType',
     'web-sys/Blob',
     "futures-channel",
