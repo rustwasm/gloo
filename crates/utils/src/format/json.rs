@@ -29,7 +29,8 @@ pub trait JsValueSerdeExt: private::Sealed {
     /// use gloo_utils::format::JsValueSerdeExt;
     ///
     /// # fn no_run() {
-    /// assert_eq!(JsValue::from("bar").into_serde::<String>().unwrap(), "bar");
+    /// let array = vec![1,2,3];
+    /// let obj = JsValue::from_serde(&array);
     /// # }
     /// ```
     /// # Errors
@@ -63,8 +64,7 @@ pub trait JsValueSerdeExt: private::Sealed {
     /// use gloo_utils::format::JsValueSerdeExt;
     ///
     /// # fn no_run() {
-    /// let array = vec![1,2,3];
-    /// let obj = JsValue::from_serde(&array);
+    /// assert_eq!(JsValue::from("bar").into_serde::<String>().unwrap(), "bar");
     /// # }
     /// ```
     ///
