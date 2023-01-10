@@ -6,17 +6,19 @@ use wasm_bindgen::{JsCast, JsValue};
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(js_name = "setTimeout", catch)]
-    fn set_timeout(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    type GlobalThis;
 
-    #[wasm_bindgen(js_name = "setInterval", catch)]
-    fn set_interval(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    #[wasm_bindgen(method, js_name = "setTimeout", catch)]
+    fn set_timeout(this: &GlobalThis, handler: &Function, timeout: i32) -> Result<i32, JsValue>;
 
-    #[wasm_bindgen(js_name = "clearTimeout")]
-    fn clear_timeout(handle: i32);
+    #[wasm_bindgen(method, js_name = "setInterval", catch)]
+    fn set_interval(this: &GlobalThis, handler: &Function, timeout: i32) -> Result<i32, JsValue>;
 
-    #[wasm_bindgen(js_name = "clearInterval")]
-    fn clear_interval(handle: i32);
+    #[wasm_bindgen(method, js_name = "clearTimeout")]
+    fn clear_timeout(this: &GlobalThis, handle: i32);
+
+    #[wasm_bindgen(method, js_name = "clearInterval")]
+    fn clear_interval(this: &GlobalThis, handle: i32);
 }
 
 /// A scheduled timeout.
@@ -37,7 +39,8 @@ impl Drop for Timeout {
     /// `clearTimeout` directly.
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            clear_timeout(id);
+            let global = js_sys::global().unchecked_into::<GlobalThis>();
+            global.clear_timeout(id);
         }
     }
 }
@@ -61,11 +64,13 @@ impl Timeout {
     {
         let closure = Closure::once(callback);
 
-        let id = set_timeout(
-            closure.as_ref().unchecked_ref::<js_sys::Function>(),
-            millis as i32,
-        )
-        .unwrap_throw();
+        let global = js_sys::global().unchecked_into::<GlobalThis>();
+        let id = global
+            .set_timeout(
+                closure.as_ref().unchecked_ref::<js_sys::Function>(),
+                millis as i32,
+            )
+            .unwrap_throw();
 
         Timeout {
             id: Some(id),
@@ -139,7 +144,8 @@ impl Drop for Interval {
     /// `clearInterval` directly.
     fn drop(&mut self) {
         if let Some(id) = self.id {
-            clear_interval(id);
+            let global = js_sys::global().unchecked_into::<GlobalThis>();
+            global.clear_interval(id);
         }
     }
 }
@@ -162,11 +168,13 @@ impl Interval {
     {
         let closure = Closure::wrap(Box::new(callback) as Box<dyn FnMut()>);
 
-        let id = set_interval(
-            closure.as_ref().unchecked_ref::<js_sys::Function>(),
-            millis as i32,
-        )
-        .unwrap_throw();
+        let global = js_sys::global().unchecked_into::<GlobalThis>();
+        let id = global
+            .set_interval(
+                closure.as_ref().unchecked_ref::<js_sys::Function>(),
+                millis as i32,
+            )
+            .unwrap_throw();
 
         Interval {
             id: Some(id),
