@@ -156,7 +156,11 @@ impl WebSocket {
 
         let error_callback: Closure<dyn FnMut(web_sys::Event)> = {
             let sender = sender.clone();
+            let waker = Rc::clone(&waker);
             Closure::wrap(Box::new(move |_e: web_sys::Event| {
+                if let Some(waker) = waker.borrow_mut().take() {
+                    waker.wake();
+                }
                 let _ = sender.unbounded_send(StreamMessage::ErrorEvent);
             }) as Box<dyn FnMut(web_sys::Event)>)
         };
