@@ -60,7 +60,7 @@ fn modified_since() {
         file.last_modified_time()
             .checked_sub(Duration::from_millis(1))
             .unwrap()
-            < now.into()
+            < now
     );
 }
 
@@ -95,7 +95,7 @@ async fn bytes_future() {
     );
 }
 
-const PNG_FILE: &'static [u8] = &[
+const PNG_FILE: &[u8] = &[
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
     0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x01, 0x03, 0x00, 0x00, 0x00, 0x25, 0xdb, 0x56,
     0xca, 0x00, 0x00, 0x00, 0x03, 0x50, 0x4c, 0x54, 0x45, 0xff, 0x4d, 0x00, 0x5c, 0x35, 0x38, 0x7f,
@@ -105,7 +105,7 @@ const PNG_FILE: &'static [u8] = &[
 ];
 
 #[cfg(feature = "futures")]
-const PNG_FILE_DATA: &'static str = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAA\
+const PNG_FILE_DATA: &str = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAA\
      Al21bKAAAAA1BMVEX/TQBcNTh/AAAAAXRSTlPM0jRW/QAAAApJREFUeJxjYgAAAAYAAzY3fKgAAAAASUVORK5CYII=";
 
 #[cfg(feature = "futures")]

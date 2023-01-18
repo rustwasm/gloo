@@ -50,7 +50,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&route);
 
-        self.inner.push(&url.href());
+        self.inner.push(url.href());
     }
 
     fn replace<'a>(&self, route: impl Into<Cow<'a, str>>) {
@@ -62,7 +62,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&route);
 
-        self.inner.replace(&url.href());
+        self.inner.replace(url.href());
     }
 
     fn push_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T)
@@ -77,7 +77,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&route);
 
-        self.inner.push_with_state(&url.href(), state)
+        self.inner.push_with_state(url.href(), state)
     }
 
     fn replace_with_state<'a, T>(&self, route: impl Into<Cow<'a, str>>, state: T)
@@ -92,7 +92,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&route);
 
-        self.inner.replace_with_state(&url.href(), state)
+        self.inner.replace_with_state(url.href(), state)
     }
 
     #[cfg(feature = "query")]
@@ -109,7 +109,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&format!("{}?{}", route, query));
 
-        self.inner.push(&url.href());
+        self.inner.push(url.href());
         Ok(())
     }
     #[cfg(feature = "query")]
@@ -130,7 +130,7 @@ impl History for HashHistory {
         let url = Self::get_url();
         url.set_hash(&format!("{}?{}", route, query));
 
-        self.inner.replace(&url.href());
+        self.inner.replace(url.href());
         Ok(())
     }
 
@@ -155,7 +155,7 @@ impl History for HashHistory {
         let query = serde_urlencoded::to_string(query)?;
         url.set_hash(&format!("{}?{}", route, query));
 
-        self.inner.push_with_state(&url.href(), state);
+        self.inner.push_with_state(url.href(), state);
 
         Ok(())
     }
@@ -181,7 +181,7 @@ impl History for HashHistory {
         let query = serde_urlencoded::to_string(query)?;
         url.set_hash(&format!("{}?{}", route, query));
 
-        self.inner.replace_with_state(&url.href(), state);
+        self.inner.replace_with_state(url.href(), state);
 
         Ok(())
     }
