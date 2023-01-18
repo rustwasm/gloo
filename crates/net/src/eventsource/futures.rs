@@ -241,11 +241,12 @@ mod tests {
 
     wasm_bindgen_test_configure!(run_in_browser);
 
-    const SSE_ECHO_SERVER_URL: &str = env!("SSE_ECHO_SERVER_URL");
-
     #[wasm_bindgen_test]
     fn eventsource_works() {
-        let mut es = EventSource::new(SSE_ECHO_SERVER_URL).unwrap();
+        let sse_echo_server_url =
+            option_env!("SSE_ECHO_SERVER_URL").expect("Did you set SSE_ECHO_SERVER_URL?");
+
+        let mut es = EventSource::new(sse_echo_server_url).unwrap();
         let mut servers = es.subscribe("server").unwrap();
         let mut requests = es.subscribe("request").unwrap();
 

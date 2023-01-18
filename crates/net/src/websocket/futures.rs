@@ -169,7 +169,6 @@ impl WebSocket {
             .map_err(js_to_js_error)?;
 
         let close_callback: Closure<dyn FnMut(web_sys::CloseEvent)> = {
-            let sender = sender.clone();
             Closure::wrap(Box::new(move |e: web_sys::CloseEvent| {
                 let close_event = CloseEvent {
                     code: e.code(),
@@ -318,8 +317,8 @@ impl PinnedDrop for WebSocket {
 
         for (ty, cb) in [
             ("open", self.closures.0.as_ref()),
-            ("message", &self.closures.1.as_ref()),
-            ("error", &self.closures.2.as_ref()),
+            ("message", self.closures.1.as_ref()),
+            ("error", self.closures.2.as_ref()),
         ] {
             let _ = self
                 .ws
@@ -346,11 +345,12 @@ mod tests {
 
     wasm_bindgen_test_configure!(run_in_browser);
 
-    const WS_ECHO_SERVER_URL: &str = env!("WS_ECHO_SERVER_URL");
-
     #[wasm_bindgen_test]
     fn websocket_works() {
-        let ws = WebSocket::open(WS_ECHO_SERVER_URL).unwrap();
+        let ws_echo_server_url =
+            option_env!("WS_ECHO_SERVER_URL").expect("Did you set WS_ECHO_SERVER_URL?");
+
+        let ws = WebSocket::open(ws_echo_server_url).unwrap();
         let (mut sender, mut receiver) = ws.split();
 
         spawn_local(async move {
