@@ -9,16 +9,21 @@ extern "C" {
     type GlobalThis;
 
     #[wasm_bindgen(method, js_name = "setTimeout", catch)]
-    fn set_timeout(this: &GlobalThis, handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    fn set_timeout(this: &GlobalThis, handler: &Function, timeout: i32)
+        -> Result<JsValue, JsValue>;
 
     #[wasm_bindgen(method, js_name = "setInterval", catch)]
-    fn set_interval(this: &GlobalThis, handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    fn set_interval(
+        this: &GlobalThis,
+        handler: &Function,
+        timeout: i32,
+    ) -> Result<JsValue, JsValue>;
 
     #[wasm_bindgen(method, js_name = "clearTimeout")]
-    fn clear_timeout(this: &GlobalThis, handle: i32);
+    fn clear_timeout(this: &GlobalThis, handle: JsValue);
 
     #[wasm_bindgen(method, js_name = "clearInterval")]
-    fn clear_interval(this: &GlobalThis, handle: i32);
+    fn clear_interval(this: &GlobalThis, handle: JsValue);
 }
 
 /// A scheduled timeout.
@@ -30,7 +35,7 @@ extern "C" {
 #[derive(Debug)]
 #[must_use = "timeouts cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Timeout {
-    id: Option<i32>,
+    id: Option<JsValue>,
     closure: Option<Closure<dyn FnMut()>>,
 }
 
@@ -38,7 +43,7 @@ impl Drop for Timeout {
     /// Disposes of the timeout, dually cancelling this timeout by calling
     /// `clearTimeout` directly.
     fn drop(&mut self) {
-        if let Some(id) = self.id {
+        if let Some(id) = self.id.take() {
             let global = js_sys::global().unchecked_into::<GlobalThis>();
             global.clear_timeout(id);
         }
@@ -95,7 +100,7 @@ impl Timeout {
     ///     // Do stuff...
     /// }).forget();
     /// ```
-    pub fn forget(mut self) -> i32 {
+    pub fn forget(mut self) -> JsValue {
         let id = self.id.take().unwrap_throw();
         self.closure.take().unwrap_throw().forget();
         id
@@ -135,7 +140,7 @@ impl Timeout {
 #[derive(Debug)]
 #[must_use = "intervals cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Interval {
-    id: Option<i32>,
+    id: Option<JsValue>,
     closure: Option<Closure<dyn FnMut()>>,
 }
 
@@ -143,7 +148,7 @@ impl Drop for Interval {
     /// Disposes of the interval, dually cancelling this interval by calling
     /// `clearInterval` directly.
     fn drop(&mut self) {
-        if let Some(id) = self.id {
+        if let Some(id) = self.id.take() {
             let global = js_sys::global().unchecked_into::<GlobalThis>();
             global.clear_interval(id);
         }
@@ -198,7 +203,7 @@ impl Interval {
     ///     // Do stuff...
     /// }).forget();
     /// ```
-    pub fn forget(mut self) -> i32 {
+    pub fn forget(mut self) -> JsValue {
         let id = self.id.take().unwrap_throw();
         self.closure.take().unwrap_throw().forget();
         id
