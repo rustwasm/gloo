@@ -7,16 +7,16 @@ use wasm_bindgen::{JsCast, JsValue};
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_name = "setTimeout", catch)]
-    fn set_timeout(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    fn set_timeout(handler: &Function, timeout: i32) -> Result<JsValue, JsValue>;
 
     #[wasm_bindgen(js_name = "setInterval", catch)]
-    fn set_interval(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    fn set_interval(handler: &Function, timeout: i32) -> Result<JsValue, JsValue>;
 
     #[wasm_bindgen(js_name = "clearTimeout")]
-    fn clear_timeout(handle: i32);
+    fn clear_timeout(handle: JsValue) -> JsValue;
 
     #[wasm_bindgen(js_name = "clearInterval")]
-    fn clear_interval(handle: i32);
+    fn clear_interval(handle: JsValue) -> JsValue;
 }
 
 /// A scheduled timeout.
@@ -28,7 +28,7 @@ extern "C" {
 #[derive(Debug)]
 #[must_use = "timeouts cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Timeout {
-    id: Option<i32>,
+    id: Option<JsValue>,
     closure: Option<Closure<dyn FnMut()>>,
 }
 
@@ -36,7 +36,7 @@ impl Drop for Timeout {
     /// Disposes of the timeout, dually cancelling this timeout by calling
     /// `clearTimeout` directly.
     fn drop(&mut self) {
-        if let Some(id) = self.id {
+        if let Some(id) = self.id.take() {
             clear_timeout(id);
         }
     }
@@ -90,7 +90,7 @@ impl Timeout {
     ///     // Do stuff...
     /// }).forget();
     /// ```
-    pub fn forget(mut self) -> i32 {
+    pub fn forget(mut self) -> JsValue {
         let id = self.id.take().unwrap_throw();
         self.closure.take().unwrap_throw().forget();
         id
@@ -130,7 +130,7 @@ impl Timeout {
 #[derive(Debug)]
 #[must_use = "intervals cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Interval {
-    id: Option<i32>,
+    id: Option<JsValue>,
     closure: Option<Closure<dyn FnMut()>>,
 }
 
@@ -138,7 +138,7 @@ impl Drop for Interval {
     /// Disposes of the interval, dually cancelling this interval by calling
     /// `clearInterval` directly.
     fn drop(&mut self) {
-        if let Some(id) = self.id {
+        if let Some(id) = self.id.take() {
             clear_interval(id);
         }
     }
@@ -190,7 +190,7 @@ impl Interval {
     ///     // Do stuff...
     /// }).forget();
     /// ```
-    pub fn forget(mut self) -> i32 {
+    pub fn forget(mut self) -> JsValue {
         let id = self.id.take().unwrap_throw();
         self.closure.take().unwrap_throw().forget();
         id

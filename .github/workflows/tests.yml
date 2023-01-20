@@ -76,6 +76,43 @@ jobs:
             wasm-pack test --headless --firefox --chrome crates/$x --no-default-features
           done
 
+  node_tests:
+    name: Node Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+          profile: minimal
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-node-tests-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-node-tests-
+            cargo-${{ runner.os }}-
+
+      - name: Run tests
+        run: |
+          for x in $(ls crates); do
+            # gloo-net is tested separately
+            if [[ "$x" == "net" ]]; then
+              continue
+            fi
+            wasm-pack test --node crates/$x --all-features
+            wasm-pack test --node crates/$x --no-default-features
+          done
+
   test-worker:
     name: Test gloo-worker
     runs-on: ubuntu-latest
