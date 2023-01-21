@@ -85,6 +85,7 @@ impl History for BrowserHistory {
             .push_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to push state.");
 
+        drop(states);
         self.notify_callbacks();
     }
 
@@ -98,10 +99,12 @@ impl History for BrowserHistory {
 
         let mut states = self.states.borrow_mut();
         states.insert(id, Rc::new(state) as Rc<dyn Any>);
+
         self.inner
             .replace_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to replace state.");
 
+        drop(states);
         self.notify_callbacks();
     }
 
@@ -170,6 +173,7 @@ impl History for BrowserHistory {
             .push_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to push history.");
 
+        drop(states);
         self.notify_callbacks();
         Ok(())
     }
@@ -199,6 +203,7 @@ impl History for BrowserHistory {
             .replace_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to replace history.");
 
+        drop(states);
         self.notify_callbacks();
         Ok(())
     }
