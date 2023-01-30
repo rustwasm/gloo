@@ -67,7 +67,7 @@ impl fmt::Display for Method {
             Method::TRACE => "TRACE",
             Method::PATCH => "PATCH",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 

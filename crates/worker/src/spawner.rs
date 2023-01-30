@@ -29,8 +29,7 @@ fn create_worker(path: &str) -> DedicatedWorker {
     let array = Array::new();
     array.push(
         &format!(
-            r#"importScripts("{}");wasm_bindgen("{}");"#,
-            js_shim_url, wasm_url
+            r#"importScripts("{js_shim_url}");wasm_bindgen("{wasm_url}");"#
         )
         .into(),
     );
