@@ -85,7 +85,7 @@ impl FromStr for Method {
             "OPTIONS" => Ok(Method::OPTIONS),
             "TRACE" => Ok(Method::TRACE),
             "PATCH" => Ok(Method::PATCH),
-            _ => Err(Error::GlooError("Tried to parse invalid method".into()))
+            _ => Err(Error::GlooError("Tried to parse invalid method".into())),
         }
     }
 }
@@ -97,7 +97,6 @@ pub struct RequestWritable {
     query: QueryParams,
     url: String,
 }
-
 
 impl RequestWritable {
     /// Creates a new request that will be sent to `url`.
@@ -333,7 +332,9 @@ impl fmt::Debug for RequestWritable {
 
 impl fmt::Debug for ResponseWritable {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Response").field("headers", &self.headers).finish()
+        f.debug_struct("Response")
+            .field("headers", &self.headers)
+            .finish()
     }
 }
 
@@ -473,7 +474,6 @@ impl fmt::Debug for ResponseReadable {
     }
 }
 
-
 /// A writable wrapper around `web_sys::Reponse`: an http response to be used with the `fetch` API
 /// on a server side javascript runtime
 pub struct ResponseWritable {
@@ -551,7 +551,9 @@ impl ResponseWritable {
             Some(x) => match x {
                 ResponseBody::Blob(y) => R::new_with_opt_blob_and_init(Some(&y), init),
                 ResponseBody::Buffer(y) => R::new_with_opt_buffer_source_and_init(Some(&y), init),
-                ResponseBody::U8(mut y) => R::new_with_opt_u8_array_and_init(Some(y.as_mut_slice()), init),
+                ResponseBody::U8(mut y) => {
+                    R::new_with_opt_u8_array_and_init(Some(y.as_mut_slice()), init)
+                }
                 ResponseBody::Form(y) => R::new_with_opt_form_data_and_init(Some(&y), init),
                 ResponseBody::Search(y) => {
                     R::new_with_opt_url_search_params_and_init(Some(&y), init)
@@ -559,10 +561,10 @@ impl ResponseWritable {
                 ResponseBody::Str(y) => R::new_with_opt_str_and_init(Some(&y), init),
                 ResponseBody::Stream(y) => R::new_with_opt_readable_stream_and_init(Some(&y), init),
             },
-        }.map_err(js_to_error)
+        }
+        .map_err(js_to_error)
     }
 }
-
 
 /// The [`Request`] sent to the server
 pub struct RequestReadable {
@@ -575,18 +577,15 @@ impl RequestReadable {
         Self { raw }
     }
 
-
     /// The URL of the request.
     pub fn url(&self) -> String {
         self.raw.url()
     }
 
-
     /// Gets the headers.
     pub fn headers(&self) -> Headers {
         Headers::from_raw(self.raw.headers())
     }
-
 
     /// Has the response body been consumed?
     ///
