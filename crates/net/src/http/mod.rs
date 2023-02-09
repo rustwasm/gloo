@@ -3,9 +3,9 @@
 //! # Example
 //!
 //! ```
-//! # use gloo_net::http::Request;
+//! # use gloo_net::http::RequestWritable;
 //! # async fn no_run() {
-//! let resp = Request::get("/path")
+//! let resp = RequestWritable::get("/path")
 //!     .send()
 //!     .await
 //!     .unwrap();
@@ -155,14 +155,14 @@ impl RequestWritable {
     /// ```
     /// # fn no_run() {
     /// use std::collections::HashMap;
-    /// use gloo_net::http::Request;
+    /// use gloo_net::http::RequestWritable;
     ///
     /// let slice_params = [("key", "value")];
     /// let vec_params = vec![("a", "3"), ("b", "4")];
     /// let mut map_params: HashMap<&'static str, &'static str> = HashMap::new();
     /// map_params.insert("key", "another_value");
     ///
-    /// let r = Request::get("/search")
+    /// let r = RequestWritable::get("/search")
     ///     .query(slice_params)
     ///     .query(vec_params)
     ///     .query(map_params);

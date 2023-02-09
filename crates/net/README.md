@@ -26,7 +26,7 @@ HTTP requests library for WASM Apps. It provides idiomatic Rust bindings for the
 ### HTTP
 
 ```rust
-let resp = Request::get("/path")
+let resp = RequestWritable::get("/path")
     .send()
     .await
     .unwrap();
