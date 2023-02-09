@@ -20,7 +20,7 @@ use crate::{js_to_error, Error};
 use js_sys::Reflect;
 use js_sys::{ArrayBuffer, Uint8Array};
 use std::fmt;
-use std::ops::DerefMut;
+use std::str::FromStr;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
@@ -72,6 +72,24 @@ impl fmt::Display for Method {
     }
 }
 
+impl FromStr for Method {
+    type Err = Error;
+    fn from_str(input: &str) -> Result<Method, Error> {
+        match input {
+            "GET" => Ok(Method::GET),
+            "HEAD" => Ok(Method::HEAD),
+            "POST" => Ok(Method::POST),
+            "PUT" => Ok(Method::PUT),
+            "DELETE" => Ok(Method::DELETE),
+            "CONNECT" => Ok(Method::CONNECT),
+            "OPTIONS" => Ok(Method::OPTIONS),
+            "TRACE" => Ok(Method::TRACE),
+            "PATCH" => Ok(Method::PATCH),
+            _ => Err(Error::GlooError("Tried to parse invalid method".into()))
+        }
+    }
+}
+
 /// A wrapper round `web_sys::Request`: an http request to be used with the `fetch` API.
 pub struct RequestWritable {
     options: web_sys::RequestInit,
@@ -80,95 +98,6 @@ pub struct RequestWritable {
     url: String,
 }
 
-/// A writable wrapper around `web_sys::Reponse`: an http response to be used with the `fetch` API
-/// on a server side javascript runtime
-#[derive(Debug)]
-pub struct ResponseWritable {
-    headers: Headers,
-    options: web_sys::ResponseInit,
-    body: Option<ResponseBody>,
-}
-
-/// Possible initializers for request body
-#[derive(Debug)]
-pub enum ResponseBody {
-    /// Blob response body
-    Blob(web_sys::Blob),
-    /// Buffer response body
-    Buffer(js_sys::Object),
-    /// `Uint8Array` response body
-    U8(Box<[u8]>),
-    /// `FormData` response body
-    Form(FormData),
-    /// `URLSearchParams` response body
-    Search(web_sys::UrlSearchParams),
-    /// String response body
-    Str(String),
-    /// ReadableStream response body
-    Stream(web_sys::ReadableStream),
-}
-
-impl ResponseWritable {
-    /// Creates a new response object
-    pub fn new() -> Self {
-        Self {
-            headers: Headers::new(),
-            options: web_sys::ResponseInit::new(),
-            body: None,
-        }
-    }
-
-    /// Replace _all_ the headers.
-    pub fn headers(mut self, headers: Headers) -> Self {
-        self.headers = headers;
-        self
-    }
-
-    /// Sets a header.
-    pub fn header(self, key: &str, value: &str) -> Self {
-        self.headers.set(key, value);
-        self
-    }
-
-    /// Set the status code
-    pub fn status(mut self, status: u16) -> Self {
-        self.options.status(status);
-        self
-    }
-
-    /// Set the status text
-    pub fn status_text(mut self, status_text: &str) -> Self {
-        self.options.status_text(status_text);
-        self
-    }
-
-    /// Set the response body
-    pub fn body(mut self, data: ResponseBody) -> Self {
-        self.body = Some(data);
-        self
-    }
-
-    /// Consume the wrapper and return a result of http response object
-    pub fn into_raw(mut self) -> Result<web_sys::Response, Error> {
-        use web_sys::Response as R;
-        self.options.headers(&self.headers.into_raw());
-        let init = &self.options;
-        match self.body {
-            None => R::new_with_opt_str_and_init(None, init),
-            Some(x) => match x {
-                ResponseBody::Blob(y) => R::new_with_opt_blob_and_init(Some(&y), init),
-                ResponseBody::Buffer(y) => R::new_with_opt_buffer_source_and_init(Some(&y), init),
-                ResponseBody::U8(mut y) => R::new_with_opt_u8_array_and_init(Some(y.deref_mut()), init),
-                ResponseBody::Form(y) => R::new_with_opt_form_data_and_init(Some(&y), init),
-                ResponseBody::Search(y) => {
-                    R::new_with_opt_url_search_params_and_init(Some(&y), init)
-                }
-                ResponseBody::Str(y) => R::new_with_opt_str_and_init(Some(&y), init),
-                ResponseBody::Stream(y) => R::new_with_opt_readable_stream_and_init(Some(&y), init),
-            },
-        }.map_err(js_to_error)
-    }
-}
 
 impl RequestWritable {
     /// Creates a new request that will be sent to `url`.
@@ -402,6 +331,12 @@ impl fmt::Debug for RequestWritable {
     }
 }
 
+impl fmt::Debug for ResponseWritable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Response").field("headers", &self.headers).finish()
+    }
+}
+
 /// The [`Request`]'s response
 pub struct ResponseReadable {
     raw: web_sys::Response,
@@ -532,6 +467,192 @@ impl fmt::Debug for ResponseReadable {
             .field("url", &self.url())
             .field("redirected", &self.redirected())
             .field("status", &self.status())
+            .field("headers", &self.headers())
+            .field("body_used", &self.body_used())
+            .finish()
+    }
+}
+
+
+/// A writable wrapper around `web_sys::Reponse`: an http response to be used with the `fetch` API
+/// on a server side javascript runtime
+pub struct ResponseWritable {
+    headers: Headers,
+    options: web_sys::ResponseInit,
+    body: Option<ResponseBody>,
+}
+
+/// Possible initializers for request body
+#[derive(Debug)]
+pub enum ResponseBody {
+    /// Blob response body
+    Blob(web_sys::Blob),
+    /// Buffer response body
+    Buffer(js_sys::Object),
+    /// `Uint8Array` response body
+    U8(Vec<u8>),
+    /// `FormData` response body
+    Form(FormData),
+    /// `URLSearchParams` response body
+    Search(web_sys::UrlSearchParams),
+    /// String response body
+    Str(String),
+    /// ReadableStream response body
+    Stream(web_sys::ReadableStream),
+}
+
+impl ResponseWritable {
+    /// Creates a new response object
+    pub fn new() -> Self {
+        Self {
+            headers: Headers::new(),
+            options: web_sys::ResponseInit::new(),
+            body: None,
+        }
+    }
+
+    /// Replace _all_ the headers.
+    pub fn headers(mut self, headers: Headers) -> Self {
+        self.headers = headers;
+        self
+    }
+
+    /// Sets a header.
+    pub fn header(self, key: &str, value: &str) -> Self {
+        self.headers.set(key, value);
+        self
+    }
+
+    /// Set the status code
+    pub fn status(mut self, status: u16) -> Self {
+        self.options.status(status);
+        self
+    }
+
+    /// Set the status text
+    pub fn status_text(mut self, status_text: &str) -> Self {
+        self.options.status_text(status_text);
+        self
+    }
+
+    /// Set the response body
+    pub fn body(mut self, data: ResponseBody) -> Self {
+        self.body = Some(data);
+        self
+    }
+
+    /// Consume the wrapper and return a result of http response object
+    pub fn into_raw(mut self) -> Result<web_sys::Response, Error> {
+        use web_sys::Response as R;
+        self.options.headers(&self.headers.into_raw());
+        let init = &self.options;
+        match self.body {
+            None => R::new_with_opt_str_and_init(None, init),
+            Some(x) => match x {
+                ResponseBody::Blob(y) => R::new_with_opt_blob_and_init(Some(&y), init),
+                ResponseBody::Buffer(y) => R::new_with_opt_buffer_source_and_init(Some(&y), init),
+                ResponseBody::U8(mut y) => R::new_with_opt_u8_array_and_init(Some(y.as_mut_slice()), init),
+                ResponseBody::Form(y) => R::new_with_opt_form_data_and_init(Some(&y), init),
+                ResponseBody::Search(y) => {
+                    R::new_with_opt_url_search_params_and_init(Some(&y), init)
+                }
+                ResponseBody::Str(y) => R::new_with_opt_str_and_init(Some(&y), init),
+                ResponseBody::Stream(y) => R::new_with_opt_readable_stream_and_init(Some(&y), init),
+            },
+        }.map_err(js_to_error)
+    }
+}
+
+
+/// The [`Request`] sent to the server
+pub struct RequestReadable {
+    raw: web_sys::Request,
+}
+
+impl RequestReadable {
+    /// Build a [Request] from [web_sys:Request]
+    pub fn from_raw(raw: web_sys::Request) -> Self {
+        Self { raw }
+    }
+
+
+    /// The URL of the request.
+    pub fn url(&self) -> String {
+        self.raw.url()
+    }
+
+
+    /// Gets the headers.
+    pub fn headers(&self) -> Headers {
+        Headers::from_raw(self.raw.headers())
+    }
+
+
+    /// Has the response body been consumed?
+    ///
+    /// If true, then any future attempts to consume the body will error.
+    pub fn body_used(&self) -> bool {
+        self.raw.body_used()
+    }
+
+    /// Gets the body.
+    pub fn body(&self) -> Option<ReadableStream> {
+        self.raw.body()
+    }
+
+    /// Reads the response to completion, returning it as `FormData`.
+    pub async fn form_data(&self) -> Result<FormData, Error> {
+        let promise = self.raw.form_data().map_err(js_to_error)?;
+        let val = JsFuture::from(promise).await.map_err(js_to_error)?;
+        Ok(FormData::from(val))
+    }
+
+    /// Reads the response to completion, parsing it as JSON.
+    #[cfg(feature = "json")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
+    pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
+        serde_json::from_str::<T>(&self.text().await?).map_err(Error::from)
+    }
+
+    /// Reads the response as a String.
+    pub async fn text(&self) -> Result<String, Error> {
+        let promise = self.raw.text().unwrap();
+        let val = JsFuture::from(promise).await.map_err(js_to_error)?;
+        let string = js_sys::JsString::from(val);
+        Ok(String::from(&string))
+    }
+
+    /// Gets the binary response
+    ///
+    /// This works by obtaining the response as an `ArrayBuffer`, creating a `Uint8Array` from it
+    /// and then converting it to `Vec<u8>`
+    pub async fn binary(&self) -> Result<Vec<u8>, Error> {
+        let promise = self.raw.array_buffer().map_err(js_to_error)?;
+        let array_buffer: ArrayBuffer = JsFuture::from(promise)
+            .await
+            .map_err(js_to_error)?
+            .unchecked_into();
+        let typed_buff: Uint8Array = Uint8Array::new(&array_buffer);
+        let mut body = vec![0; typed_buff.length() as usize];
+        typed_buff.copy_to(&mut body);
+        Ok(body)
+    }
+
+    /// Return the read only mode for the request
+    pub fn mode(&self) -> RequestMode {
+        self.raw.mode()
+    }
+
+    /// Return the parsed method for the request
+    pub fn method(&self) -> Method {
+        Method::from_str(self.raw.method().as_str()).unwrap()
+    }
+}
+
+impl fmt::Debug for RequestReadable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Request")
+            .field("url", &self.url())
             .field("headers", &self.headers())
             .field("body_used", &self.body_used())
             .finish()
