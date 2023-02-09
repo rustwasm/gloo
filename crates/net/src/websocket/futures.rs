@@ -109,8 +109,7 @@ impl WebSocket {
         let json = <JsValue as gloo_utils::format::JsValueSerdeExt>::from_serde(protocols)
             .map_err(|err| {
                 js_sys::Error::new(&format!(
-                    "Failed to convert protocols to Javascript value: {}",
-                    err
+                    "Failed to convert protocols to Javascript value: {err}"
                 ))
             })?;
         Self::setup(web_sys::WebSocket::new_with_str_sequence(url, &json))

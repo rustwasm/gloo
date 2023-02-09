@@ -255,12 +255,12 @@ impl std::fmt::Display for FileReadError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             FileReadError::AbortedEarly => write!(f, "FileReader aborted early"),
-            FileReadError::NotFound(msg) => write!(f, "FileReader cannot find blob: {}", msg),
+            FileReadError::NotFound(msg) => write!(f, "FileReader cannot find blob: {msg}"),
             FileReadError::NotReadable(msg) => {
-                write!(f, "FileReader cannot read contents of blob: {}", msg)
+                write!(f, "FileReader cannot read contents of blob: {msg}")
             }
             FileReadError::Security(msg) => {
-                write!(f, "FileReader encountered a security exception: {}", msg)
+                write!(f, "FileReader encountered a security exception: {msg}")
             }
         }
     }

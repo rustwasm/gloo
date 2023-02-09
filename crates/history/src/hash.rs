@@ -107,7 +107,7 @@ impl History for HashHistory {
         assert_no_query(&route);
 
         let url = Self::get_url();
-        url.set_hash(&format!("{}?{}", route, query));
+        url.set_hash(&format!("{route}?{query}"));
 
         self.inner.push(url.href());
         Ok(())
@@ -128,7 +128,7 @@ impl History for HashHistory {
         assert_no_query(&route);
 
         let url = Self::get_url();
-        url.set_hash(&format!("{}?{}", route, query));
+        url.set_hash(&format!("{route}?{query}"));
 
         self.inner.replace(url.href());
         Ok(())
@@ -153,7 +153,7 @@ impl History for HashHistory {
         let url = Self::get_url();
 
         let query = serde_urlencoded::to_string(query)?;
-        url.set_hash(&format!("{}?{}", route, query));
+        url.set_hash(&format!("{route}?{query}"));
 
         self.inner.push_with_state(url.href(), state);
 
@@ -179,7 +179,7 @@ impl History for HashHistory {
         let url = Self::get_url();
 
         let query = serde_urlencoded::to_string(query)?;
-        url.set_hash(&format!("{}?{}", route, query));
+        url.set_hash(&format!("{route}?{query}"));
 
         self.inner.replace_with_state(url.href(), state);
 
