@@ -70,6 +70,7 @@ http = [
     'web-sys/RequestInit',
     'web-sys/RequestMode',
     'web-sys/Response',
+    'web-sys/ResponseInit',
     'web-sys/ResponseType',
     'web-sys/Window',
     'web-sys/RequestCache',
