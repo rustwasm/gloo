@@ -223,7 +223,7 @@ impl History for MemoryHistory {
 
         let location = Location {
             path: route.to_string().into(),
-            query_str: format!("?{}", query).into(),
+            query_str: format!("?{query}").into(),
             hash: "".to_string().into(),
             state: None,
             id: Some(get_id()),
@@ -253,7 +253,7 @@ impl History for MemoryHistory {
 
         let location = Location {
             path: route.to_string().into(),
-            query_str: format!("?{}", query).into(),
+            query_str: format!("?{query}").into(),
             hash: "".to_string().into(),
             state: None,
             id: Some(get_id()),
@@ -286,7 +286,7 @@ impl History for MemoryHistory {
 
         let location = Location {
             path: route.to_string().into(),
-            query_str: format!("?{}", query).into(),
+            query_str: format!("?{query}").into(),
             hash: "".to_string().into(),
             state: Some(Rc::new(state) as Rc<dyn Any>),
             id: Some(get_id()),
@@ -319,7 +319,7 @@ impl History for MemoryHistory {
 
         let location = Location {
             path: route.to_string().into(),
-            query_str: format!("?{}", query).into(),
+            query_str: format!("?{query}").into(),
             hash: "".to_string().into(),
             state: Some(Rc::new(state) as Rc<dyn Any>),
             id: Some(get_id()),

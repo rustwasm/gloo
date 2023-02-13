@@ -57,7 +57,7 @@ impl fmt::Display for WebSocketError {
                 "WebSocket Closed: code: {}, reason: {}",
                 e.code, e.reason
             ),
-            WebSocketError::MessageSendError(e) => write!(f, "{}", e),
+            WebSocketError::MessageSendError(e) => write!(f, "{e}"),
         }
     }
 }

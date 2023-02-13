@@ -27,13 +27,7 @@ fn create_worker(path: &str) -> DedicatedWorker {
     let wasm_url = js_shim_url.replace(".js", "_bg.wasm");
 
     let array = Array::new();
-    array.push(
-        &format!(
-            r#"importScripts("{}");wasm_bindgen("{}");"#,
-            js_shim_url, wasm_url
-        )
-        .into(),
-    );
+    array.push(&format!(r#"importScripts("{js_shim_url}");wasm_bindgen("{wasm_url}");"#).into());
     let blob = Blob::new_with_str_sequence_and_options(
         &array,
         BlobPropertyBag::new().type_("application/javascript"),
