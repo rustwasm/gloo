@@ -5,9 +5,7 @@
 //! ```
 //! # use gloo_net::http::Request;
 //! # async fn no_run() {
-//! let resp = RequestWritable::get("/path")
-//!     .body(None)
-//!     .unwrap()
+//! let resp = Request::get("/path")
 //!     .send()
 //!     .await
 //!     .unwrap();

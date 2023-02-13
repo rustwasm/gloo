@@ -82,14 +82,14 @@ impl Builder {
     /// ```
     /// # fn no_run() {
     /// use std::collections::HashMap;
-    /// use gloo_net::http::RequestWritable;
+    /// use gloo_net::http::Request;
     ///
     /// let slice_params = [("key", "value")];
     /// let vec_params = vec![("a", "3"), ("b", "4")];
     /// let mut map_params: HashMap<&'static str, &'static str> = HashMap::new();
     /// map_params.insert("key", "another_value");
     ///
-    /// let r = RequestWritable::get("/search")
+    /// let r = Request::get("/search")
     ///     .query(slice_params)
     ///     .query(vec_params)
     ///     .query(map_params);
@@ -175,6 +175,11 @@ impl Builder {
     pub fn abort_signal(mut self, signal: Option<&AbortSignal>) -> Self {
         self.options.signal(signal);
         self
+    }
+
+    pub async fn send(self) -> Result<Response, Error> {
+        let req: Request = self.try_into()?;
+        req.send().await
     }
 }
 
