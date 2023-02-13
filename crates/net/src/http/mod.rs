@@ -16,14 +16,13 @@
 //! ```
 
 mod headers;
+mod method;
 mod query;
 mod request;
 mod response;
-mod method;
 
-
+pub use headers::Headers;
 pub use method::Method;
+pub use query::QueryParams;
 pub use request::Request;
 pub use response::Response;
-pub use headers::Headers;
-pub use query::QueryParams;

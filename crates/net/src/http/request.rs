@@ -193,11 +193,10 @@ impl TryInto<Request> for Builder {
         };
         url.set_search(&combined_query);
 
-
         let final_url = String::from(url.to_string());
         self.options.headers(&self.headers.into_raw());
-        let request =
-            web_sys::Request::new_with_str_and_init(&final_url, &self.options).map_err(js_to_error)?;
+        let request = web_sys::Request::new_with_str_and_init(&final_url, &self.options)
+            .map_err(js_to_error)?;
 
         Request::try_from(request)
     }
@@ -342,7 +341,7 @@ impl TryFrom<web_sys::Request> for Request {
     type Error = crate::Error;
 
     fn try_from(raw: web_sys::Request) -> Result<Request, Error> {
-        Ok(Request{ raw })
+        Ok(Request { raw })
     }
 }
 

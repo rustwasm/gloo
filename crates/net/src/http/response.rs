@@ -22,6 +22,7 @@ pub struct Response {
 
 impl Response {
     /// Returns an instance of response builder
+    #[allow(clippy::new_ret_no_self)]
     pub fn new() -> Builder {
         Builder::new()
     }
@@ -191,11 +192,7 @@ pub enum ResponseBody {
 impl Builder {
     /// Creates a new response object
     pub fn new() -> Self {
-        Self {
-            headers: Headers::new(),
-            options: web_sys::ResponseInit::new(),
-            body: None,
-        }
+        Self::default()
     }
 
     /// Replace _all_ the headers.
@@ -247,6 +244,16 @@ impl Builder {
         }
         .map(|raw| Response { raw })
         .map_err(js_to_error)
+    }
+}
+
+impl Default for Builder {
+    fn default() -> Self {
+        Self {
+            headers: Headers::new(),
+            options: web_sys::ResponseInit::new(),
+            body: None,
+        }
     }
 }
 

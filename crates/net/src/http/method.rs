@@ -1,6 +1,6 @@
+use crate::Error;
 use std::fmt;
 use std::str::FromStr;
-use crate::Error;
 
 #[allow(
     missing_docs,
