@@ -1,30 +1,23 @@
-use std::{
-    convert::{TryFrom, TryInto},
-    fmt,
-};
+use std::{convert::From, fmt};
 
 use crate::{js_to_error, Error};
 use js_sys::{ArrayBuffer, Uint8Array};
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{FormData, ReadableStream, ResponseType};
 
+use crate::http::Headers;
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 use serde::de::DeserializeOwned;
 
-use crate::http::Headers;
-
 /// The [`Request`]'s response
-pub struct Response {
-    raw: web_sys::Response,
-}
+pub struct Response(web_sys::Response);
 
 impl Response {
     /// Returns an instance of response builder
     #[allow(clippy::new_ret_no_self)]
-    pub fn builder() -> Builder {
-        Builder::new()
+    pub fn builder() -> ResponseBuilder {
+        ResponseBuilder::new()
     }
     /// The type read-only property of the Response interface contains the type of the response.
     ///
@@ -40,32 +33,32 @@ impl Response {
     ///  - opaque: Response for “no-cors” request to cross-origin resource. Severely restricted.
     ///  - opaqueredirect: The fetch request was made with redirect: "manual". The Response's
     ///    status is 0, headers are empty, body is null and trailer is empty.
-    pub fn type_(&self) -> ResponseType {
-        self.raw.type_()
+    pub fn type_(&self) -> web_sys::ResponseType {
+        self.0.type_()
     }
 
     /// The URL of the response.
     ///
     /// The returned value will be the final URL obtained after any redirects.
     pub fn url(&self) -> String {
-        self.raw.url()
+        self.0.url()
     }
 
     /// Whether or not this response is the result of a request you made which was redirected.
     pub fn redirected(&self) -> bool {
-        self.raw.redirected()
+        self.0.redirected()
     }
 
     /// the [HTTP status code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) of the
     /// response.
     pub fn status(&self) -> u16 {
-        self.raw.status()
+        self.0.status()
     }
 
     /// Whether the [HTTP status code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
     /// was a success code (in the range `200 - 299`).
     pub fn ok(&self) -> bool {
-        self.raw.ok()
+        self.0.ok()
     }
 
     /// The status message corresponding to the
@@ -75,31 +68,31 @@ impl Response {
     /// For example, this would be 'OK' for a status code 200, 'Continue' for 100, or 'Not Found'
     /// for 404.
     pub fn status_text(&self) -> String {
-        self.raw.status_text()
+        self.0.status_text()
     }
 
     /// Gets the headers.
     pub fn headers(&self) -> Headers {
-        Headers::from_raw(self.raw.headers())
+        Headers::from_raw(self.0.headers())
     }
 
     /// Has the response body been consumed?
     ///
     /// If true, then any future attempts to consume the body will error.
     pub fn body_used(&self) -> bool {
-        self.raw.body_used()
+        self.0.body_used()
     }
 
     /// Gets the body.
-    pub fn body(&self) -> Option<ReadableStream> {
-        self.raw.body()
+    pub fn body(&self) -> Option<web_sys::ReadableStream> {
+        self.0.body()
     }
 
     /// Reads the response to completion, returning it as `FormData`.
-    pub async fn form_data(&self) -> Result<FormData, Error> {
-        let promise = self.raw.form_data().map_err(js_to_error)?;
+    pub async fn form_data(&self) -> Result<web_sys::FormData, Error> {
+        let promise = self.0.form_data().map_err(js_to_error)?;
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
-        Ok(FormData::from(val))
+        Ok(web_sys::FormData::from(val))
     }
 
     /// Reads the response to completion, parsing it as JSON.
@@ -111,7 +104,7 @@ impl Response {
 
     /// Reads the response as a String.
     pub async fn text(&self) -> Result<String, Error> {
-        let promise = self.raw.text().unwrap();
+        let promise = self.0.text().unwrap();
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         let string = js_sys::JsString::from(val);
         Ok(String::from(&string))
@@ -122,7 +115,7 @@ impl Response {
     /// This works by obtaining the response as an `ArrayBuffer`, creating a `Uint8Array` from it
     /// and then converting it to `Vec<u8>`
     pub async fn binary(&self) -> Result<Vec<u8>, Error> {
-        let promise = self.raw.array_buffer().map_err(js_to_error)?;
+        let promise = self.0.array_buffer().map_err(js_to_error)?;
         let array_buffer: ArrayBuffer = JsFuture::from(promise)
             .await
             .map_err(js_to_error)?
@@ -132,21 +125,18 @@ impl Response {
         typed_buff.copy_to(&mut body);
         Ok(body)
     }
+
 }
 
-impl TryFrom<web_sys::Response> for Response {
-    type Error = crate::Error;
-
-    fn try_from(raw: web_sys::Response) -> Result<Response, Error> {
-        Ok(Self { raw })
+impl From<web_sys::Response> for Response {
+    fn from(raw: web_sys::Response) -> Self {
+        Self(raw)
     }
 }
 
-impl TryInto<web_sys::Response> for Response {
-    type Error = crate::Error;
-
-    fn try_into(self) -> Result<web_sys::Response, Error> {
-        Ok(self.raw)
+impl From<Response> for web_sys::Response {
+    fn from(res: Response) -> Self {
+        res.0
     }
 }
 
@@ -164,7 +154,7 @@ impl fmt::Debug for Response {
 
 /// A writable wrapper around `web_sys::Reponse`: an http response to be used with the `fetch` API
 /// on a server side javascript runtime
-pub struct Builder {
+pub struct ResponseBuilder {
     headers: Headers,
     options: web_sys::ResponseInit,
     body: Option<ResponseBody>,
@@ -180,7 +170,7 @@ pub enum ResponseBody {
     /// `Uint8Array` response body
     U8(Vec<u8>),
     /// `FormData` response body
-    Form(FormData),
+    Form(web_sys::FormData),
     /// `URLSearchParams` response body
     Search(web_sys::UrlSearchParams),
     /// String response body
@@ -189,7 +179,7 @@ pub enum ResponseBody {
     Stream(web_sys::ReadableStream),
 }
 
-impl Builder {
+impl ResponseBuilder {
     /// Creates a new response object
     pub fn new() -> Self {
         Self::default()
@@ -219,6 +209,17 @@ impl Builder {
         self
     }
 
+    /// A convenience method to set JSON as response body
+    ///
+    /// # Note
+    ///
+    /// This method also sets the `Content-Type` header to `application/json`
+    pub fn json<T: serde::Serialize + ?Sized>(self, value: &T) -> Result<Response, Error> {
+        let json = serde_json::to_string(value)?;
+        self.header("Content-Type", "application/json")
+            .body(Some(ResponseBody::Str(json)))
+    }
+
     /// Set the response body and return the response
     pub fn body(mut self, data: Option<ResponseBody>) -> Result<Response, Error> {
         self.body = data;
@@ -242,12 +243,12 @@ impl Builder {
                 ResponseBody::Stream(y) => R::new_with_opt_readable_stream_and_init(Some(&y), init),
             },
         }
-        .map(|raw| Response { raw })
+        .map(Response)
         .map_err(js_to_error)
     }
 }
 
-impl Default for Builder {
+impl Default for ResponseBuilder {
     fn default() -> Self {
         Self {
             headers: Headers::new(),
@@ -257,7 +258,7 @@ impl Default for Builder {
     }
 }
 
-impl fmt::Debug for Builder {
+impl fmt::Debug for ResponseBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Response Builder")
             .field("headers", &self.headers)

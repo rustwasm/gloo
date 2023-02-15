@@ -1,11 +1,10 @@
 use crate::http::{Headers, Method, QueryParams, Response};
 use crate::{js_to_error, Error};
 use js_sys::{ArrayBuffer, Reflect, Uint8Array};
-use std::convert::{TryFrom, TryInto};
+use std::convert::{From, TryInto};
 use std::fmt;
 use std::str::FromStr;
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsValue;
+use wasm_bindgen::{JsValue, JsCast};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
     AbortSignal, FormData, ObserverCallback, ReadableStream, ReferrerPolicy, RequestCache,
@@ -17,14 +16,14 @@ use web_sys::{
 use serde::de::DeserializeOwned;
 
 /// A wrapper round `web_sys::Request`: an http request to be used with the `fetch` API.
-pub struct Builder {
+pub struct RequestBuilder {
     options: web_sys::RequestInit,
     headers: Headers,
     query: QueryParams,
     url: String,
 }
 
-impl Builder {
+impl RequestBuilder {
     /// Creates a new request that will be sent to `url`.
     ///
     /// Uses `GET` by default. `url` can be a `String`, a `&str`, or a `Cow<'a, str>`.
@@ -119,7 +118,6 @@ impl Builder {
     /// # Note
     ///
     /// This method also sets the `Content-Type` header to `application/json`
-    #[cfg(feature = "json")]
     pub fn json<T: serde::Serialize + ?Sized>(self, value: &T) -> Result<Request, Error> {
         let json = serde_json::to_string(value)?;
         self.header("Content-Type", "application/json").body(json)
@@ -183,7 +181,7 @@ impl Builder {
     }
 }
 
-impl TryInto<Request> for Builder {
+impl TryInto<Request> for RequestBuilder {
     type Error = crate::error::Error;
 
     fn try_into(mut self) -> Result<Request, Error> {
@@ -203,72 +201,70 @@ impl TryInto<Request> for Builder {
         let request = web_sys::Request::new_with_str_and_init(&final_url, &self.options)
             .map_err(js_to_error)?;
 
-        Request::try_from(request)
+        Ok(request.into())
     }
 }
 
-impl fmt::Debug for Builder {
+impl fmt::Debug for RequestBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Request").field("url", &self.url).finish()
     }
 }
 
 /// The [`Request`] sent to the server
-pub struct Request {
-    raw: web_sys::Request,
-}
+pub struct Request(web_sys::Request);
 
 impl Request {
     /// Creates a new [`GET`][Method::GET] `Request` with url.
-    pub fn get(url: &str) -> Builder {
-        Builder::new(url).method(Method::GET)
+    pub fn get(url: &str) -> RequestBuilder {
+        RequestBuilder::new(url).method(Method::GET)
     }
 
     /// Creates a new [`POST`][Method::POST] `Request` with url.
-    pub fn post(url: &str) -> Builder {
-        Builder::new(url).method(Method::POST)
+    pub fn post(url: &str) -> RequestBuilder {
+        RequestBuilder::new(url).method(Method::POST)
     }
 
     /// Creates a new [`PUT`][Method::PUT] `Request` with url.
-    pub fn put(url: &str) -> Builder {
-        Builder::new(url).method(Method::PUT)
+    pub fn put(url: &str) -> RequestBuilder {
+        RequestBuilder::new(url).method(Method::PUT)
     }
 
     /// Creates a new [`DELETE`][Method::DELETE] `Request` with url.
-    pub fn delete(url: &str) -> Builder {
-        Builder::new(url).method(Method::DELETE)
+    pub fn delete(url: &str) -> RequestBuilder {
+        RequestBuilder::new(url).method(Method::DELETE)
     }
 
     /// Creates a new [`PATCH`][Method::PATCH] `Request` with url.
-    pub fn patch(url: &str) -> Builder {
-        Builder::new(url).method(Method::PATCH)
+    pub fn patch(url: &str) -> RequestBuilder {
+        RequestBuilder::new(url).method(Method::PATCH)
     }
 
     /// The URL of the request.
     pub fn url(&self) -> String {
-        self.raw.url()
+        self.0.url()
     }
 
     /// Gets the headers.
     pub fn headers(&self) -> Headers {
-        Headers::from_raw(self.raw.headers())
+        Headers::from_raw(self.0.headers())
     }
 
     /// Has the request body been consumed?
     ///
     /// If true, then any future attempts to consume the body will error.
     pub fn body_used(&self) -> bool {
-        self.raw.body_used()
+        self.0.body_used()
     }
 
     /// Gets the body.
     pub fn body(&self) -> Option<ReadableStream> {
-        self.raw.body()
+        self.0.body()
     }
 
     /// Reads the request to completion, returning it as `FormData`.
     pub async fn form_data(&self) -> Result<FormData, Error> {
-        let promise = self.raw.form_data().map_err(js_to_error)?;
+        let promise = self.0.form_data().map_err(js_to_error)?;
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         Ok(FormData::from(val))
     }
@@ -282,7 +278,7 @@ impl Request {
 
     /// Reads the reqeust as a String.
     pub async fn text(&self) -> Result<String, Error> {
-        let promise = self.raw.text().unwrap();
+        let promise = self.0.text().unwrap();
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         let string = js_sys::JsString::from(val);
         Ok(String::from(&string))
@@ -293,7 +289,7 @@ impl Request {
     /// This works by obtaining the response as an `ArrayBuffer`, creating a `Uint8Array` from it
     /// and then converting it to `Vec<u8>`
     pub async fn binary(&self) -> Result<Vec<u8>, Error> {
-        let promise = self.raw.array_buffer().map_err(js_to_error)?;
+        let promise = self.0.array_buffer().map_err(js_to_error)?;
         let array_buffer: ArrayBuffer = JsFuture::from(promise)
             .await
             .map_err(js_to_error)?
@@ -306,17 +302,17 @@ impl Request {
 
     /// Return the read only mode for the request
     pub fn mode(&self) -> RequestMode {
-        self.raw.mode()
+        self.0.mode()
     }
 
     /// Return the parsed method for the request
     pub fn method(&self) -> Method {
-        Method::from_str(self.raw.method().as_str()).unwrap()
+        Method::from_str(self.0.method().as_str()).unwrap()
     }
 
     /// Executes the request.
     pub async fn send(self) -> Result<Response, Error> {
-        let request = self.raw;
+        let request = self.0;
         let global = js_sys::global();
         let maybe_window =
             Reflect::get(&global, &JsValue::from_str("Window")).map_err(js_to_error)?;
@@ -335,18 +331,22 @@ impl Request {
         };
 
         let response = JsFuture::from(promise).await.map_err(js_to_error)?;
-        match response.dyn_into::<web_sys::Response>() {
-            Ok(response) => Response::try_from(response),
-            Err(e) => panic!("fetch returned {:?}, not `Response` - this is a bug", e),
-        }
+        response
+            .dyn_into::<web_sys::Response>()
+            .map_err(|e| panic!("fetch returned {:?}, not `Response` - this is a bug", e))
+            .map(Response::from)
     }
 }
 
-impl TryFrom<web_sys::Request> for Request {
-    type Error = crate::Error;
+impl From<web_sys::Request> for Request {
+    fn from(raw: web_sys::Request) -> Self {
+        Request(raw)
+    }
+}
 
-    fn try_from(raw: web_sys::Request) -> Result<Request, Error> {
-        Ok(Request { raw })
+impl From<Request> for web_sys::Request {
+    fn from(val: Request) -> Self {
+        val.0
     }
 }
 
