@@ -23,7 +23,7 @@ pub struct Response {
 impl Response {
     /// Returns an instance of response builder
     #[allow(clippy::new_ret_no_self)]
-    pub fn new() -> Builder {
+    pub fn builder() -> Builder {
         Builder::new()
     }
     /// The type read-only property of the Response interface contains the type of the response.
