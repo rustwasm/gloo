@@ -4,7 +4,7 @@ use js_sys::{ArrayBuffer, Reflect, Uint8Array};
 use std::convert::{From, TryInto};
 use std::fmt;
 use std::str::FromStr;
-use wasm_bindgen::{JsValue, JsCast};
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
     AbortSignal, FormData, ObserverCallback, ReadableStream, ReferrerPolicy, RequestCache,

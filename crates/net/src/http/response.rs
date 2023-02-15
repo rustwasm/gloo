@@ -125,7 +125,6 @@ impl Response {
         typed_buff.copy_to(&mut body);
         Ok(body)
     }
-
 }
 
 impl From<web_sys::Response> for Response {
