@@ -118,6 +118,8 @@ impl RequestBuilder {
     /// # Note
     ///
     /// This method also sets the `Content-Type` header to `application/json`
+    #[cfg(feature = "json")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
     pub fn json<T: serde::Serialize + ?Sized>(self, value: &T) -> Result<Request, Error> {
         let json = serde_json::to_string(value)?;
         self.header("Content-Type", "application/json").body(json)
