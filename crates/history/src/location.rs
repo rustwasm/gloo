@@ -27,7 +27,7 @@ impl Location {
     ///
     /// # Warning
     ///
-    /// Depending on the sitation, the id may or may not be sequential / incremental.
+    /// Depending on the situation, the id may or may not be sequential / incremental.
     pub fn id(&self) -> Option<u32> {
         self.id
     }
