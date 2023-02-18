@@ -24,3 +24,4 @@ pub use method::Method;
 pub use query::QueryParams;
 pub use request::Request;
 pub use response::Response;
+pub use response::ResponseBody;
