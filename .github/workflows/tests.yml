@@ -29,10 +29,7 @@ jobs:
             cargo-${{ runner.os }}-
 
       - name: Run tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --workspace --exclude gloo-net
+        run: cargo test --workspace --exclude gloo-net
 
   browser_tests:
     name: Browser Tests
@@ -215,7 +212,4 @@ jobs:
           HTTPBIN_URL: "http://localhost:8080"
           WS_ECHO_SERVER_URL: "ws://localhost:8081"
           SSE_ECHO_SERVER_URL: "http://localhost:8081/.sse"
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: -p gloo-net --all-features
+        run: cargo test -p gloo-net --all-features
