@@ -355,7 +355,7 @@ impl MemoryHistory {
         Self::default()
     }
 
-    /// Creates a new [`MemoryHistory`] with entires.
+    /// Creates a new [`MemoryHistory`] with entries.
     pub fn with_entries<'a>(entries: impl IntoIterator<Item = impl Into<Cow<'a, str>>>) -> Self {
         let self_ = Self::new();
 
