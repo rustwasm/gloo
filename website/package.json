@@ -16,7 +16,7 @@
   "dependencies": {
     "@docusaurus/core": "^2.3.1",
     "@docusaurus/preset-classic": "2.4.0",
-    "@mdx-js/react": "^1.6.21",
+    "@mdx-js/react": "^2.3.0",
     "@svgr/webpack": "^7.0.0",
     "clsx": "^1.2.1",
     "file-loader": "^6.2.0",
