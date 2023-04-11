@@ -2,8 +2,9 @@ use std::{convert::From, fmt};
 
 use crate::{js_to_error, Error};
 use js_sys::{ArrayBuffer, Uint8Array};
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
+use web_sys::ResponseInit;
 
 use crate::http::Headers;
 #[cfg(feature = "json")]
@@ -15,7 +16,6 @@ pub struct Response(web_sys::Response);
 
 impl Response {
     /// Returns an instance of response builder
-    #[allow(clippy::new_ret_no_self)]
     pub fn builder() -> ResponseBuilder {
         ResponseBuilder::new()
     }
@@ -147,7 +147,7 @@ impl fmt::Debug for Response {
             .field("status", &self.status())
             .field("headers", &self.headers())
             .field("body_used", &self.body_used())
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -156,30 +156,11 @@ impl fmt::Debug for Response {
 pub struct ResponseBuilder {
     headers: Headers,
     options: web_sys::ResponseInit,
-    body: Option<ResponseBody>,
-}
-
-/// Possible initializers for request body
-#[derive(Debug)]
-pub enum ResponseBody {
-    /// Blob response body
-    Blob(web_sys::Blob),
-    /// Buffer response body
-    Buffer(js_sys::Object),
-    /// `Uint8Array` response body
-    U8(Vec<u8>),
-    /// `FormData` response body
-    Form(web_sys::FormData),
-    /// `URLSearchParams` response body
-    Search(web_sys::UrlSearchParams),
-    /// String response body
-    Str(String),
-    /// ReadableStream response body
-    Stream(web_sys::ReadableStream),
 }
 
 impl ResponseBuilder {
-    /// Creates a new response object
+    /// Creates a new response object which defaults to status 200
+    /// for other status codes, call Self.status(400)
     pub fn new() -> Self {
         Self::default()
     }
@@ -218,35 +199,68 @@ impl ResponseBuilder {
     pub fn json<T: serde::Serialize + ?Sized>(self, value: &T) -> Result<Response, Error> {
         let json = serde_json::to_string(value)?;
         self.header("Content-Type", "application/json")
-            .body(Some(ResponseBody::Str(json)))
+            .body(Some(json.as_str()))
     }
 
     /// Set the response body and return the response
-    pub fn body(mut self, data: Option<ResponseBody>) -> Result<Response, Error> {
-        self.body = data;
-
-        use web_sys::Response as R;
+    pub fn body<T>(mut self, data: T) -> Result<Response, Error>
+    where
+        T: IntoRawResponse,
+    {
         self.options.headers(&self.headers.into_raw());
-        let init = &self.options;
-        match self.body {
-            None => R::new_with_opt_str_and_init(None, init),
-            Some(x) => match x {
-                ResponseBody::Blob(y) => R::new_with_opt_blob_and_init(Some(&y), init),
-                ResponseBody::Buffer(y) => R::new_with_opt_buffer_source_and_init(Some(&y), init),
-                ResponseBody::U8(mut y) => {
-                    R::new_with_opt_u8_array_and_init(Some(y.as_mut_slice()), init)
-                }
-                ResponseBody::Form(y) => R::new_with_opt_form_data_and_init(Some(&y), init),
-                ResponseBody::Search(y) => {
-                    R::new_with_opt_url_search_params_and_init(Some(&y), init)
-                }
-                ResponseBody::Str(y) => R::new_with_opt_str_and_init(Some(&y), init),
-                ResponseBody::Stream(y) => R::new_with_opt_readable_stream_and_init(Some(&y), init),
-            },
-        }
-        .map(Response)
-        .map_err(js_to_error)
+        let init = self.options;
+
+        data.into_raw(init).map(Response).map_err(js_to_error)
     }
+}
+
+impl IntoRawResponse for Option<&web_sys::Blob> {
+    fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
+        web_sys::Response::new_with_opt_blob_and_init(self, &init)
+    }
+}
+
+impl IntoRawResponse for Option<&js_sys::Object> {
+    fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
+        web_sys::Response::new_with_opt_buffer_source_and_init(self, &init)
+    }
+}
+
+impl IntoRawResponse for Option<&mut [u8]> {
+    fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
+        web_sys::Response::new_with_opt_u8_array_and_init(self, &init)
+    }
+}
+
+impl IntoRawResponse for Option<&web_sys::FormData> {
+    fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
+        web_sys::Response::new_with_opt_form_data_and_init(self, &init)
+    }
+}
+
+impl IntoRawResponse for Option<&web_sys::UrlSearchParams> {
+    fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
+        web_sys::Response::new_with_opt_url_search_params_and_init(self, &init)
+    }
+}
+
+impl IntoRawResponse for Option<&str> {
+    fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
+        web_sys::Response::new_with_opt_str_and_init(self, &init)
+    }
+}
+
+impl IntoRawResponse for Option<&web_sys::ReadableStream> {
+    fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
+        web_sys::Response::new_with_opt_readable_stream_and_init(self, &init)
+    }
+}
+
+/// trait which allow consuming self into a raw web_sys::Response
+pub trait IntoRawResponse {
+    /// function which converts self and a web_sys::ResponseInit into a result to a
+    /// web_sys::Response
+    fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue>;
 }
 
 impl Default for ResponseBuilder {
@@ -254,7 +268,6 @@ impl Default for ResponseBuilder {
         Self {
             headers: Headers::new(),
             options: web_sys::ResponseInit::new(),
-            body: None,
         }
     }
 }
@@ -263,6 +276,6 @@ impl fmt::Debug for ResponseBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Response Builder")
             .field("headers", &self.headers)
-            .finish()
+            .finish_non_exhaustive()
     }
 }

@@ -1,7 +1,8 @@
-use crate::http::{Headers, Method, QueryParams, Response};
+use crate::http::{Headers, QueryParams, Response};
 use crate::{js_to_error, Error};
+use http::Method;
 use js_sys::{ArrayBuffer, Reflect, Uint8Array};
-use std::convert::{From, TryInto};
+use std::convert::{From, TryFrom, TryInto};
 use std::fmt;
 use std::str::FromStr;
 use wasm_bindgen::{JsCast, JsValue};
@@ -127,7 +128,7 @@ impl RequestBuilder {
 
     /// The request method, e.g., GET, POST.
     pub fn method(mut self, method: Method) -> Self {
-        self.options.method(&method.to_string());
+        self.options.method(method.as_ref());
         self
     }
 
@@ -181,26 +182,30 @@ impl RequestBuilder {
         let req: Request = self.try_into()?;
         req.send().await
     }
+
+    pub fn build(self) -> Result<Request, crate::error::Error> {
+        self.try_into()
+    }
 }
 
-impl TryInto<Request> for RequestBuilder {
+impl TryFrom<RequestBuilder> for Request {
     type Error = crate::error::Error;
 
-    fn try_into(mut self) -> Result<Request, Error> {
+    fn try_from(mut value: RequestBuilder) -> Result<Self, Self::Error> {
         // To preserve existing query parameters of self.url, it must be parsed and extended with
         // self.query's parameters. As web_sys::Url just accepts absolute URLs, retrieve the
         // absolute URL through creating a web_sys::Request object.
-        let request = web_sys::Request::new_with_str(&self.url).map_err(js_to_error)?;
+        let request = web_sys::Request::new_with_str(&value.url).map_err(js_to_error)?;
         let url = web_sys::Url::new(&request.url()).map_err(js_to_error)?;
         let combined_query = match url.search().as_str() {
-            "" => self.query.to_string(),
-            _ => format!("{}&{}", url.search(), self.query),
+            "" => value.query.to_string(),
+            _ => format!("{}&{}", url.search(), value.query),
         };
         url.set_search(&combined_query);
 
         let final_url = String::from(url.to_string());
-        self.options.headers(&self.headers.into_raw());
-        let request = web_sys::Request::new_with_str_and_init(&final_url, &self.options)
+        value.options.headers(&value.headers.into_raw());
+        let request = web_sys::Request::new_with_str_and_init(&final_url, &value.options)
             .map_err(js_to_error)?;
 
         Ok(request.into())
