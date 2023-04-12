@@ -12,7 +12,7 @@ use crate::listener::HistoryListener;
 use crate::location::Location;
 use crate::memory::MemoryHistory;
 
-/// A [`History`] that provides a universial API to the underlying history type.
+/// A [`History`] that provides a universal API to the underlying history type.
 #[derive(Clone, PartialEq, Debug)]
 pub enum AnyHistory {
     /// A Browser History.
