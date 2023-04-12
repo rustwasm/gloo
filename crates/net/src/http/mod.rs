@@ -71,7 +71,7 @@ impl fmt::Display for Method {
     }
 }
 
-/// A wrapper round `web_sys::Request`: an http request to be used with the `fetch` API.
+/// A wrapper around `web_sys::Request`: an http request to be used with the `fetch` API.
 pub struct Request {
     options: web_sys::RequestInit,
     headers: Headers,
