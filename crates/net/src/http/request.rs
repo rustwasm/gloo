@@ -177,12 +177,12 @@ impl RequestBuilder {
         self.options.signal(signal);
         self
     }
-
+    /// Builds the request and send it to the server, returning the received response.
     pub async fn send(self) -> Result<Response, Error> {
         let req: Request = self.try_into()?;
         req.send().await
     }
-
+    /// Builds the request.
     pub fn build(self) -> Result<Request, crate::error::Error> {
         self.try_into()
     }
