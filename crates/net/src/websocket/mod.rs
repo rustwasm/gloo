@@ -11,7 +11,7 @@ use gloo_utils::errors::JsError;
 use std::fmt;
 
 /// Message sent to and received from WebSocket.
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Message {
     /// String message
     Text(String),
@@ -23,7 +23,7 @@ pub enum Message {
 ///
 /// See [`WebSocket.readyState` on MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState)
 /// to learn more.
-#[derive(Copy, Clone, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum State {
     /// The connection has not yet been established.
     Connecting,

@@ -1,7 +1,7 @@
 //! WebSocket Events
 
 /// Data emitted by `onclose` event
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CloseEvent {
     /// Close code
     pub code: u16,

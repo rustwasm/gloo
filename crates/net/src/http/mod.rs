@@ -40,23 +40,40 @@ pub use web_sys::{
     missing_debug_implementations,
     clippy::upper_case_acronyms
 )]
+
 /// Valid request methods.
-#[derive(Clone, Copy, Debug)]
+// Methods are sorted lexicographically, so special care must be taken when adding new methods.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Method {
+    CONNECT,
+    DELETE,
     GET,
     HEAD,
+    OPTIONS,
+    PATCH,
     POST,
     PUT,
-    DELETE,
-    CONNECT,
-    OPTIONS,
     TRACE,
-    PATCH,
 }
 
 impl fmt::Display for Method {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = match self {
+        f.write_str(self.as_str())
+    }
+}
+
+impl Method {
+    /// Converts the method to a `&str`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use gloo_net::http::Method;
+    ///
+    /// assert_eq!(Method::GET.as_str(), "GET");
+    /// ```
+    pub const fn as_str(&self) -> &'static str {
+        match self {
             Method::GET => "GET",
             Method::HEAD => "HEAD",
             Method::POST => "POST",
@@ -66,12 +83,12 @@ impl fmt::Display for Method {
             Method::OPTIONS => "OPTIONS",
             Method::TRACE => "TRACE",
             Method::PATCH => "PATCH",
-        };
-        write!(f, "{s}")
+        }
     }
 }
 
 /// A wrapper round `web_sys::Request`: an http request to be used with the `fetch` API.
+#[derive(Clone, PartialEq, Eq)]
 pub struct Request {
     options: web_sys::RequestInit,
     headers: Headers,
@@ -312,6 +329,7 @@ impl fmt::Debug for Request {
 }
 
 /// The [`Request`]'s response
+#[derive(Clone, PartialEq, Eq)]
 pub struct Response {
     response: web_sys::Response,
 }
@@ -444,5 +462,37 @@ impl fmt::Debug for Response {
             .field("headers", &self.headers())
             .field("body_used", &self.body_used())
             .finish()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Method;
+
+    // Method ordering matches the lexical ordering of the method names.
+    #[test]
+    fn method_ordering_matches_lexical_ordering() {
+        // Order doesn't matter here
+        let mut method_enums = vec![
+            Method::GET,
+            Method::HEAD,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::CONNECT,
+            Method::OPTIONS,
+            Method::TRACE,
+            Method::PATCH,
+        ];
+
+        let mut method_strs: Vec<&str> = method_enums.iter().map(Method::as_str).collect();
+
+        method_enums.sort();
+        method_strs.sort();
+
+        assert!(method_enums
+            .iter()
+            .zip(method_strs.iter())
+            .all(|(m, s)| m.as_str() == *s));
     }
 }

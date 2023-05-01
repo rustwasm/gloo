@@ -4,6 +4,7 @@ use std::fmt;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 /// A sequence of URL query parameters, wrapping [`web_sys::UrlSearchParams`].
+#[derive(Clone, PartialEq, Eq)]
 pub struct QueryParams {
     raw: web_sys::UrlSearchParams,
 }

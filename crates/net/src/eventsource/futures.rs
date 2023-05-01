@@ -50,7 +50,7 @@ use web_sys::MessageEvent;
 
 /// Wrapper around browser's EventSource API. Dropping
 /// this will close the underlying event source.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct EventSource {
     es: web_sys::EventSource,
 }
@@ -178,13 +178,7 @@ impl EventSource {
 
     /// The current state of the EventSource.
     pub fn state(&self) -> State {
-        let ready_state = self.es.ready_state();
-        match ready_state {
-            0 => State::Connecting,
-            1 => State::Open,
-            2 => State::Closed,
-            _ => unreachable!(),
-        }
+        self.es.ready_state().into()
     }
 }
 
