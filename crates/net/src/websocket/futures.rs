@@ -217,14 +217,7 @@ impl WebSocket {
 
     /// The current state of the websocket.
     pub fn state(&self) -> State {
-        let ready_state = self.ws.ready_state();
-        match ready_state {
-            0 => State::Connecting,
-            1 => State::Open,
-            2 => State::Closing,
-            3 => State::Closed,
-            _ => unreachable!(),
-        }
+        self.ws.ready_state().into()
     }
 
     /// The extensions in use.

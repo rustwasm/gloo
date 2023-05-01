@@ -36,6 +36,29 @@ pub enum State {
     Closed,
 }
 
+impl From<u16> for State {
+    fn from(state: u16) -> Self {
+        match state {
+            0 => State::Connecting,
+            1 => State::Open,
+            2 => State::Closing,
+            3 => State::Closed,
+            _ => unreachable!("invalid state"),
+        }
+    }
+}
+
+impl From<State> for u16 {
+    fn from(state: State) -> Self {
+        match state {
+            State::Connecting => 0,
+            State::Open => 1,
+            State::Closing => 2,
+            State::Closed => 3,
+        }
+    }
+}
+
 /// Error returned by WebSocket
 #[derive(Debug)]
 #[non_exhaustive]
