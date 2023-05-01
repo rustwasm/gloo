@@ -22,3 +22,13 @@ pub mod http;
 pub mod websocket;
 
 pub use error::*;
+
+#[cfg(test)]
+/// Checks if a slice is strictly sorted.
+///
+/// Strictly sorted means that each element is _less_ than the next.
+/// 
+/// TODO: Use `is_sorted` when it becomes stable.
+fn is_strictly_sorted<T: Ord>(slice: &[T]) -> bool {
+    slice.iter().zip(slice.iter().skip(1)).all(|(a, b)| a < b)
+}

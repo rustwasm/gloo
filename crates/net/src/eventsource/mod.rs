@@ -84,3 +84,21 @@ impl fmt::Display for EventSourceError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::is_strictly_sorted;
+
+    use super::*;
+
+    #[test]
+    fn test_order() {
+        let expected_order = vec![State::Connecting, State::Open, State::Closed];
+
+        assert!(is_strictly_sorted(&expected_order));
+
+        // Check that the u16 conversion is also sorted
+        let order: Vec<_> = expected_order.iter().map(|s| u16::from(*s)).collect();
+        assert!(is_strictly_sorted(&order));
+    }
+}

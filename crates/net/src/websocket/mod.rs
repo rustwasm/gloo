@@ -23,6 +23,7 @@ pub enum Message {
 ///
 /// See [`WebSocket.readyState` on MDN](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/readyState)
 /// to learn more.
+// This trait implements `Ord`, use caution when changing the order of the variants.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum State {
     /// The connection has not yet been established.
@@ -86,3 +87,26 @@ impl fmt::Display for WebSocketError {
 }
 
 impl std::error::Error for WebSocketError {}
+
+#[cfg(test)]
+mod tests {
+    use crate::is_strictly_sorted;
+
+    use super::*;
+
+    #[test]
+    fn test_order() {
+        let expected_order = vec![
+            State::Connecting,
+            State::Open,
+            State::Closing,
+            State::Closed,
+        ];
+
+        assert!(is_strictly_sorted(&expected_order));
+
+        // Check that the u16 conversion is also sorted
+        let order: Vec<_> = expected_order.iter().map(|s| u16::from(*s)).collect();
+        assert!(is_strictly_sorted(&order));
+    }
+}

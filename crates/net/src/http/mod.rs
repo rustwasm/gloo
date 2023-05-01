@@ -42,7 +42,7 @@ pub use web_sys::{
 )]
 
 /// Valid request methods.
-// Methods are sorted lexicographically, so special care must be taken when adding new methods.
+// This trait implements `Ord`, use caution when changing the order of the variants.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Method {
     CONNECT,
@@ -467,32 +467,29 @@ impl fmt::Debug for Response {
 
 #[cfg(test)]
 mod tests {
+    use crate::is_strictly_sorted;
+
     use super::Method;
 
-    // Method ordering matches the lexical ordering of the method names.
     #[test]
-    fn method_ordering_matches_lexical_ordering() {
-        // Order doesn't matter here
-        let mut method_enums = vec![
+    fn test_order() {
+        let expected = vec![
+            Method::CONNECT,
+            Method::DELETE,
             Method::GET,
             Method::HEAD,
+            Method::OPTIONS,
+            Method::PATCH,
             Method::POST,
             Method::PUT,
-            Method::DELETE,
-            Method::CONNECT,
-            Method::OPTIONS,
             Method::TRACE,
-            Method::PATCH,
         ];
 
-        let mut method_strs: Vec<&str> = method_enums.iter().map(Method::as_str).collect();
+        // is sorted
+        assert!(is_strictly_sorted(&expected));
 
-        method_enums.sort();
-        method_strs.sort();
-
-        assert!(method_enums
-            .iter()
-            .zip(method_strs.iter())
-            .all(|(m, s)| m.as_str() == *s));
+        // Check that it's also lexicographically sorted
+        let actual: Vec<&str> = expected.iter().map(Method::as_str).collect();
+        assert!(is_strictly_sorted(&actual))
     }
 }
