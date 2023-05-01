@@ -11,6 +11,7 @@ use std::fmt;
 ///
 /// See [`EventSource.readyState` on MDN](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/readyState)
 /// to learn more.
+// This trait implements `Ord`, use caution when changing the order of the variants.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum State {
     /// The connection has not yet been established.
