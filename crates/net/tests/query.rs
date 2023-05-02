@@ -1,4 +1,4 @@
-use gloo_net::http::*;
+use gloo_net::http::QueryParams;
 use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
