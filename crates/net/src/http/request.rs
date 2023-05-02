@@ -113,13 +113,13 @@ impl RequestBuilder {
     }
 
     /// A convenience method to set JSON as request body.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This method also sets the `Content-Type` header to `application/json`
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// This method will return an error if the value cannot be serialized
     #[cfg(feature = "json")]
     #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
@@ -227,9 +227,9 @@ pub struct Request(web_sys::Request);
 
 impl Request {
     /// Creates a new [`Request`] from a [`web_sys::Request`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// If the body of the request has already been read, other body readers will misbehave.
     pub fn from_raw(request: web_sys::Request) -> Self {
         Self(request)
@@ -288,9 +288,9 @@ impl Request {
     /// Has the request body been consumed?
     ///
     /// If true, then any future attempts to consume the body will panic.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// In normal usage, this should always return false. The body is only consumed
     /// by methods that take ownership of the request. However, if you manually
     /// build a [`Request`] from [`web_sys::Request`], then this could be true.
@@ -299,9 +299,9 @@ impl Request {
     }
 
     /// Returns the underlying body of the request.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This consumes the request, if you need to access the body multiple times,
     /// you should `clone` the request first.
     pub fn body(self) -> Option<ReadableStream> {
@@ -309,17 +309,17 @@ impl Request {
     }
 
     /// Returns the underlying body of the request as [`web_sys::FormData`].
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This consumes the request, if you need to access the body multiple times,
     /// you should `clone` the request first.
-    /// 
+    ///
     /// # Errors
-    /// 
-    /// Throws a "TypeError" if the content type of the request is not `"multipart/form-data"` or 
+    ///
+    /// Throws a "TypeError" if the content type of the request is not `"multipart/form-data"` or
     /// `"application/x-www-form-urlencoded"`.
-    /// 
+    ///
     /// Throws a "TypeError" if the body cannot be converted to [`web_sys::FormData`].
     pub async fn form_data(self) -> Result<FormData, Error> {
         let promise = self.0.form_data().map_err(js_to_error)?;
@@ -328,14 +328,14 @@ impl Request {
     }
 
     /// Returns the underlying body as a string.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This consumes the request, if you need to access the body multiple times,
     /// you should `clone` the request first.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// This will return an error if the body cannot be decoded as utf-8.
     pub async fn text(self) -> Result<String, Error> {
         let promise = self.0.text().map_err(js_to_error)?;
@@ -345,14 +345,14 @@ impl Request {
     }
 
     /// Returns the underlying body of the request and parses it as JSON.
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This consumes the request, if you need to access the body multiple times,
     /// you should `clone` the request first.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// This will return an error if the body text cannot be decoded as utf-8 or
     /// if the JSON cannot be deserialized.
     #[cfg(feature = "json")]
@@ -365,14 +365,14 @@ impl Request {
     ///
     /// This works by obtaining the response as an `ArrayBuffer`, creating a `Uint8Array` from it
     /// and then converting it to `Vec<u8>`
-    /// 
+    ///
     /// # Note
-    /// 
+    ///
     /// This consumes the request, if you need to access the body multiple times,
     /// you should `clone` the request first.
-    /// 
+    ///
     /// # Errors
-    /// 
+    ///
     /// This method may return a "RangeError"
     pub async fn binary(self) -> Result<Vec<u8>, Error> {
         let promise = self.0.array_buffer().map_err(js_to_error)?; // RangeError

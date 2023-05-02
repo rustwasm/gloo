@@ -1,7 +1,7 @@
 use std::iter::FromIterator;
 
 use gloo_net::http::Headers;
-use wasm_bindgen_test::{wasm_bindgen_test_configure, wasm_bindgen_test};
+use wasm_bindgen_test::{wasm_bindgen_test, wasm_bindgen_test_configure};
 
 wasm_bindgen_test_configure!(run_in_browser);
 
@@ -12,7 +12,10 @@ fn headers_append() {
     assert_eq!(headers.get("Content-Type"), Some("text/plain".to_string()));
 
     headers.append("Content-Type", "text/html");
-    assert_eq!(headers.get("Content-Type"), Some("text/plain, text/html".to_string()));
+    assert_eq!(
+        headers.get("Content-Type"),
+        Some("text/plain, text/html".to_string())
+    );
 }
 
 #[wasm_bindgen_test]
@@ -23,7 +26,10 @@ fn headers_from_iter() {
         ("Content-Type", "text/html"),
         ("X-Test", "test"),
     ]);
-    assert_eq!(headers.get("Content-Type"), Some("text/plain, text/html".to_string()));
+    assert_eq!(
+        headers.get("Content-Type"),
+        Some("text/plain, text/html".to_string())
+    );
     assert_eq!(headers.get("X-Test"), Some("test".to_string()));
 
     // Test extend

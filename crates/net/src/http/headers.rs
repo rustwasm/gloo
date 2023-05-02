@@ -29,16 +29,16 @@ impl Headers {
 
     /// This method appends a new value onto an existing header, or adds the header if it does not
     /// already exist.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// # use gloo_net::http::Headers;
     /// # fn no_run() {
     /// let headers = Headers::new();
     /// headers.append("Content-Type", "text/plain");
     /// assert_eq!(headers.get("Content-Type"), Some("text/plain".to_string()));
-    /// 
+    ///
     /// headers.append("Content-Type", "text/html");
     /// assert_eq!(headers.get("Content-Type"), Some("text/plain, text/html".to_string()));
     /// # }

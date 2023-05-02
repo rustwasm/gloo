@@ -143,7 +143,9 @@ async fn query_preserve_duplicate_params() {
 
 #[wasm_bindgen_test]
 async fn request_clone() {
-    let req = Request::get(&format!("{}/get", *HTTPBIN_URL)).build().unwrap();
+    let req = Request::get(&format!("{}/get", *HTTPBIN_URL))
+        .build()
+        .unwrap();
 
     let req1 = req.clone();
     let req2 = req.clone();
