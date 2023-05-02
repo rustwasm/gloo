@@ -1,4 +1,4 @@
-use gloo_net::http::*;
+use gloo_net::http::Request;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen_test::*;
