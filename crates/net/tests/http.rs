@@ -26,8 +26,8 @@ async fn fetch_json() {
 
     let url = format!("{}/get", *HTTPBIN_URL);
     let resp = Request::get(&url).send().await.unwrap();
-    let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(resp.status(), 200);
+    let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(json.url, url);
 }
 
@@ -53,8 +53,9 @@ async fn gzip_response() {
         .send()
         .await
         .unwrap();
-    let json: HttpBin = resp.json().await.unwrap();
+
     assert_eq!(resp.status(), 200);
+    let json: HttpBin = resp.json().await.unwrap();
     assert!(json.gzipped);
 }
 
@@ -95,8 +96,9 @@ async fn post_json() {
         .send()
         .await
         .unwrap();
-    let resp: HttpBin = req.json().await.unwrap();
+
     assert_eq!(req.status(), 200);
+    let resp: HttpBin = req.json().await.unwrap();
     assert_eq!(resp.json.data, "data");
     assert_eq!(resp.json.num, 42);
 }
@@ -112,8 +114,9 @@ async fn fetch_binary() {
         .send()
         .await
         .unwrap();
-    let json = resp.binary().await.unwrap();
+
     assert_eq!(resp.status(), 200);
+    let json = resp.binary().await.unwrap();
     let json: HttpBin = serde_json::from_slice(&json).unwrap();
     assert_eq!(json.data, ""); // default is empty string
 }
@@ -136,4 +139,44 @@ async fn query_preserve_duplicate_params() {
         .await
         .unwrap();
     assert_eq!(resp.url(), format!("{}/get?q=1&q=2", *HTTPBIN_URL));
+}
+
+#[wasm_bindgen_test]
+async fn request_clone() {
+    let req = Request::get(&format!("{}/get", *HTTPBIN_URL)).build().unwrap();
+
+    let req1 = req.clone();
+    let req2 = req.clone();
+
+    let resp1 = req1.send().await.unwrap();
+    let resp2 = req2.send().await.unwrap();
+
+    assert_eq!(resp1.status(), 200);
+    assert_eq!(resp2.status(), 200);
+}
+
+#[wasm_bindgen_test]
+async fn request_clone_with_body() {
+    // Get a stream of bytes by making a request
+    let resp = Request::get(&format!("{}/get", *HTTPBIN_URL))
+        .send()
+        .await
+        .unwrap();
+
+    // Build a request with the body of the response
+    let req = Request::post(&format!("{}/post", *HTTPBIN_URL))
+        .body(resp.body())
+        .build()
+        .unwrap();
+
+    // Clone the request
+    let req1 = req.clone();
+    let req2 = req.clone();
+
+    // Send both requests
+    let resp1 = req1.send().await.unwrap();
+    let resp2 = req2.send().await.unwrap();
+
+    assert_eq!(resp1.status(), 200);
+    assert_eq!(resp2.status(), 200);
 }

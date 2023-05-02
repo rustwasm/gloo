@@ -1,10 +1,9 @@
 use gloo_utils::iter::UncheckedIter;
 use js_sys::{Array, Map};
-use std::fmt;
+use std::{fmt, iter::FromIterator};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 /// A sequence of URL query parameters, wrapping [`web_sys::UrlSearchParams`].
-#[derive(Clone, PartialEq, Eq)]
 pub struct QueryParams {
     raw: web_sys::UrlSearchParams,
 }
@@ -30,8 +29,13 @@ impl QueryParams {
         Self { raw }
     }
 
+    /// Create [`web_sys::UrlSearchParams`] from [`QueryParams`] object.
+    pub fn into_raw(self) -> web_sys::UrlSearchParams {
+        self.raw
+    }
+
     /// Append a parameter to the query string.
-    pub fn append(&self, name: &str, value: &str) {
+    pub fn append(&mut self, name: &str, value: &str) {
         self.raw.append(name, value)
     }
 
@@ -51,7 +55,7 @@ impl QueryParams {
     }
 
     /// Remove all occurrences of a parameter from the query string.
-    pub fn delete(&self, name: &str) {
+    pub fn delete(&mut self, name: &str) {
         self.raw.delete(name)
     }
 
@@ -70,6 +74,36 @@ impl QueryParams {
                 value.as_string().unwrap_throw(),
             )
         })
+    }
+}
+
+impl Clone for QueryParams {
+    fn clone(&self) -> Self {
+        self.iter().collect()
+    }
+}
+
+impl<K, V> Extend<(K, V)> for QueryParams
+where
+    K: AsRef<str>,
+    V: AsRef<str>,
+{
+    fn extend<I: IntoIterator<Item = (K, V)>>(&mut self, iter: I) {
+        for (key, value) in iter {
+            self.append(key.as_ref(), value.as_ref());
+        }
+    }
+}
+
+impl<K, V> FromIterator<(K, V)> for QueryParams
+where
+    K: AsRef<str>,
+    V: AsRef<str>,
+{
+    fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
+        let mut params = Self::new();
+        params.extend(iter);
+        params
     }
 }
 

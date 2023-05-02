@@ -16,7 +16,7 @@ use web_sys::{
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 use serde::de::DeserializeOwned;
 
-/// A wrapper round `web_sys::Request`: an http request to be used with the `fetch` API.
+/// A builder for [`Request`].
 pub struct RequestBuilder {
     options: web_sys::RequestInit,
     headers: Headers,
@@ -38,10 +38,9 @@ impl RequestBuilder {
     }
 
     /// Set the body for this request.
-    pub fn body(mut self, body: impl Into<JsValue>) -> Result<Request, Error> {
+    pub fn body(mut self, body: impl Into<JsValue>) -> Self {
         self.options.body(Some(&body.into()));
-
-        self.try_into()
+        self
     }
 
     /// A string indicating how the request will interact with the browser’s HTTP cache.
@@ -64,7 +63,7 @@ impl RequestBuilder {
     }
 
     /// Sets a header.
-    pub fn header(self, key: &str, value: &str) -> Self {
+    pub fn header(mut self, key: &str, value: &str) -> Self {
         self.headers.set(key, value);
         self
     }
@@ -96,14 +95,13 @@ impl RequestBuilder {
     /// // Result URL: /search?key=value&a=3&b=4&key=another_value
     /// # }
     /// ```
-    pub fn query<'a, T, V>(self, params: T) -> Self
+    pub fn query<T, K, V>(mut self, params: T) -> Self
     where
-        T: IntoIterator<Item = (&'a str, V)>,
+        T: IntoIterator<Item = (K, V)>,
+        K: AsRef<str>,
         V: AsRef<str>,
     {
-        for (name, value) in params {
-            self.query.append(name, value.as_ref());
-        }
+        self.query.extend(params);
         self
     }
 
@@ -114,16 +112,20 @@ impl RequestBuilder {
         self
     }
 
-    /// A convenience method to set JSON as request body
-    ///
+    /// A convenience method to set JSON as request body.
+    /// 
     /// # Note
-    ///
+    /// 
     /// This method also sets the `Content-Type` header to `application/json`
+    /// 
+    /// # Errors
+    /// 
+    /// This method will return an error if the value cannot be serialized
     #[cfg(feature = "json")]
     #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-    pub fn json<T: serde::Serialize + ?Sized>(self, value: &T) -> Result<Request, Error> {
+    pub fn json<T: serde::Serialize + ?Sized>(self, value: &T) -> Result<Self, Error> {
         let json = serde_json::to_string(value)?;
-        self.header("Content-Type", "application/json").body(json)
+        Ok(self.header("Content-Type", "application/json").body(json))
     }
 
     /// The request method, e.g., GET, POST.
@@ -177,19 +179,21 @@ impl RequestBuilder {
         self.options.signal(signal);
         self
     }
+
     /// Builds the request and send it to the server, returning the received response.
     pub async fn send(self) -> Result<Response, Error> {
         let req: Request = self.try_into()?;
         req.send().await
     }
+
     /// Builds the request.
-    pub fn build(self) -> Result<Request, crate::error::Error> {
+    pub fn build(self) -> Result<Request, Error> {
         self.try_into()
     }
 }
 
 impl TryFrom<RequestBuilder> for Request {
-    type Error = crate::error::Error;
+    type Error = crate::Error;
 
     fn try_from(mut value: RequestBuilder) -> Result<Self, Self::Error> {
         // To preserve existing query parameters of self.url, it must be parsed and extended with
@@ -208,7 +212,7 @@ impl TryFrom<RequestBuilder> for Request {
         let request = web_sys::Request::new_with_str_and_init(&final_url, &value.options)
             .map_err(js_to_error)?;
 
-        Ok(request.into())
+        Ok(Request::from_raw(request))
     }
 }
 
@@ -222,27 +226,41 @@ impl fmt::Debug for RequestBuilder {
 pub struct Request(web_sys::Request);
 
 impl Request {
-    /// Creates a new [`GET`][Method::GET] `Request` with url.
+    /// Creates a new [`Request`] from a [`web_sys::Request`].
+    /// 
+    /// # Note
+    /// 
+    /// If the body of the request has already been read, other body readers will misbehave.
+    pub fn from_raw(request: web_sys::Request) -> Self {
+        Self(request)
+    }
+
+    /// Returns the underlying [`web_sys::Request`].
+    pub fn into_raw(self) -> web_sys::Request {
+        self.0
+    }
+
+    /// Creates a new GET [`RequestBuilder`] with url.
     pub fn get(url: &str) -> RequestBuilder {
         RequestBuilder::new(url).method(Method::GET)
     }
 
-    /// Creates a new [`POST`][Method::POST] `Request` with url.
+    /// Creates a new POST [`RequestBuilder`] with url.
     pub fn post(url: &str) -> RequestBuilder {
         RequestBuilder::new(url).method(Method::POST)
     }
 
-    /// Creates a new [`PUT`][Method::PUT] `Request` with url.
+    /// Creates a new PUT [`RequestBuilder`] with url.
     pub fn put(url: &str) -> RequestBuilder {
         RequestBuilder::new(url).method(Method::PUT)
     }
 
-    /// Creates a new [`DELETE`][Method::DELETE] `Request` with url.
+    /// Creates a new Delete [`RequestBuilder`] with url.
     pub fn delete(url: &str) -> RequestBuilder {
         RequestBuilder::new(url).method(Method::DELETE)
     }
 
-    /// Creates a new [`PATCH`][Method::PATCH] `Request` with url.
+    /// Creates a new PATCH [`RequestBuilder`] with url.
     pub fn patch(url: &str) -> RequestBuilder {
         RequestBuilder::new(url).method(Method::PATCH)
     }
@@ -257,56 +275,6 @@ impl Request {
         Headers::from_raw(self.0.headers())
     }
 
-    /// Has the request body been consumed?
-    ///
-    /// If true, then any future attempts to consume the body will error.
-    pub fn body_used(&self) -> bool {
-        self.0.body_used()
-    }
-
-    /// Gets the body.
-    pub fn body(&self) -> Option<ReadableStream> {
-        self.0.body()
-    }
-
-    /// Reads the request to completion, returning it as `FormData`.
-    pub async fn form_data(&self) -> Result<FormData, Error> {
-        let promise = self.0.form_data().map_err(js_to_error)?;
-        let val = JsFuture::from(promise).await.map_err(js_to_error)?;
-        Ok(FormData::from(val))
-    }
-
-    /// Reads the request to completion, parsing it as JSON.
-    #[cfg(feature = "json")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-    pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
-        serde_json::from_str::<T>(&self.text().await?).map_err(Error::from)
-    }
-
-    /// Reads the reqeust as a String.
-    pub async fn text(&self) -> Result<String, Error> {
-        let promise = self.0.text().unwrap();
-        let val = JsFuture::from(promise).await.map_err(js_to_error)?;
-        let string = js_sys::JsString::from(val);
-        Ok(String::from(&string))
-    }
-
-    /// Gets the binary request
-    ///
-    /// This works by obtaining the response as an `ArrayBuffer`, creating a `Uint8Array` from it
-    /// and then converting it to `Vec<u8>`
-    pub async fn binary(&self) -> Result<Vec<u8>, Error> {
-        let promise = self.0.array_buffer().map_err(js_to_error)?;
-        let array_buffer: ArrayBuffer = JsFuture::from(promise)
-            .await
-            .map_err(js_to_error)?
-            .unchecked_into();
-        let typed_buff: Uint8Array = Uint8Array::new(&array_buffer);
-        let mut body = vec![0; typed_buff.length() as usize];
-        typed_buff.copy_to(&mut body);
-        Ok(body)
-    }
-
     /// Return the read only mode for the request
     pub fn mode(&self) -> RequestMode {
         self.0.mode()
@@ -317,7 +285,108 @@ impl Request {
         Method::from_str(self.0.method().as_str()).unwrap()
     }
 
-    /// Executes the request.
+    /// Has the request body been consumed?
+    ///
+    /// If true, then any future attempts to consume the body will panic.
+    /// 
+    /// # Note
+    /// 
+    /// In normal usage, this should always return false. The body is only consumed
+    /// by methods that take ownership of the request. However, if you manually
+    /// build a [`Request`] from [`web_sys::Request`], then this could be true.
+    pub fn body_used(&self) -> bool {
+        self.0.body_used()
+    }
+
+    /// Returns the underlying body of the request.
+    /// 
+    /// # Note
+    /// 
+    /// This consumes the request, if you need to access the body multiple times,
+    /// you should `clone` the request first.
+    pub fn body(self) -> Option<ReadableStream> {
+        self.0.body()
+    }
+
+    /// Returns the underlying body of the request as [`web_sys::FormData`].
+    /// 
+    /// # Note
+    /// 
+    /// This consumes the request, if you need to access the body multiple times,
+    /// you should `clone` the request first.
+    /// 
+    /// # Errors
+    /// 
+    /// Throws a "TypeError" if the content type of the request is not `"multipart/form-data"` or 
+    /// `"application/x-www-form-urlencoded"`.
+    /// 
+    /// Throws a "TypeError" if the body cannot be converted to [`web_sys::FormData`].
+    pub async fn form_data(self) -> Result<FormData, Error> {
+        let promise = self.0.form_data().map_err(js_to_error)?;
+        let val = JsFuture::from(promise).await.map_err(js_to_error)?; // should never fail?
+        Ok(FormData::from(val))
+    }
+
+    /// Returns the underlying body as a string.
+    /// 
+    /// # Note
+    /// 
+    /// This consumes the request, if you need to access the body multiple times,
+    /// you should `clone` the request first.
+    /// 
+    /// # Errors
+    /// 
+    /// This will return an error if the body cannot be decoded as utf-8.
+    pub async fn text(self) -> Result<String, Error> {
+        let promise = self.0.text().map_err(js_to_error)?;
+        let val = JsFuture::from(promise).await.map_err(js_to_error)?; // should never fail?
+        let string = js_sys::JsString::from(val);
+        Ok(String::from(&string))
+    }
+
+    /// Returns the underlying body of the request and parses it as JSON.
+    /// 
+    /// # Note
+    /// 
+    /// This consumes the request, if you need to access the body multiple times,
+    /// you should `clone` the request first.
+    /// 
+    /// # Errors
+    /// 
+    /// This will return an error if the body text cannot be decoded as utf-8 or
+    /// if the JSON cannot be deserialized.
+    #[cfg(feature = "json")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
+    pub async fn json<T: DeserializeOwned>(self) -> Result<T, Error> {
+        serde_json::from_str::<T>(&self.text().await?).map_err(Error::from)
+    }
+
+    /// Gets the binary request
+    ///
+    /// This works by obtaining the response as an `ArrayBuffer`, creating a `Uint8Array` from it
+    /// and then converting it to `Vec<u8>`
+    /// 
+    /// # Note
+    /// 
+    /// This consumes the request, if you need to access the body multiple times,
+    /// you should `clone` the request first.
+    /// 
+    /// # Errors
+    /// 
+    /// This method may return a "RangeError"
+    pub async fn binary(self) -> Result<Vec<u8>, Error> {
+        let promise = self.0.array_buffer().map_err(js_to_error)?; // RangeError
+        let array_buffer: ArrayBuffer = JsFuture::from(promise)
+            .await
+            .map_err(js_to_error)? // should never fail?
+            .unchecked_into();
+        let typed_buff: Uint8Array = Uint8Array::new(&array_buffer);
+        let mut body = vec![0; typed_buff.length() as usize];
+        typed_buff.copy_to(&mut body);
+        Ok(body)
+    }
+
+    /// Executes the request, using the `fetch` API.
     pub async fn send(self) -> Result<Response, Error> {
         let request = self.0;
         let global = js_sys::global();
@@ -341,19 +410,16 @@ impl Request {
         response
             .dyn_into::<web_sys::Response>()
             .map_err(|e| panic!("fetch returned {:?}, not `Response` - this is a bug", e))
-            .map(Response::from)
+            .map(Response::from_raw)
     }
 }
 
-impl From<web_sys::Request> for Request {
-    fn from(raw: web_sys::Request) -> Self {
-        Request(raw)
-    }
-}
-
-impl From<Request> for web_sys::Request {
-    fn from(val: Request) -> Self {
-        val.0
+impl Clone for Request {
+    fn clone(&self) -> Self {
+        // Cloning the underlying request could fail if the request body has already been consumed.
+        // This should not happen in normal usage since the body is consumed only when `send` is called.
+        debug_assert!(!self.body_used());
+        Self(self.0.clone().unwrap())
     }
 }
 

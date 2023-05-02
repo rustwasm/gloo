@@ -1,20 +1,11 @@
 use gloo_utils::iter::UncheckedIter;
 use js_sys::{Array, Map};
-use std::fmt;
+use std::{fmt, iter::FromIterator};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-// I experimented with using `js_sys::Object` for the headers, since this object is marked
-// experimental in MDN. However it's in the fetch spec, and it's necessary for appending headers.
 /// A wrapper around `web_sys::Headers`.
-#[derive(Clone, PartialEq, Eq)]
 pub struct Headers {
     raw: web_sys::Headers,
-}
-
-impl Default for Headers {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl Headers {
@@ -38,19 +29,33 @@ impl Headers {
 
     /// This method appends a new value onto an existing header, or adds the header if it does not
     /// already exist.
-    pub fn append(&self, name: &str, value: &str) {
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// # use gloo_net::http::Headers;
+    /// # fn no_run() {
+    /// let headers = Headers::new();
+    /// headers.append("Content-Type", "text/plain");
+    /// assert_eq!(headers.get("Content-Type"), Some("text/plain".to_string()));
+    /// 
+    /// headers.append("Content-Type", "text/html");
+    /// assert_eq!(headers.get("Content-Type"), Some("text/plain, text/html".to_string()));
+    /// # }
+    /// ```
+    pub fn append(&mut self, name: &str, value: &str) {
         // XXX Can this throw? WEBIDL says yes, my experiments with forbidden headers and MDN say
         // no.
         self.raw.append(name, value).unwrap_throw()
     }
 
     /// Deletes a header if it is present.
-    pub fn delete(&self, name: &str) {
+    pub fn delete(&mut self, name: &str) {
         self.raw.delete(name).unwrap_throw()
     }
 
     /// Gets a header if it is present.
-    pub fn get(&self, name: &str) -> Option<String> {
+    pub fn get(&mut self, name: &str) -> Option<String> {
         self.raw.get(name).unwrap_throw()
     }
 
@@ -60,7 +65,7 @@ impl Headers {
     }
 
     /// Overwrites a header with the given name.
-    pub fn set(&self, name: &str, value: &str) {
+    pub fn set(&mut self, name: &str, value: &str) {
         self.raw.set(name, value).unwrap_throw()
     }
 
@@ -91,6 +96,42 @@ impl Headers {
     pub fn values(&self) -> impl Iterator<Item = String> {
         let fake_map: &Map = self.raw.unchecked_ref();
         UncheckedIter::from(fake_map.values()).map(|v| v.as_string().unwrap_throw())
+    }
+}
+
+impl Clone for Headers {
+    fn clone(&self) -> Self {
+        self.entries().collect()
+    }
+}
+
+impl Default for Headers {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<K, V> Extend<(K, V)> for Headers
+where
+    K: AsRef<str>,
+    V: AsRef<str>,
+{
+    fn extend<T: IntoIterator<Item = (K, V)>>(&mut self, iter: T) {
+        for (key, value) in iter {
+            self.append(key.as_ref(), value.as_ref());
+        }
+    }
+}
+
+impl<K, V> FromIterator<(K, V)> for Headers
+where
+    K: AsRef<str>,
+    V: AsRef<str>,
+{
+    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
+        let mut headers = Self::new();
+        headers.extend(iter);
+        headers
     }
 }
 

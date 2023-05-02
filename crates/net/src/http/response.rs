@@ -19,6 +19,21 @@ impl Response {
     pub fn builder() -> ResponseBuilder {
         ResponseBuilder::new()
     }
+
+    /// Creates a new [`Response`] from a [`web_sys::Request`].
+    /// 
+    /// # Note
+    /// 
+    /// If the body of the response has already been read, other body readers will misbehave.
+    pub fn from_raw(request: web_sys::Response) -> Self {
+        Self(request)
+    }
+
+    /// Returns the underlying [`web_sys::Response`].
+    pub fn into_raw(self) -> web_sys::Response {
+        self.0
+    }
+
     /// The type read-only property of the Response interface contains the type of the response.
     ///
     /// It can be one of the following:
@@ -78,43 +93,93 @@ impl Response {
 
     /// Has the response body been consumed?
     ///
-    /// If true, then any future attempts to consume the body will error.
+    /// If true, then any future attempts to consume the body will panic.
+    /// 
+    /// # Note
+    /// 
+    /// In normal usage, this should always return false. The body is only consumed
+    /// by methods that take ownership of the response. However, if you manually
+    /// build a [`Response`] from [`web_sys::Response`], then this could be true.
     pub fn body_used(&self) -> bool {
         self.0.body_used()
     }
 
-    /// Gets the body.
-    pub fn body(&self) -> Option<web_sys::ReadableStream> {
+    /// Returns the underlying body of the response.
+    /// 
+    /// # Note
+    /// 
+    /// This consumes the response, if you need to access the body multiple times,
+    /// you should `clone` the response first.
+    pub fn body(self) -> Option<web_sys::ReadableStream> {
         self.0.body()
     }
 
-    /// Reads the response to completion, returning it as `FormData`.
-    pub async fn form_data(&self) -> Result<web_sys::FormData, Error> {
+    /// Returns the underlying body as [`web_sys::FormData`].
+    /// 
+    /// # Note
+    /// 
+    /// This consumes the request, if you need to access the body multiple times,
+    /// you should `clone` the request first.
+    /// 
+    /// # Errors
+    /// 
+    /// Throws a "TypeError" if the content type of the request is not `"multipart/form-data"` or 
+    /// `"application/x-www-form-urlencoded"`.
+    /// 
+    /// Throws a "TypeError" if the body cannot be converted to [`web_sys::FormData`].
+    pub async fn form_data(self) -> Result<web_sys::FormData, Error> {
         let promise = self.0.form_data().map_err(js_to_error)?;
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         Ok(web_sys::FormData::from(val))
     }
 
-    /// Reads the response to completion, parsing it as JSON.
-    #[cfg(feature = "json")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-    pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
-        serde_json::from_str::<T>(&self.text().await?).map_err(Error::from)
-    }
-
-    /// Reads the response as a String.
-    pub async fn text(&self) -> Result<String, Error> {
+    /// Returns the underlying body as a string.
+    /// 
+    /// # Note
+    /// 
+    /// This consumes the response, if you need to access the body multiple times,
+    /// you should `clone` the response first.
+    /// 
+    /// # Errors
+    /// 
+    /// This will return an error if the body cannot be decoded as utf-8.
+    pub async fn text(self) -> Result<String, Error> {
         let promise = self.0.text().unwrap();
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         let string = js_sys::JsString::from(val);
         Ok(String::from(&string))
     }
 
+    /// Returns the underlying body as a string.
+    /// 
+    /// # Note
+    /// 
+    /// This consumes the response, if you need to access the body multiple times,
+    /// you should `clone` the response first.
+    /// 
+    /// # Errors
+    /// 
+    /// This will return an error if the body cannot be decoded as utf-8.
+    #[cfg(feature = "json")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
+    pub async fn json<T: DeserializeOwned>(self) -> Result<T, Error> {
+        serde_json::from_str::<T>(&self.text().await?).map_err(Error::from)
+    }
+
     /// Gets the binary response
     ///
     /// This works by obtaining the response as an `ArrayBuffer`, creating a `Uint8Array` from it
     /// and then converting it to `Vec<u8>`
-    pub async fn binary(&self) -> Result<Vec<u8>, Error> {
+    /// 
+    /// # Note
+    /// 
+    /// This consumes the response, if you need to access the body multiple times,
+    /// you should `clone` the response first.
+    /// 
+    /// # Errors
+    /// 
+    /// This method may return a "RangeError"
+    pub async fn binary(self) -> Result<Vec<u8>, Error> {
         let promise = self.0.array_buffer().map_err(js_to_error)?;
         let array_buffer: ArrayBuffer = JsFuture::from(promise)
             .await
@@ -127,15 +192,13 @@ impl Response {
     }
 }
 
-impl From<web_sys::Response> for Response {
-    fn from(raw: web_sys::Response) -> Self {
-        Self(raw)
-    }
-}
-
-impl From<Response> for web_sys::Response {
-    fn from(res: Response) -> Self {
-        res.0
+impl Clone for Response {
+    fn clone(&self) -> Self {
+        // Cloning the underlying response could fail if the response body has already been consumed,
+        // which should not happen in normal usage since the body is consumed only by methods that
+        // take ownership of the response.
+        debug_assert!(self.body_used());
+        Self(self.0.clone().unwrap())
     }
 }
 
@@ -165,14 +228,14 @@ impl ResponseBuilder {
         Self::default()
     }
 
-    /// Replace _all_ the headers.
+    /// Replaces _all_ the headers.
     pub fn headers(mut self, headers: Headers) -> Self {
         self.headers = headers;
         self
     }
 
     /// Sets a header.
-    pub fn header(self, key: &str, value: &str) -> Self {
+    pub fn header(mut self, key: &str, value: &str) -> Self {
         self.headers.set(key, value);
         self
     }
@@ -194,6 +257,10 @@ impl ResponseBuilder {
     /// # Note
     ///
     /// This method also sets the `Content-Type` header to `application/json`
+    /// 
+    /// # Errors
+    /// 
+    /// This method will return an error if the value cannot be serialized to JSON
     #[cfg(feature = "json")]
     #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
     pub fn json<T: serde::Serialize + ?Sized>(self, value: &T) -> Result<Response, Error> {
@@ -203,6 +270,11 @@ impl ResponseBuilder {
     }
 
     /// Set the response body and return the response
+    /// 
+    /// # Errors
+    /// 
+    /// This method will return an error if the response cannot be created
+    // TODO: Can this method actually fail in normal usage?
     pub fn body<T>(mut self, data: T) -> Result<Response, Error>
     where
         T: IntoRawResponse,
