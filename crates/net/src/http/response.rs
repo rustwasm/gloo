@@ -184,7 +184,9 @@ impl ResponseBuilder {
 
     /// Get the contained status code if it exists
     pub fn get_status(&self) -> Option<f64> {
-        js_sys::Reflect::get(&self.options, &JsValue::from_str("status")).ok()?.as_f64()
+        js_sys::Reflect::get(&self.options, &JsValue::from_str("status"))
+            .ok()?
+            .as_f64()
     }
 
     /// Get the contained status text if it exists
@@ -306,5 +308,4 @@ impl Clone for ResponseBuilder {
         let options = self.options.clone();
         Self { headers, options }
     }
-
 }
