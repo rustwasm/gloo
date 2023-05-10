@@ -177,6 +177,23 @@ impl ResponseBuilder {
         self
     }
 
+    /// Get a reference to the contained headers
+    pub fn get_headers(&self) -> &Headers {
+        &self.headers
+    }
+
+    /// Get the contained status code if it exists
+    pub fn get_status(&self) -> Option<f64> {
+        js_sys::Reflect::get(&self.options, &JsValue::from_str("status")).ok()?.as_f64()
+    }
+
+    /// Get the contained status text if it exists
+    pub fn get_status_text(&self) -> Option<String> {
+        js_sys::Reflect::get(&self.options, &JsValue::from_str("statusText"))
+            .ok()?
+            .as_string()
+    }
+
     /// Set the status code
     pub fn status(mut self, status: u16) -> Self {
         self.options.status(status);
@@ -278,4 +295,16 @@ impl fmt::Debug for ResponseBuilder {
             .field("headers", &self.headers)
             .finish_non_exhaustive()
     }
+}
+
+impl Clone for ResponseBuilder {
+    fn clone(&self) -> Self {
+        let headers = Headers::new();
+        for (name, value) in self.headers.entries() {
+            headers.append(name.as_str(), value.as_str())
+        }
+        let options = self.options.clone();
+        Self { headers, options }
+    }
+
 }
