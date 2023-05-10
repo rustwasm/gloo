@@ -343,6 +343,11 @@ impl Request {
             .map_err(|e| panic!("fetch returned {:?}, not `Response` - this is a bug", e))
             .map(Response::from)
     }
+    /// attempts to clone the request via the Request.clone api
+    pub fn try_clone(&self) -> Result<Self, Error> {
+        let clone = self.0.clone().map_err(js_to_error)?;
+        Ok(Self(clone))
+    }
 }
 
 impl From<web_sys::Request> for Request {
