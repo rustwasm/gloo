@@ -26,8 +26,8 @@ async fn fetch_json() {
 
     let url = format!("{}/get", *HTTPBIN_URL);
     let resp = Request::get(&url).send().await.unwrap();
-    let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(resp.status(), 200);
+    let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(json.url, url);
 }
 
@@ -53,8 +53,8 @@ async fn gzip_response() {
         .send()
         .await
         .unwrap();
-    let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(resp.status(), 200);
+    let json: HttpBin = resp.json().await.unwrap();
     assert!(json.gzipped);
 }
 
@@ -95,8 +95,8 @@ async fn post_json() {
         .send()
         .await
         .unwrap();
-    let resp: HttpBin = req.json().await.unwrap();
     assert_eq!(req.status(), 200);
+    let resp: HttpBin = req.json().await.unwrap();
     assert_eq!(resp.json.data, "data");
     assert_eq!(resp.json.num, 42);
 }
@@ -112,8 +112,8 @@ async fn fetch_binary() {
         .send()
         .await
         .unwrap();
-    let json = resp.binary().await.unwrap();
     assert_eq!(resp.status(), 200);
+    let json = resp.binary().await.unwrap();
     let json: HttpBin = serde_json::from_slice(&json).unwrap();
     assert_eq!(json.data, ""); // default is empty string
 }
