@@ -265,12 +265,12 @@ impl Request {
     }
 
     /// Gets the body.
-    pub fn body(&self) -> Option<ReadableStream> {
+    pub fn body(self) -> Option<ReadableStream> {
         self.0.body()
     }
 
     /// Reads the request to completion, returning it as `FormData`.
-    pub async fn form_data(&self) -> Result<FormData, Error> {
+    pub async fn form_data(self) -> Result<FormData, Error> {
         let promise = self.0.form_data().map_err(js_to_error)?;
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         Ok(FormData::from(val))
@@ -279,12 +279,12 @@ impl Request {
     /// Reads the request to completion, parsing it as JSON.
     #[cfg(feature = "json")]
     #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-    pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
+    pub async fn json<T: DeserializeOwned>(self) -> Result<T, Error> {
         serde_json::from_str::<T>(&self.text().await?).map_err(Error::from)
     }
 
     /// Reads the reqeust as a String.
-    pub async fn text(&self) -> Result<String, Error> {
+    pub async fn text(self) -> Result<String, Error> {
         let promise = self.0.text().unwrap();
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         let string = js_sys::JsString::from(val);
@@ -295,7 +295,7 @@ impl Request {
     ///
     /// This works by obtaining the response as an `ArrayBuffer`, creating a `Uint8Array` from it
     /// and then converting it to `Vec<u8>`
-    pub async fn binary(&self) -> Result<Vec<u8>, Error> {
+    pub async fn binary(self) -> Result<Vec<u8>, Error> {
         let promise = self.0.array_buffer().map_err(js_to_error)?;
         let array_buffer: ArrayBuffer = JsFuture::from(promise)
             .await
