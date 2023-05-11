@@ -84,12 +84,12 @@ impl Response {
     }
 
     /// Gets the body.
-    pub fn body(&self) -> Option<web_sys::ReadableStream> {
+    pub fn body(self) -> Option<web_sys::ReadableStream> {
         self.0.body()
     }
 
     /// Reads the response to completion, returning it as `FormData`.
-    pub async fn form_data(&self) -> Result<web_sys::FormData, Error> {
+    pub async fn form_data(self) -> Result<web_sys::FormData, Error> {
         let promise = self.0.form_data().map_err(js_to_error)?;
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         Ok(web_sys::FormData::from(val))
@@ -98,12 +98,12 @@ impl Response {
     /// Reads the response to completion, parsing it as JSON.
     #[cfg(feature = "json")]
     #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-    pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
+    pub async fn json<T: DeserializeOwned>(self) -> Result<T, Error> {
         serde_json::from_str::<T>(&self.text().await?).map_err(Error::from)
     }
 
     /// Reads the response as a String.
-    pub async fn text(&self) -> Result<String, Error> {
+    pub async fn text(self) -> Result<String, Error> {
         let promise = self.0.text().unwrap();
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         let string = js_sys::JsString::from(val);
@@ -114,7 +114,7 @@ impl Response {
     ///
     /// This works by obtaining the response as an `ArrayBuffer`, creating a `Uint8Array` from it
     /// and then converting it to `Vec<u8>`
-    pub async fn binary(&self) -> Result<Vec<u8>, Error> {
+    pub async fn binary(self) -> Result<Vec<u8>, Error> {
         let promise = self.0.array_buffer().map_err(js_to_error)?;
         let array_buffer: ArrayBuffer = JsFuture::from(promise)
             .await
@@ -124,6 +124,12 @@ impl Response {
         let mut body = vec![0; typed_buff.length() as usize];
         typed_buff.copy_to(&mut body);
         Ok(body)
+    }
+
+    /// attempts to clone the request via the Response.clone api
+    pub fn try_clone(&self) -> Result<Self, Error> {
+        let clone = self.0.clone().map_err(js_to_error)?;
+        Ok(Self(clone))
     }
 }
 
