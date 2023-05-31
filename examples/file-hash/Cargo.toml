@@ -8,7 +8,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# We use gloo-worker to avoid dependency conflicts as Yew also uses gloo
+# We use the gloo-worker directly to avoid dependency conflicts as Yew also uses gloo.
 gloo-worker = { path = "../../crates/worker" }
 serde = "1.0.163"
 web-sys = { version = "0.3.63", features = ["File", "Blob", "ReadableStream"] }

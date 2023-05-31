@@ -43,16 +43,17 @@ impl Worker for HashWorker {
             let scope = scope.clone();
 
             spawn_local(async move {
-                // This is more of a demonstration of processing transferrable types
-                // than how to calculate hashes,
-                // if you are trying to calculate hashes in browsers for your application,
-                // please consider subtle crypto.
+                // This is a demonstration of codec and passing transferrable types to worker.
+                //
+                // If you are trying to calculate hashes in browsers for your application,
+                // please consider using subtle crypto.
+                //
                 // This example does not use subtle crypto
                 // because calculating hashes with subtle crypto doesn't need to be sent to a worker.
                 let mut hasher = Sha256::new();
 
                 // We assume that this file is big and cannot be loaded into the memory in one chunk.
-                // So we process this in chunks.
+                // So we process this as a stream.
                 let mut s = ReadableStream::from_raw(m.stream().unchecked_into()).into_stream();
 
                 while let Some(chunk) = s.try_next().await.unwrap() {
