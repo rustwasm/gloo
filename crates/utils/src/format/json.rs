@@ -51,7 +51,7 @@ pub trait JsValueSerdeExt: private::Sealed {
     ///
     /// This function will first call `JSON.stringify` on the `JsValue` itself.
     /// The resulting string is then passed into Rust which then parses it as
-    /// JSON into the resulting value. If given `undefined`, object will be silentrly changed to
+    /// JSON into the resulting value. If given `undefined`, object will be silently changed to
     /// null to avoid panic.
     ///
     /// Usage of this API requires activating the `serde` feature of
