@@ -43,7 +43,7 @@ impl Worker for HashWorker {
             let scope = scope.clone();
 
             spawn_local(async move {
-                // This is a demonstration of codec and passing transferrable types to worker.
+                // This is a demonstration of codec and how to pass transferrable types to worker.
                 //
                 // If you are trying to calculate hashes in browsers for your application,
                 // please consider using subtle crypto.
