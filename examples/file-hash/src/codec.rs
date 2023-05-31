@@ -25,21 +25,23 @@ impl TransferrableCodec {
     }
 }
 
+// This codec implementation relys on some internal implementation details about gloo worker message types.
+// This should be considered as a last resort approach after all other options are exhausted.
+//
+// In addition, using this approach could also potentially create unsound code.
+// This could cause data being sent to a wrong worker or with wrong handler id if it is not implemented
+// properly.
+//
+// You should only use this approach if you know how to make it sound.
+// This example mitigates this issue by only allowing 1 file to be processed at a time
+// and only 1 worker instance across the entire tab.
 impl Codec for TransferrableCodec {
     fn encode<I>(input: I) -> wasm_bindgen::JsValue
     where
         I: serde::Serialize,
     {
         let i = serde_wasm_bindgen::to_value(&input).expect("failed to encode");
-        // This relys on some internal implementation details about gloo worker message types.
-        // This should be considered as a last resort approach after all other possibilities are exhausted.
-        //
-        // Using this approach could potentially create unsound code.
-        // This could cause data being sent to wrong worker or with wrong handler id if mitigations are not
-        // in place.
-        // You should only use this if you know how to make it sound.
-        // This example mitigates it by only allowing 1 file to be processed at 1 time
-        // and only 1 worker instance across the entire tab.
+
         if i.is_object() {
             if let Ok(m) = Reflect::get(&i, &JsString::from("ProcessInput")) {
                 if let Ok(m) = m.dyn_into::<Array>() {
