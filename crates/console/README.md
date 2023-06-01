@@ -31,5 +31,5 @@ The following example logs text to the console using `console.log`
 ```rust
 use gloo_console::log;
 let object = JsValue::from("any JsValue can be logged");
-log!("text", object)
+log!("text", object);
 ```
