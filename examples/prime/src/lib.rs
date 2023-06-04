@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use futures::{FutureExt, StreamExt};
 use gloo::timers::future::sleep;
-use gloo::worker::reactor::ReactorScope;
+use gloo::worker::reactor::{reactor, ReactorScope};
 
 use futures::sink::SinkExt;
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,7 @@ pub enum ControlSignal {
     Stop,
 }
 
-#[gloo::worker::reactor]
+#[reactor]
 pub async fn Prime(mut scope: ReactorScope<ControlSignal, u64>) {
     while let Some(m) = scope.next().await {
         if m == ControlSignal::Start {
