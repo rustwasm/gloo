@@ -12,3 +12,10 @@ primes = "0.3.0"
 wasm-bindgen-futures = "0.4.33"
 console_error_panic_hook = "0.1.7"
 serde = { version = "1.0.147", features = ["derive"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = ["full"] }
+warp = "0.3"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.36"
