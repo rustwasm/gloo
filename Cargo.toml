@@ -12,25 +12,51 @@ documentation = "https://docs.rs/gloo/"
 categories = ["api-bindings", "wasm"]
 
 [dependencies]
-gloo-timers = { version = "0.2", path = "crates/timers" }
-gloo-events = { version = "0.1", path = "crates/events" }
-gloo-file = { version = "0.2", path = "crates/file" }
-gloo-dialogs = { version = "0.1", path = "crates/dialogs" }
-gloo-storage = { version = "0.2", path = "crates/storage" }
-gloo-render = { version = "0.1", path = "crates/render" }
-gloo-console = { version = "0.2", path = "crates/console" }
-gloo-utils = { version = "0.1", path = "crates/utils" }
-gloo-history = { version = "0.1", path = "crates/history" }
-gloo-worker = { version = "0.2", path = "crates/worker" }
-gloo-net = { version = "0.2", path = "crates/net" }
+gloo-timers = { version = "0.2", path = "crates/timers", optional = true }
+gloo-events = { version = "0.1", path = "crates/events", optional = true }
+gloo-file = { version = "0.2", path = "crates/file", optional = true }
+gloo-dialogs = { version = "0.1", path = "crates/dialogs", optional = true }
+gloo-storage = { version = "0.2", path = "crates/storage", optional = true }
+gloo-render = { version = "0.1", path = "crates/render", optional = true }
+gloo-console = { version = "0.2", path = "crates/console", optional = true }
+gloo-utils = { version = "0.1", path = "crates/utils", optional = true }
+gloo-history = { version = "0.1", path = "crates/history", optional = true }
+gloo-worker = { version = "0.2", path = "crates/worker", optional = true }
+gloo-net = { version = "0.2", path = "crates/net", optional = true }
 
 [features]
-default = []
+default = [
+    "timers",
+    "events",
+    "file",
+    "dialogs",
+    "storage",
+    "render",
+    "console",
+    "utils",
+    "history",
+    "worker",
+    "net",
+]
 futures = [
+    "timers",
+    "file",
+    "worker",
     "gloo-timers/futures",
     "gloo-file/futures",
     "gloo-worker/futures"
 ]
+timers = ["gloo-timers"]
+events = ["gloo-events"]
+file = ["gloo-file"]
+dialogs = ["gloo-dialogs"]
+storage = ["gloo-storage"]
+render = ["gloo-render"]
+console = ["gloo-console"]
+utils = ["gloo-utils"]
+history = ["gloo-history"]
+worker = ["gloo-worker"]
+net = ["gloo-net"]
 
 [package.metadata.docs.rs]
 features = ["futures"]
