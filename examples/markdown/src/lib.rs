@@ -1,5 +1,5 @@
-use pulldown_cmark::{html, Parser};
 use gloo::worker::oneshot::oneshot;
+use pulldown_cmark::{html, Parser};
 
 #[oneshot]
 pub async fn MarkdownWorker(input: String) -> String {

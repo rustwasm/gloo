@@ -41,7 +41,6 @@
 //! 1. [`#[oneshot]`](oneshot) - Worker where each input produces a single output.
 //! 2. [`#[reactor]`](reactor) - Worker that receives input(s) and may produce output(s).
 
-
 #![deny(
     clippy::all,
     missing_docs,
