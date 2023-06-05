@@ -17,7 +17,7 @@
 //! #### Overhead
 //!
 //! Gloo Workers use web workers. They incur a serialization overhead on the
-//! messages they send and receive. Bridges use [bincode](https://!github.com/servo/bincode)
+//! messages they send and receive. Bridges use [bincode](https://github.com/servo/bincode)
 //! by default to communicate with workers, so the cost is substantially higher
 //! than just calling a function.
 
