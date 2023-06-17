@@ -9,7 +9,6 @@ use oneshot::{oneshot_impl, OneshotFn};
 use reactor::{reactor_impl, ReactorFn};
 use worker_fn::{WorkerFn, WorkerName};
 
-#[proc_macro_error::proc_macro_error]
 #[proc_macro_attribute]
 pub fn reactor(attr: TokenStream, item: TokenStream) -> TokenStream {
     let item = parse_macro_input!(item as WorkerFn<ReactorFn>);
@@ -20,7 +19,6 @@ pub fn reactor(attr: TokenStream, item: TokenStream) -> TokenStream {
         .into()
 }
 
-#[proc_macro_error::proc_macro_error]
 #[proc_macro_attribute]
 pub fn oneshot(attr: TokenStream, item: TokenStream) -> TokenStream {
     let item = parse_macro_input!(item as WorkerFn<OneshotFn>);
