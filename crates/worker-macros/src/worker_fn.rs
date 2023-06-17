@@ -232,7 +232,7 @@ where
         func
     }
 
-    // Sometimes this users use gloo_worker directly, sometimes it is imported via gloo.
+    // Sometimes users use gloo_worker directly, sometimes it is imported via gloo.
     // We inspect Cargo.toml to find out.
     pub fn worker_crate_name() -> syn::Path {
         if let Ok(m) = crate_name("gloo-worker") {
