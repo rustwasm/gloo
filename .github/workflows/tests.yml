@@ -113,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        examples: [ markdown, prime ]
+        example: [ markdown, prime ]
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
