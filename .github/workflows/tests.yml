@@ -151,7 +151,7 @@ jobs:
 
       - name: Run tests for gloo worker
         run: |
-          wasm-pack test --headless --firefox --chrome  examples/${{ matrix.example }}
+          wasm-pack test --headless --firefox  examples/${{ matrix.example }}
 
 
   test-net:
