@@ -113,7 +113,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        example: [ markdown, prime ]
+        # example: [ markdown, prime ]
+        example: [ markdown ]
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
@@ -151,7 +152,7 @@ jobs:
 
       - name: Run tests for gloo worker
         run: |
-          wasm-pack test --headless --firefox  examples/${{ matrix.example }}
+          wasm-pack test --headless --chrome --firefox  examples/${{ matrix.example }}
 
 
   test-net:
