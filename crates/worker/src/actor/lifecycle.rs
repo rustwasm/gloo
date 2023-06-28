@@ -1,10 +1,10 @@
 use wasm_bindgen::prelude::*;
 
-use crate::messages::ToWorker;
-use crate::native_worker::{DedicatedWorker, WorkerSelf};
-use crate::scope::{WorkerDestroyHandle, WorkerScope};
-use crate::traits::Worker;
-use crate::Shared;
+use super::messages::ToWorker;
+use super::native_worker::{DedicatedWorker, WorkerSelf};
+use super::scope::{WorkerDestroyHandle, WorkerScope};
+use super::traits::Worker;
+use super::Shared;
 
 pub(crate) struct WorkerState<W>
 where
@@ -48,7 +48,7 @@ pub(crate) struct WorkerRunnable<W: Worker> {
 
 impl<W> WorkerRunnable<W>
 where
-    W: Worker,
+    W: Worker + 'static,
 {
     pub fn run(self) {
         let mut state = self.state.borrow_mut();

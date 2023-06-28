@@ -1,0 +1,5 @@
+error: reactor workers must be asynchronous
+ --> tests/reactor/sync-fail.rs:4:4
+  |
+4 | fn Worker(_scope: ::gloo::worker::reactor::ReactorScope<(), ()>) {}
+  |    ^^^^^^

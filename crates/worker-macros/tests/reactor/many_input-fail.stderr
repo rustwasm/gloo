@@ -1,0 +1,5 @@
+error: reactor worker can accept at most 1 argument
+ --> tests/reactor/many_input-fail.rs:2:31
+  |
+2 | async fn Worker(input_1: u32, input_2: u32) {
+  |                               ^^^^^^^^^^^^

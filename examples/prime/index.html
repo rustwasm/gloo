@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prime Calculator</title>
+
+    <link data-trunk rel="rust" data-type="worker" data-wasm-opt="z" data-bin="example_prime_worker" />
+    <link data-trunk rel="rust" data-wasm-opt="z" data-bin="example_prime_app" />
+    <style>
+        .result-item {
+            padding: 10px;
+            display: inline-block;
+        }
+
+    </style>
+</head>
+
+<body>
+    <h1>Find Prime</h1>
+    <p>This page demonstrates how to calculate prime in a web worker.</p>
+    <button id="start-btn">Start</button>
+    <div id="result"></div>
+</body>
+
+</html>

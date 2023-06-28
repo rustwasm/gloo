@@ -1,0 +1,24 @@
+[package]
+name = "gloo-worker-macros"
+version = "0.1.0"
+authors = ["Rust and WebAssembly Working Group"]
+edition = "2021"
+readme = "README.md"
+description = "Convenience crate for working with Web Workers"
+repository = "https://github.com/rustwasm/gloo/tree/master/crates/worker"
+homepage = "https://github.com/rustwasm/gloo"
+license = "MIT OR Apache-2.0"
+categories = ["api-bindings", "asynchronous", "wasm"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro-crate = "1.2.1"
+proc-macro2 = "1.0.47"
+quote = "1.0.21"
+syn = { version = "2.0.15", features = ["full"] }
+
+[dev-dependencies]
+trybuild = "1"
+gloo = { path = "../..", features = ["futures"] }

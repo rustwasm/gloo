@@ -6,15 +6,17 @@ use std::rc::{Rc, Weak};
 
 use gloo_utils::window;
 use js_sys::Array;
+use serde::de::Deserialize;
+use serde::ser::Serialize;
 use web_sys::{Blob, BlobPropertyBag, Url};
 
-use crate::bridge::{CallbackMap, WorkerBridge};
+use super::bridge::{CallbackMap, WorkerBridge};
+use super::handler_id::HandlerId;
+use super::messages::FromWorker;
+use super::native_worker::{DedicatedWorker, NativeWorkerExt};
+use super::traits::Worker;
+use super::{Callback, Shared};
 use crate::codec::{Bincode, Codec};
-use crate::handler_id::HandlerId;
-use crate::messages::FromWorker;
-use crate::native_worker::{DedicatedWorker, NativeWorkerExt};
-use crate::traits::Worker;
-use crate::{Callback, Shared};
 
 fn create_worker(path: &str) -> DedicatedWorker {
     let js_shim_url = Url::new_with_base(
@@ -61,7 +63,7 @@ where
 
 impl<W, CODEC> Default for WorkerSpawner<W, CODEC>
 where
-    W: Worker,
+    W: Worker + 'static,
     CODEC: Codec,
 {
     fn default() -> Self {
@@ -71,11 +73,11 @@ where
 
 impl<W, CODEC> WorkerSpawner<W, CODEC>
 where
-    W: Worker,
+    W: Worker + 'static,
     CODEC: Codec,
 {
     /// Creates a [WorkerSpawner].
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             _marker: PhantomData,
             callback: None,
@@ -104,7 +106,11 @@ where
     }
 
     /// Spawns a Worker.
-    pub fn spawn(&self, path: &str) -> WorkerBridge<W> {
+    pub fn spawn(&self, path: &str) -> WorkerBridge<W>
+    where
+        W::Input: Serialize + for<'de> Deserialize<'de>,
+        W::Output: Serialize + for<'de> Deserialize<'de>,
+    {
         let pending_queue = Rc::new(RefCell::new(Some(Vec::new())));
         let handler_id = HandlerId::new();
         let mut callbacks = HashMap::new();

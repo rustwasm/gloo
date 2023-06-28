@@ -70,10 +70,12 @@ members = [
     "crates/utils",
     "crates/history",
     "crates/worker",
+    "crates/worker-macros",
     "crates/net",
 
     "examples/markdown",
     "examples/clock",
+    "examples/prime",
 ]
 
 # Passing arguments to the docsrs builder in order to properly document cfg's.
