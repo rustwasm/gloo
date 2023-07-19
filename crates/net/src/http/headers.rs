@@ -6,6 +6,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 // I experimented with using `js_sys::Object` for the headers, since this object is marked
 // experimental in MDN. However it's in the fetch spec, and it's necessary for appending headers.
 /// A wrapper around `web_sys::Headers`.
+#[derive(Clone)]
 pub struct Headers {
     raw: web_sys::Headers,
 }
