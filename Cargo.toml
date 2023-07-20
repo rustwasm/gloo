@@ -2,7 +2,7 @@
 authors = ["Rust and WebAssembly Working Group"]
 description = "A modular toolkit for Rust and WebAssembly"
 edition = "2018"
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 name = "gloo"
 readme = "README.md"
 version = "0.8.1"
