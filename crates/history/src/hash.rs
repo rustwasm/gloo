@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::cell::RefCell;
 use std::fmt;
 
 use gloo_utils::window;
@@ -238,36 +237,26 @@ impl HashHistory {
 impl Default for HashHistory {
     fn default() -> Self {
         thread_local! {
-            static HASH_HISTORY: RefCell<Option<HashHistory>> = RefCell::default();
+            static HASH_HISTORY: HashHistory = {
+                let browser_history = BrowserHistory::new();
+                let browser_location = browser_history.location();
+
+                let current_hash = browser_location.hash();
+
+                // Hash needs to start with #/.
+                if current_hash.is_empty() || !current_hash.starts_with("#/") {
+                    let url = HashHistory::get_url();
+                    url.set_hash("#/");
+
+                    browser_history.replace(url.href());
+                }
+
+                HashHistory {
+                    inner: browser_history,
+                }
+            };
         }
 
-        HASH_HISTORY.with(|m| {
-            let mut m = m.borrow_mut();
-
-            match *m {
-                Some(ref m) => m.clone(),
-                None => {
-                    let browser_history = BrowserHistory::new();
-                    let browser_location = browser_history.location();
-
-                    let current_hash = browser_location.hash();
-
-                    // Hash needs to start with #/.
-                    if current_hash.is_empty() || !current_hash.starts_with("#/") {
-                        let url = Self::get_url();
-                        url.set_hash("#/");
-
-                        browser_history.replace(url.href());
-                    }
-
-                    let history = Self {
-                        inner: browser_history,
-                    };
-
-                    *m = Some(history.clone());
-                    history
-                }
-            }
-        })
+        HASH_HISTORY.with(|s| s.clone())
     }
 }
