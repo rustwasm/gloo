@@ -148,7 +148,7 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -178,7 +178,7 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
