@@ -127,9 +127,13 @@
 
 ## `net`
 
-### Version "0.2.7"
+### Version "0.3.1"
 
 - export RequestBuilder and ResponseBuilder as public
+
+### Version "0.3.0"
+
+- Seanaye/feat/serverside http (#312)
 
 ### Version "0.2.6"
 
