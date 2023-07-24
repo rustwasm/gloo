@@ -93,6 +93,11 @@
 
 ## `history`
 
+### Version 0.1.4
+
+- Use thread_local!'s lazy initialization instead of RefCell<Option<_>> (#358)
+- Fix required feature set of serde dependency (#357)
+
 ### Version "0.1.3"
 
 - Fix some typos (#313)
@@ -121,6 +126,10 @@
 
 
 ## `net`
+
+### Version "0.2.7"
+
+- export RequestBuilder and ResponseBuilder as public
 
 ### Version "0.2.6"
 
@@ -301,6 +310,10 @@
 
 
 ## `worker`
+
+### Version 0.3.0
+
+- Function Worker (#267)
 
 ### Version "0.2.0"
 
