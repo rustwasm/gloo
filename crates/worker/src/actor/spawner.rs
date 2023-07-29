@@ -105,7 +105,11 @@ where
         self
     }
 
-    fn spawn_inner(&self, worker: DedicatedWorker) -> WorkerBridge<W> {
+    fn spawn_inner(&self, worker: DedicatedWorker) -> WorkerBridge<W>
+    where
+        W::Input: Serialize + for<'de> Deserialize<'de>,
+        W::Output: Serialize + for<'de> Deserialize<'de>,
+    {
         let pending_queue = Rc::new(RefCell::new(Some(Vec::new())));
         let handler_id = HandlerId::new();
         let mut callbacks = HashMap::new();
