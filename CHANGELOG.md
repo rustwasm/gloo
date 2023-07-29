@@ -315,6 +315,10 @@
 
 ## `worker`
 
+### Next Version
+
+- Add Worker Loader (#349)
+
 ### Version 0.3.0
 
 - Function Worker (#267)
