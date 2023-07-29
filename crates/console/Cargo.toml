@@ -3,13 +3,14 @@ name = "gloo-console"
 description = "Convenience crate for working with browser's console"
 version = "0.2.3"
 authors = ["Rust and WebAssembly Working Group"]
-edition = "2018"
+edition = "2021"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/rustwasm/gloo/tree/master/crates/console"
 homepage = "https://github.com/rustwasm/gloo"
 documentation = "https://docs.rs/gloo-console/"
 categories = ["api-bindings", "development-tools::profiling", "wasm"]
+rust-version = "1.56"
 
 [dependencies]
 wasm-bindgen = "0.2"
@@ -18,10 +19,7 @@ serde = { version = "1", features = ["derive"] }
 gloo-utils = { version = "0.1", path = "../utils", features = ["serde"] }
 [dependencies.web-sys]
 version = "0.3"
-features = [
-    "console",
-    "Document"
-]
+features = ["console", "Document"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.4"

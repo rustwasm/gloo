@@ -2,8 +2,9 @@
 name = "example-clock"
 version = "0.1.0"
 authors = ["Rust and WebAssembly Working Group"]
-edition = "2018"
+edition = "2021"
 publish = false
+rust-version = "1.56"
 
 [lib]
 crate-type = ["cdylib"]
@@ -18,10 +19,4 @@ console_error_panic_hook = "0.1.6"
 
 [dependencies.web-sys]
 version = "0.3.19"
-features = [
-    "console",
-    "Window",
-    "Document",
-    "Element",
-    "Node",
-]
+features = ["console", "Window", "Document", "Element", "Node"]

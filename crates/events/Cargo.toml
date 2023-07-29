@@ -3,23 +3,20 @@ name = "gloo-events"
 description = "Convenience crate for working with DOM event listeners"
 version = "0.1.2"
 authors = ["Rust and WebAssembly Working Group"]
-edition = "2018"
+edition = "2021"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/rustwasm/gloo/tree/master/crates/events"
 homepage = "https://github.com/rustwasm/gloo"
 categories = ["api-bindings", "asynchronous", "web-programming", "wasm"]
+rust-version = "1.56"
 
 [dependencies]
 wasm-bindgen = "0.2"
 
 [dependencies.web-sys]
 version = "0.3.31"
-features = [
-    "Event",
-    "EventTarget",
-    "AddEventListenerOptions",
-]
+features = ["Event", "EventTarget", "AddEventListenerOptions"]
 
 [dev-dependencies]
 js-sys = "0.3.31"

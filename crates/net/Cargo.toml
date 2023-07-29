@@ -1,14 +1,18 @@
 [package]
 name = "gloo-net"
 version = "0.3.1"
-authors = ["Rust and WebAssembly Working Group", "Muhammad Hamza <muhammadhamza1311@gmail.com>"]
-edition = "2018"
+authors = [
+    "Rust and WebAssembly Working Group",
+    "Muhammad Hamza <muhammadhamza1311@gmail.com>",
+]
+edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/rustwasm/gloo"
 description = "HTTP requests library for WASM Apps"
 readme = "README.md"
 keywords = ["requests", "http", "wasm", "websockets"]
 categories = ["wasm", "web-programming::http-client", "api-bindings"]
+rust-version = "1.56"
 
 [package.metadata.docs.rs]
 all-features = true
