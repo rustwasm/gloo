@@ -16,11 +16,14 @@ pub enum Error {
         #[from]
         serde_json::Error,
     ),
+    /// Error returned by this crate
+    #[error("{0}")]
+    GlooError(String),
 }
 
-#[cfg(any(feature = "http", feature = "websocket"))]
+#[cfg(any(feature = "http", feature = "websocket", feature = "eventsource"))]
 pub(crate) use conversion::*;
-#[cfg(any(feature = "http", feature = "websocket"))]
+#[cfg(any(feature = "http", feature = "websocket", feature = "eventsource"))]
 mod conversion {
     use gloo_utils::errors::JsError;
     use std::convert::TryFrom;

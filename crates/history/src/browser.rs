@@ -85,6 +85,7 @@ impl History for BrowserHistory {
             .push_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to push state.");
 
+        drop(states);
         self.notify_callbacks();
     }
 
@@ -98,10 +99,12 @@ impl History for BrowserHistory {
 
         let mut states = self.states.borrow_mut();
         states.insert(id, Rc::new(state) as Rc<dyn Any>);
+
         self.inner
             .replace_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to replace state.");
 
+        drop(states);
         self.notify_callbacks();
     }
 
@@ -145,7 +148,7 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -170,11 +173,12 @@ impl History for BrowserHistory {
             .push_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to push history.");
 
+        drop(states);
         self.notify_callbacks();
         Ok(())
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -199,6 +203,7 @@ impl History for BrowserHistory {
             .replace_state_with_url(&history_state, "", Some(&url))
             .expect_throw("failed to replace history.");
 
+        drop(states);
         self.notify_callbacks();
         Ok(())
     }
@@ -245,47 +250,34 @@ impl Default for BrowserHistory {
     fn default() -> Self {
         // We create browser history only once.
         thread_local! {
-            static BROWSER_HISTORY: RefCell<Option<BrowserHistory>> = RefCell::default();
-            static LISTENER: RefCell<Option<EventListener>> = RefCell::default();
+            static BROWSER_HISTORY: (BrowserHistory, EventListener) = {
+                let window = window();
+
+                let inner = window
+                    .history()
+                    .expect_throw("Failed to create browser history. Are you using a browser?");
+                let callbacks = Rc::default();
+
+                let history = BrowserHistory {
+                    inner,
+                    callbacks,
+                    states: Rc::default(),
+                };
+
+                let listener = {
+                    let history = history.clone();
+
+                    // Listens to popstate.
+                    EventListener::new(&window, "popstate", move |_| {
+                        history.notify_callbacks();
+                    })
+                };
+
+                (history, listener)
+            };
         }
 
-        BROWSER_HISTORY.with(|m| {
-            let mut m = m.borrow_mut();
-
-            match *m {
-                Some(ref m) => m.clone(),
-                None => {
-                    let window = window();
-
-                    let inner = window
-                        .history()
-                        .expect_throw("Failed to create browser history. Are you using a browser?");
-                    let callbacks = Rc::default();
-
-                    let history = Self {
-                        inner,
-                        callbacks,
-                        states: Rc::default(),
-                    };
-
-                    {
-                        let history = history.clone();
-
-                        // Listens to popstate.
-                        LISTENER.with(move |m| {
-                            let mut listener = m.borrow_mut();
-
-                            *listener = Some(EventListener::new(&window, "popstate", move |_| {
-                                history.notify_callbacks();
-                            }));
-                        });
-                    }
-
-                    *m = Some(history.clone());
-                    history
-                }
-            }
-        })
+        BROWSER_HISTORY.with(|(history, _)| history.clone())
     }
 }
 

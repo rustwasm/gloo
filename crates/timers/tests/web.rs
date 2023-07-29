@@ -1,6 +1,4 @@
-//! Test suite for the Web and headless browsers.
-
-#![cfg(all(target_arch = "wasm32", feature = "futures"))]
+#![cfg(all(target_family = "wasm", feature = "futures"))]
 
 use futures_channel::{mpsc, oneshot};
 use futures_util::{

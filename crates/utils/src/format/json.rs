@@ -6,7 +6,7 @@ mod private {
     impl Sealed for wasm_bindgen::JsValue {}
 }
 
-/// Extenstion trait to provide conversion between [`JsValue`](wasm_bindgen::JsValue) and [`serde`].
+/// Extension trait to provide conversion between [`JsValue`](wasm_bindgen::JsValue) and [`serde`].
 ///
 /// Usage of this API requires activating the `serde` feature of the `gloo-utils` crate.
 #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
@@ -29,7 +29,8 @@ pub trait JsValueSerdeExt: private::Sealed {
     /// use gloo_utils::format::JsValueSerdeExt;
     ///
     /// # fn no_run() {
-    /// assert_eq!(JsValue::from("bar").into_serde::<String>().unwrap(), "bar");
+    /// let array = vec![1,2,3];
+    /// let obj = JsValue::from_serde(&array);
     /// # }
     /// ```
     /// # Errors
@@ -50,7 +51,7 @@ pub trait JsValueSerdeExt: private::Sealed {
     ///
     /// This function will first call `JSON.stringify` on the `JsValue` itself.
     /// The resulting string is then passed into Rust which then parses it as
-    /// JSON into the resulting value. If given `undefined`, object will be silentrly changed to
+    /// JSON into the resulting value. If given `undefined`, object will be silently changed to
     /// null to avoid panic.
     ///
     /// Usage of this API requires activating the `serde` feature of
@@ -63,8 +64,7 @@ pub trait JsValueSerdeExt: private::Sealed {
     /// use gloo_utils::format::JsValueSerdeExt;
     ///
     /// # fn no_run() {
-    /// let array = vec![1,2,3];
-    /// let obj = JsValue::from_serde(&array);
+    /// assert_eq!(JsValue::from("bar").into_serde::<String>().unwrap(), "bar");
     /// # }
     /// ```
     ///

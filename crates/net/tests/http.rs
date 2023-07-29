@@ -1,14 +1,16 @@
-use gloo_net::http::*;
+use gloo_net::http::Request;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
 
-const HTTPBIN_URL: &str = env!("HTTPBIN_URL");
+static HTTPBIN_URL: Lazy<&'static str> =
+    Lazy::new(|| option_env!("HTTPBIN_URL").expect("Did you set HTTPBIN_URL?"));
 
 #[wasm_bindgen_test]
 async fn fetch() {
-    let resp = Request::get(&format!("{}/get", HTTPBIN_URL))
+    let resp = Request::get(&format!("{}/get", *HTTPBIN_URL))
         .send()
         .await
         .unwrap();
@@ -22,7 +24,7 @@ async fn fetch_json() {
         url: String,
     }
 
-    let url = format!("{}/get", HTTPBIN_URL);
+    let url = format!("{}/get", *HTTPBIN_URL);
     let resp = Request::get(&url).send().await.unwrap();
     let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(resp.status(), 200);
@@ -31,7 +33,7 @@ async fn fetch_json() {
 
 #[wasm_bindgen_test]
 async fn auth_valid_bearer() {
-    let resp = Request::get(&format!("{}/get", HTTPBIN_URL))
+    let resp = Request::get(&format!("{}/get", *HTTPBIN_URL))
         .header("Authorization", "Bearer token")
         .send()
         .await
@@ -47,13 +49,13 @@ async fn gzip_response() {
         gzipped: bool,
     }
 
-    let resp = Request::get(&format!("{}/gzip", HTTPBIN_URL))
+    let resp = Request::get(&format!("{}/gzip", *HTTPBIN_URL))
         .send()
         .await
         .unwrap();
     let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(resp.status(), 200);
-    assert_eq!(json.gzipped, true);
+    assert!(json.gzipped);
 }
 
 #[wasm_bindgen_test]
@@ -64,7 +66,7 @@ async fn json_body() {
         num: i16,
     }
 
-    let result = Request::post(&format!("{}/anything", HTTPBIN_URL)).json(&Payload {
+    let result = Request::post(&format!("{}/anything", *HTTPBIN_URL)).json(&Payload {
         data: "data".to_string(),
         num: 42,
     });
@@ -84,7 +86,7 @@ async fn post_json() {
         json: Payload,
     }
 
-    let req = Request::post(&format!("{}/anything", HTTPBIN_URL))
+    let req = Request::post(&format!("{}/anything", *HTTPBIN_URL))
         .json(&Payload {
             data: "data".to_string(),
             num: 42,
@@ -106,7 +108,7 @@ async fn fetch_binary() {
         data: String,
     }
 
-    let resp = Request::post(&format!("{}/post", HTTPBIN_URL))
+    let resp = Request::post(&format!("{}/post", *HTTPBIN_URL))
         .send()
         .await
         .unwrap();
@@ -118,20 +120,20 @@ async fn fetch_binary() {
 
 #[wasm_bindgen_test]
 async fn query_preserve_initial() {
-    let resp = Request::get(&format!("{}/get?key=value", HTTPBIN_URL))
+    let resp = Request::get(&format!("{}/get?key=value", *HTTPBIN_URL))
         .query([("q", "val")])
         .send()
         .await
         .unwrap();
-    assert_eq!(resp.url(), format!("{}/get?key=value&q=val", HTTPBIN_URL));
+    assert_eq!(resp.url(), format!("{}/get?key=value&q=val", *HTTPBIN_URL));
 }
 
 #[wasm_bindgen_test]
 async fn query_preserve_duplicate_params() {
-    let resp = Request::get(&format!("{}/get", HTTPBIN_URL))
+    let resp = Request::get(&format!("{}/get", *HTTPBIN_URL))
         .query([("q", "1"), ("q", "2")])
         .send()
         .await
         .unwrap();
-    assert_eq!(resp.url(), format!("{}/get?q=1&q=2", HTTPBIN_URL));
+    assert_eq!(resp.url(), format!("{}/get?q=1&q=2", *HTTPBIN_URL));
 }

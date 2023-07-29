@@ -4,18 +4,23 @@ use std::fmt;
 use std::future::Future;
 use std::rc::Rc;
 
+use serde::de::Deserialize;
+use serde::ser::Serialize;
 use wasm_bindgen_futures::spawn_local;
 
+use super::handler_id::HandlerId;
+use super::lifecycle::{WorkerLifecycleEvent, WorkerRunnable, WorkerState};
+use super::messages::FromWorker;
+use super::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
+use super::traits::Worker;
+use super::Shared;
 use crate::codec::Codec;
-use crate::handler_id::HandlerId;
-use crate::lifecycle::{WorkerLifecycleEvent, WorkerRunnable, WorkerState};
-use crate::messages::FromWorker;
-use crate::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
-use crate::traits::Worker;
-use crate::Shared;
 
 /// A handle that closes the worker when it is dropped.
-pub struct WorkerDestroyHandle<W: Worker> {
+pub struct WorkerDestroyHandle<W>
+where
+    W: Worker + 'static,
+{
     scope: WorkerScope<W>,
 }
 
@@ -66,12 +71,13 @@ impl<W: Worker> Clone for WorkerScope<W> {
 
 impl<W> WorkerScope<W>
 where
-    W: Worker,
+    W: Worker + 'static,
 {
     /// Create worker scope
     pub(crate) fn new<CODEC>() -> Self
     where
         CODEC: Codec,
+        W::Output: Serialize + for<'de> Deserialize<'de>,
     {
         let post_msg = move |msg: FromWorker<W>| {
             DedicatedWorker::worker_self().post_packed_message::<_, CODEC>(msg)

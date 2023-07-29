@@ -17,6 +17,7 @@ yourself.
   - [Building](#building)
   - [Testing](#testing)
     - [Wasm Headless Browser Tests](#wasm-headless-browser-tests)
+    - [Wasm Node Tests](#wasm-node-tests)
     - [Non-Wasm Tests](#non-wasm-tests)
   - [Formatting](#formatting)
   - [Updating `README.md`s](#updating-readmemds)
@@ -79,6 +80,14 @@ To run headless browser tests for a particular crate:
 
 ```shell
 wasm-pack test crates/my-particular-crate --headless --firefox # or --safari or --chrome
+```
+
+#### Wasm Node Tests
+
+To run tests in Node.js:
+
+```shell
+wasm-pack test crates/my-particular-crate --node
 ```
 
 #### Non-Wasm Tests

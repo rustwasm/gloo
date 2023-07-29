@@ -12,7 +12,7 @@ use crate::listener::HistoryListener;
 use crate::location::Location;
 use crate::memory::MemoryHistory;
 
-/// A [`History`] that provides a universial API to the underlying history type.
+/// A [`History`] that provides a universal API to the underlying history type.
 #[derive(Clone, PartialEq, Debug)]
 pub enum AnyHistory {
     /// A Browser History.
@@ -105,7 +105,7 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -123,7 +123,7 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,

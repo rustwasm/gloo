@@ -51,12 +51,12 @@ pub struct WebSocket {
     #[pin]
     message_receiver: mpsc::UnboundedReceiver<StreamMessage>,
     #[allow(clippy::type_complexity)]
-    closures: Rc<(
+    closures: (
         Closure<dyn FnMut()>,
         Closure<dyn FnMut(MessageEvent)>,
         Closure<dyn FnMut(web_sys::Event)>,
         Closure<dyn FnMut(web_sys::CloseEvent)>,
-    )>,
+    ),
 }
 
 impl WebSocket {
@@ -109,8 +109,7 @@ impl WebSocket {
         let json = <JsValue as gloo_utils::format::JsValueSerdeExt>::from_serde(protocols)
             .map_err(|err| {
                 js_sys::Error::new(&format!(
-                    "Failed to convert protocols to Javascript value: {}",
-                    err
+                    "Failed to convert protocols to Javascript value: {err}"
                 ))
             })?;
         Self::setup(web_sys::WebSocket::new_with_str_sequence(url, &json))
@@ -136,32 +135,40 @@ impl WebSocket {
             }) as Box<dyn FnMut()>)
         };
 
-        ws.set_onopen(Some(open_callback.as_ref().unchecked_ref()));
+        ws.add_event_listener_with_callback_and_add_event_listener_options(
+            "open",
+            open_callback.as_ref().unchecked_ref(),
+            web_sys::AddEventListenerOptions::new().once(true),
+        )
+        .map_err(js_to_js_error)?;
 
         let message_callback: Closure<dyn FnMut(MessageEvent)> = {
             let sender = sender.clone();
             Closure::wrap(Box::new(move |e: MessageEvent| {
-                let sender = sender.clone();
                 let msg = parse_message(e);
                 let _ = sender.unbounded_send(StreamMessage::Message(msg));
             }) as Box<dyn FnMut(MessageEvent)>)
         };
 
-        ws.set_onmessage(Some(message_callback.as_ref().unchecked_ref()));
+        ws.add_event_listener_with_callback("message", message_callback.as_ref().unchecked_ref())
+            .map_err(js_to_js_error)?;
 
         let error_callback: Closure<dyn FnMut(web_sys::Event)> = {
             let sender = sender.clone();
+            let waker = Rc::clone(&waker);
             Closure::wrap(Box::new(move |_e: web_sys::Event| {
-                let sender = sender.clone();
+                if let Some(waker) = waker.borrow_mut().take() {
+                    waker.wake();
+                }
                 let _ = sender.unbounded_send(StreamMessage::ErrorEvent);
             }) as Box<dyn FnMut(web_sys::Event)>)
         };
 
-        ws.set_onerror(Some(error_callback.as_ref().unchecked_ref()));
+        ws.add_event_listener_with_callback("error", error_callback.as_ref().unchecked_ref())
+            .map_err(js_to_js_error)?;
 
         let close_callback: Closure<dyn FnMut(web_sys::CloseEvent)> = {
             Closure::wrap(Box::new(move |e: web_sys::CloseEvent| {
-                let sender = sender.clone();
                 let close_event = CloseEvent {
                     code: e.code(),
                     reason: e.reason(),
@@ -172,18 +179,23 @@ impl WebSocket {
             }) as Box<dyn FnMut(web_sys::CloseEvent)>)
         };
 
-        ws.set_onclose(Some(close_callback.as_ref().unchecked_ref()));
+        ws.add_event_listener_with_callback_and_add_event_listener_options(
+            "close",
+            close_callback.as_ref().unchecked_ref(),
+            web_sys::AddEventListenerOptions::new().once(true),
+        )
+        .map_err(js_to_js_error)?;
 
         Ok(Self {
             ws,
             sink_waker: waker,
             message_receiver: receiver,
-            closures: Rc::new((
+            closures: (
                 open_callback,
                 message_callback,
                 error_callback,
                 close_callback,
-            )),
+            ),
         })
     }
 
@@ -301,6 +313,25 @@ impl Stream for WebSocket {
 impl PinnedDrop for WebSocket {
     fn drop(self: Pin<&mut Self>) {
         self.ws.close().unwrap();
+
+        for (ty, cb) in [
+            ("open", self.closures.0.as_ref()),
+            ("message", self.closures.1.as_ref()),
+            ("error", self.closures.2.as_ref()),
+        ] {
+            let _ = self
+                .ws
+                .remove_event_listener_with_callback(ty, cb.unchecked_ref());
+        }
+
+        if let Ok(close_event) = web_sys::CloseEvent::new_with_event_init_dict(
+            "close",
+            web_sys::CloseEventInit::new()
+                .code(1000)
+                .reason("client dropped"),
+        ) {
+            let _ = self.ws.dispatch_event(&close_event);
+        }
     }
 }
 
@@ -313,11 +344,12 @@ mod tests {
 
     wasm_bindgen_test_configure!(run_in_browser);
 
-    const ECHO_SERVER_URL: &str = env!("ECHO_SERVER_URL");
-
     #[wasm_bindgen_test]
     fn websocket_works() {
-        let ws = WebSocket::open(ECHO_SERVER_URL).unwrap();
+        let ws_echo_server_url =
+            option_env!("WS_ECHO_SERVER_URL").expect("Did you set WS_ECHO_SERVER_URL?");
+
+        let ws = WebSocket::open(ws_echo_server_url).unwrap();
         let (mut sender, mut receiver) = ws.split();
 
         spawn_local(async move {
@@ -333,8 +365,8 @@ mod tests {
 
         spawn_local(async move {
             // ignore first message
-            // the echo-server used sends it's info in the first message
-            // let _ = ws.next().await;
+            // the echo-server uses it to send it's info in the first message
+            let _ = receiver.next().await;
 
             assert_eq!(
                 receiver.next().await.unwrap().unwrap(),

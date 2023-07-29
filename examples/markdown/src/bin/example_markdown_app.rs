@@ -4,8 +4,7 @@ use wasm_bindgen::prelude::*;
 use gloo::utils::document;
 use gloo::worker::Spawnable;
 
-use js_sys::Promise;
-use wasm_bindgen_futures::{spawn_local, JsFuture};
+use wasm_bindgen_futures::spawn_local;
 
 static MARKDOWN_CONTENT: &str = r#"
 ## Hello
@@ -32,10 +31,7 @@ fn main() {
     bridge.send(MARKDOWN_CONTENT.to_owned());
 
     spawn_local(async move {
-        bridge.send(MARKDOWN_CONTENT.to_owned());
-
-        // We need to hold the bridge until the worker resolves.
-        let promise = Promise::new(&mut |_, _| {});
-        let _ = JsFuture::from(promise).await;
+        let content = bridge.run(MARKDOWN_CONTENT.to_owned()).await;
+        root.set_inner_html(&content);
     });
 }

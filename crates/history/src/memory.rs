@@ -223,7 +223,7 @@ impl History for MemoryHistory {
 
         let location = Location {
             path: route.to_string().into(),
-            query_str: format!("?{}", query).into(),
+            query_str: format!("?{query}").into(),
             hash: "".to_string().into(),
             state: None,
             id: Some(get_id()),
@@ -253,7 +253,7 @@ impl History for MemoryHistory {
 
         let location = Location {
             path: route.to_string().into(),
-            query_str: format!("?{}", query).into(),
+            query_str: format!("?{query}").into(),
             hash: "".to_string().into(),
             state: None,
             id: Some(get_id()),
@@ -266,7 +266,7 @@ impl History for MemoryHistory {
         Ok(())
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -286,7 +286,7 @@ impl History for MemoryHistory {
 
         let location = Location {
             path: route.to_string().into(),
-            query_str: format!("?{}", query).into(),
+            query_str: format!("?{query}").into(),
             hash: "".to_string().into(),
             state: Some(Rc::new(state) as Rc<dyn Any>),
             id: Some(get_id()),
@@ -299,7 +299,7 @@ impl History for MemoryHistory {
         Ok(())
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -319,7 +319,7 @@ impl History for MemoryHistory {
 
         let location = Location {
             path: route.to_string().into(),
-            query_str: format!("?{}", query).into(),
+            query_str: format!("?{query}").into(),
             hash: "".to_string().into(),
             state: Some(Rc::new(state) as Rc<dyn Any>),
             id: Some(get_id()),
@@ -355,7 +355,7 @@ impl MemoryHistory {
         Self::default()
     }
 
-    /// Creates a new [`MemoryHistory`] with entires.
+    /// Creates a new [`MemoryHistory`] with entries.
     pub fn with_entries<'a>(entries: impl IntoIterator<Item = impl Into<Cow<'a, str>>>) -> Self {
         let self_ = Self::new();
 

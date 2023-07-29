@@ -7,34 +7,36 @@ use wasm_bindgen::{JsCast, JsValue};
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_name = "setTimeout", catch)]
-    fn set_timeout(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    fn set_timeout(handler: &Function, timeout: i32) -> Result<JsValue, JsValue>;
 
     #[wasm_bindgen(js_name = "setInterval", catch)]
-    fn set_interval(handler: &Function, timeout: i32) -> Result<i32, JsValue>;
+    fn set_interval(handler: &Function, timeout: i32) -> Result<JsValue, JsValue>;
 
     #[wasm_bindgen(js_name = "clearTimeout")]
-    fn clear_timeout(handle: i32);
+    fn clear_timeout(handle: JsValue) -> JsValue;
 
     #[wasm_bindgen(js_name = "clearInterval")]
-    fn clear_interval(handle: i32);
+    fn clear_interval(handle: JsValue) -> JsValue;
 }
 
 /// A scheduled timeout.
 ///
 /// See `Timeout::new` for scheduling new timeouts.
 ///
-/// Once scheduled, you can either `cancel` so that it doesn't run or `forget`
-/// it so that it is un-cancel-able.
+/// Once scheduled, you can [`drop`] the [`Timeout`] to clear it or [`forget`](Timeout::forget) to leak it. Once forgotten, the interval will keep running forever.
+/// This pattern is known as Resource Acquisition Is Initialization (RAII).
 #[derive(Debug)]
 #[must_use = "timeouts cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Timeout {
-    id: Option<i32>,
+    id: Option<JsValue>,
     closure: Option<Closure<dyn FnMut()>>,
 }
 
 impl Drop for Timeout {
+    /// Disposes of the timeout, dually cancelling this timeout by calling
+    /// `clearTimeout` directly.
     fn drop(&mut self) {
-        if let Some(id) = self.id {
+        if let Some(id) = self.id.take() {
             clear_timeout(id);
         }
     }
@@ -71,7 +73,7 @@ impl Timeout {
         }
     }
 
-    /// Make this timeout uncancel-able.
+    /// Forgets this resource without clearing the timeout.
     ///
     /// Returns the identifier returned by the original `setTimeout` call, and
     /// therefore you can still cancel the timeout by calling `clearTimeout`
@@ -88,7 +90,7 @@ impl Timeout {
     ///     // Do stuff...
     /// }).forget();
     /// ```
-    pub fn forget(mut self) -> i32 {
+    pub fn forget(mut self) -> JsValue {
         let id = self.id.take().unwrap_throw();
         self.closure.take().unwrap_throw().forget();
         id
@@ -123,18 +125,20 @@ impl Timeout {
 ///
 /// See `Interval::new` for scheduling new intervals.
 ///
-/// Once scheduled, you can either `cancel` so that it ceases to fire or `forget`
-/// it so that it is un-cancel-able.
+/// Once scheduled, you can [`drop`] the [`Interval`] to clear it or [`forget`](Interval::forget) to leak it. Once forgotten, the interval will keep running forever.
+/// This pattern is known as Resource Acquisition Is Initialization (RAII).
 #[derive(Debug)]
 #[must_use = "intervals cancel on drop; either call `forget` or `drop` explicitly"]
 pub struct Interval {
-    id: Option<i32>,
+    id: Option<JsValue>,
     closure: Option<Closure<dyn FnMut()>>,
 }
 
 impl Drop for Interval {
+    /// Disposes of the interval, dually cancelling this interval by calling
+    /// `clearInterval` directly.
     fn drop(&mut self) {
-        if let Some(id) = self.id {
+        if let Some(id) = self.id.take() {
             clear_interval(id);
         }
     }
@@ -170,7 +174,7 @@ impl Interval {
         }
     }
 
-    /// Make this interval uncancel-able.
+    /// Forget this resource without clearing the interval.
     ///
     /// Returns the identifier returned by the original `setInterval` call, and
     /// therefore you can still cancel the interval by calling `clearInterval`
@@ -186,7 +190,7 @@ impl Interval {
     ///     // Do stuff...
     /// }).forget();
     /// ```
-    pub fn forget(mut self) -> i32 {
+    pub fn forget(mut self) -> JsValue {
         let id = self.id.take().unwrap_throw();
         self.closure.take().unwrap_throw().forget();
         id

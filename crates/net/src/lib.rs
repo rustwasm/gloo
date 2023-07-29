@@ -11,6 +11,9 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod error;
+#[cfg(feature = "eventsource")]
+#[cfg_attr(docsrs, doc(cfg(feature = "eventsource")))]
+pub mod eventsource;
 #[cfg(feature = "http")]
 #[cfg_attr(docsrs, doc(cfg(feature = "http")))]
 pub mod http;

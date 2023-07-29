@@ -9,7 +9,7 @@ publish = false
 
 [dependencies]
 pulldown-cmark = { version = "0.9.1", default-features = false }
-gloo = { path = "../.." }
+gloo = { path = "../..", features = ["futures"] }
 
 console_error_panic_hook = "0.1.7"
 wasm-bindgen = "0.2"
