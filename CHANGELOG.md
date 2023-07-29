@@ -1,5 +1,9 @@
 ## `console`
 
+### Next Version
+
+- Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
+
 ### Version "0.2.3"
 
 - Release new gloo versions
@@ -21,18 +25,23 @@
 
 ### Version "0.1.0"
 
-- Add an `dbg!` equivalent to `gloo-console`  (#158)
+- Add an `dbg!` equivalent to `gloo-console` (#158)
 - Fix dir, dirxml macros in gloo-console (#154)
 - Finishing touches
 
-
 ## `dialogs`
+
+### Next Version
+
+- Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
 ### Version "0.1.0"
 
-
-
 ## `events`
+
+### Next Version
+
+- Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
 ### Version "0.1.1"
 
@@ -67,8 +76,11 @@
 - Renaming A parameter to S
 - Fixing all the issues with gloo-events
 
-
 ## `file`
+
+### Next Version
+
+- Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
 ### Version "0.2.2"
 
@@ -90,12 +102,15 @@
 - Adding README for gloo-file
 - Fixing Cargo.toml for gloo-file
 
-
 ## `history`
+
+### Next Version
+
+- Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
 ### Version 0.1.4
 
-- Use thread_local!'s lazy initialization instead of RefCell<Option<_>> (#358)
+- Use `thread_local!`'s lazy initialization instead of `RefCell<Option<_>>` (#358)
 - Fix required feature set of serde dependency (#357)
 
 ### Version "0.1.3"
@@ -124,8 +139,11 @@
 - Memory-based History (#178)
 - Hash-based History type & Unified Location. (#177)
 
-
 ## `net`
+
+### Next Version
+
+- Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
 ### Version "0.3.1"
 
@@ -186,14 +204,19 @@
 - add `json()` impl to `Request` (#204)
 - Improve the Fetch API (#188)
 
-
 ## `render`
+
+### Next Version
+
+- Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
 ### Version "0.1.0"
 
-
-
 ## `storage`
+
+### Next Version
+
+- Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
 ### Version "0.2.1"
 
@@ -208,8 +231,11 @@
 
 - Utility crate for common `web_sys`/`js_sys` features (#155)
 
-
 ## `timers`
+
+### Next Version
+
+- Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
 ### Version "0.2.5"
 
@@ -275,8 +301,11 @@
 - Split up callback and future/stream APIs.
 - timers: Fix author line in Cargo.toml
 
-
 ## `utils`
+
+### Next Version
+
+- Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
 ### Version "0.1.6"
 
@@ -312,8 +341,11 @@
 
 - utils: Add body() and document_element() getters (#161)
 
-
 ## `worker`
+
+### Next Version
+
+- Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
 ### Version 0.3.0
 
