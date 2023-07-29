@@ -9,7 +9,7 @@ readme = "README.md"
 repository = "https://github.com/rustwasm/gloo/tree/master/crates/utils"
 homepage = "https://github.com/rustwasm/gloo"
 categories = ["api-bindings", "wasm"]
-rust-version = "1.56"
+rust-version = "1.64"
 
 
 [dependencies]

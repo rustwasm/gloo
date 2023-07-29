@@ -10,7 +10,7 @@ repository = "https://github.com/rustwasm/gloo"
 homepage = "https://gloo-rs.web.app/"
 documentation = "https://docs.rs/gloo/"
 categories = ["api-bindings", "wasm"]
-rust-version = "1.56"
+rust-version = "1.64"
 
 [dependencies]
 gloo-timers = { version = "0.2", path = "crates/timers", optional = true }

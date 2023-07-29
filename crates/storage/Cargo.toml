@@ -9,7 +9,7 @@ readme = "README.md"
 repository = "https://github.com/rustwasm/gloo/tree/master/crates/storage"
 homepage = "https://github.com/rustwasm/gloo"
 categories = ["api-bindings", "storage", "wasm"]
-rust-version = "1.56"
+rust-version = "1.64"
 
 [dependencies]
 wasm-bindgen = "0.2"
