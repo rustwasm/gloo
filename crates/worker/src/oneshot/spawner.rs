@@ -51,4 +51,17 @@ where
 
         OneshotBridge::new(inner, rx)
     }
+
+    /// Spawns an Oneshot Worker with a loader shim script.
+    pub fn spawn_with_loader(mut self, loader_path: &str) -> OneshotBridge<N>
+    where
+        N::Input: Serialize + for<'de> Deserialize<'de>,
+        N::Output: Serialize + for<'de> Deserialize<'de>,
+    {
+        let rx = OneshotBridge::register_callback(&mut self.inner);
+
+        let inner = self.inner.spawn_with_loader(loader_path);
+
+        OneshotBridge::new(inner, rx)
+    }
 }
