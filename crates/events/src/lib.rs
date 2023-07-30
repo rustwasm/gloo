@@ -28,8 +28,9 @@ use web_sys::{AddEventListenerOptions, Event, EventTarget};
 /// EventListenerPhase::Bubble
 /// # ;
 /// ```
-#[derive(Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy)]
 pub enum EventListenerPhase {
+    #[default]
     #[allow(missing_docs)]
     Bubble,
 
@@ -44,13 +45,6 @@ impl EventListenerPhase {
             EventListenerPhase::Bubble => false,
             EventListenerPhase::Capture => true,
         }
-    }
-}
-
-impl Default for EventListenerPhase {
-    #[inline]
-    fn default() -> Self {
-        EventListenerPhase::Bubble
     }
 }
 

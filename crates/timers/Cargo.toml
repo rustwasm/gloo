@@ -3,12 +3,13 @@ name = "gloo-timers"
 description = "Convenience crate for working with JavaScript timers"
 version = "0.2.6"
 authors = ["Rust and WebAssembly Working Group"]
-edition = "2018"
+edition = "2021"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/rustwasm/gloo/tree/master/crates/timers"
 homepage = "https://github.com/rustwasm/gloo"
 categories = ["api-bindings", "asynchronous", "wasm"]
+rust-version = "1.64"
 
 [package.metadata.docs.rs]
 features = ["futures"]

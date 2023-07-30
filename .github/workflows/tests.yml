@@ -7,13 +7,17 @@ on:
 
 jobs:
   native_tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        rust-version: [1.64, stable, nightly]
     name: Native Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust-version }}
 
       - uses: actions/cache@v3
         with:
@@ -30,13 +34,17 @@ jobs:
         run: cargo test --workspace --exclude gloo-net
 
   browser_tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        rust-version: [1.64, stable, nightly]
     name: Browser Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust-version }}
           target: wasm32-unknown-unknown
 
       - name: Install wasm-pack
@@ -73,13 +81,17 @@ jobs:
           done
 
   node_tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        rust-version: [1.64, stable, nightly]
     name: Node Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust-version }}
           target: wasm32-unknown-unknown
 
       - name: Install wasm-pack
@@ -115,11 +127,12 @@ jobs:
       matrix:
         # example: [ markdown, prime ]
         example: [ markdown ]
+        rust-version: [1.64, stable, nightly]
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust-version }}
           target: wasm32-unknown-unknown
 
       - name: Install wasm-pack
@@ -156,6 +169,10 @@ jobs:
 
 
   test-net:
+    strategy:
+      fail-fast: false
+      matrix:
+        rust-version: [1.64, stable, nightly]
     name: Test gloo-net
     runs-on: ubuntu-latest
     services:
@@ -200,7 +217,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust-version }}
           target: wasm32-unknown-unknown
 
       - name: Run native tests

@@ -9,6 +9,7 @@ repository = "https://github.com/rustwasm/gloo/tree/master/crates/worker"
 homepage = "https://github.com/rustwasm/gloo"
 license = "MIT OR Apache-2.0"
 categories = ["api-bindings", "asynchronous", "wasm"]
+rust-version = "1.64"
 
 [lib]
 proc-macro = true

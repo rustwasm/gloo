@@ -1,7 +1,7 @@
 [package]
 authors = ["Rust and WebAssembly Working Group"]
 description = "A modular toolkit for Rust and WebAssembly"
-edition = "2018"
+edition = "2021"
 license = "MIT OR Apache-2.0"
 name = "gloo"
 readme = "README.md"
@@ -10,6 +10,7 @@ repository = "https://github.com/rustwasm/gloo"
 homepage = "https://gloo-rs.web.app/"
 documentation = "https://docs.rs/gloo/"
 categories = ["api-bindings", "wasm"]
+rust-version = "1.64"
 
 [dependencies]
 gloo-timers = { version = "0.2", path = "crates/timers", optional = true }
@@ -44,7 +45,7 @@ futures = [
     "worker",
     "gloo-timers/futures",
     "gloo-file/futures",
-    "gloo-worker/futures"
+    "gloo-worker/futures",
 ]
 timers = ["gloo-timers"]
 events = ["gloo-events"]
