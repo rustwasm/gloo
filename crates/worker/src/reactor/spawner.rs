@@ -52,4 +52,17 @@ where
 
         ReactorBridge::new(inner, rx)
     }
+
+    /// Spawns a Reactor Worker with a loader shim script.
+    pub fn spawn_with_loader(mut self, loader_path: &str) -> ReactorBridge<R>
+    where
+        <R::Scope as ReactorScoped>::Input: Serialize + for<'de> Deserialize<'de>,
+        <R::Scope as ReactorScoped>::Output: Serialize + for<'de> Deserialize<'de>,
+    {
+        let rx = ReactorBridge::register_callback(&mut self.inner);
+
+        let inner = self.inner.spawn_with_loader(loader_path);
+
+        ReactorBridge::new(inner, rx)
+    }
 }

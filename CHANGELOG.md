@@ -346,6 +346,7 @@
 ### Next Version
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
+- Add Worker Loader (#349)
 
 ### Version 0.3.0
 
