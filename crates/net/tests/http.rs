@@ -1,4 +1,4 @@
-use gloo_net::http::Request;
+use gloo_net::http::{Request, Headers};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen_test::*;
@@ -137,3 +137,13 @@ async fn query_preserve_duplicate_params() {
         .unwrap();
     assert_eq!(resp.url(), format!("{}/get?q=1&q=2", *HTTPBIN_URL));
 }
+
+#[wasm_bindgen_test]
+fn clone_headers() {
+    let mut headers = Headers::new();
+    headers.append("Content-Type", "application/json");
+    let other = headers.clone();
+    headers.append("Content-Type", "text/html");
+    assert_ne!(headers.get("Content-Type"), other.get("Content-Type"))
+}
+

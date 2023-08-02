@@ -64,7 +64,7 @@ impl RequestBuilder {
     }
 
     /// Sets a header.
-    pub fn header(self, key: &str, value: &str) -> Self {
+    pub fn header(mut self, key: &str, value: &str) -> Self {
         self.headers.set(key, value);
         self
     }
