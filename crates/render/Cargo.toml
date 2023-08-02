@@ -3,18 +3,17 @@ name = "gloo-render"
 description = "Convenience crate for working with browser's requestAnimationFrame"
 version = "0.1.1"
 authors = ["Rust and WebAssembly Working Group"]
-edition = "2018"
+edition = "2021"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/rustwasm/gloo/tree/master/crates/storage"
 homepage = "https://github.com/rustwasm/gloo"
 categories = ["api-bindings", "storage", "wasm"]
+rust-version = "1.64"
 
 [dependencies]
 wasm-bindgen = "0.2"
 
 [dependencies.web-sys]
 version = "0.3"
-features = [
-    "Window"
-]
+features = ["Window"]
