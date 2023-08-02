@@ -1,4 +1,4 @@
-use gloo_net::http::{Request, Headers};
+use gloo_net::http::{Headers, Request};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen_test::*;
@@ -146,4 +146,3 @@ fn clone_headers() {
     headers.append("Content-Type", "text/html");
     assert_ne!(headers.get("Content-Type"), other.get("Content-Type"))
 }
-

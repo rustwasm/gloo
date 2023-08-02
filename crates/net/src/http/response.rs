@@ -301,7 +301,6 @@ impl Default for ResponseBuilder {
             options: web_sys::ResponseInit::new(),
             status: None,
             status_text: None,
-        
         }
     }
 }
@@ -314,7 +313,6 @@ impl fmt::Debug for ResponseBuilder {
     }
 }
 
-
 #[wasm_bindgen]
 extern "C" {
     #[wasm_bindgen(js_name = "structuredClone", catch)]
@@ -323,7 +321,14 @@ extern "C" {
 
 impl Clone for ResponseBuilder {
     fn clone(&self) -> Self {
-        let options_clone: ResponseInit = structured_clone(&self.options).unwrap_throw().unchecked_into();
-        Self { headers: self.headers.clone(), options: options_clone, status: self.status, status_text: self.status_text.clone() }
+        let options_clone: ResponseInit = structured_clone(&self.options)
+            .unwrap_throw()
+            .unchecked_into();
+        Self {
+            headers: self.headers.clone(),
+            options: options_clone,
+            status: self.status,
+            status_text: self.status_text.clone(),
+        }
     }
 }
