@@ -6,15 +6,17 @@ use std::rc::{Rc, Weak};
 
 use gloo_utils::window;
 use js_sys::Array;
+use serde::de::Deserialize;
+use serde::ser::Serialize;
 use web_sys::{Blob, BlobPropertyBag, Url};
 
-use crate::bridge::{CallbackMap, WorkerBridge};
+use super::bridge::{CallbackMap, WorkerBridge};
+use super::handler_id::HandlerId;
+use super::messages::FromWorker;
+use super::native_worker::{DedicatedWorker, NativeWorkerExt};
+use super::traits::Worker;
+use super::{Callback, Shared};
 use crate::codec::{Bincode, Codec};
-use crate::handler_id::HandlerId;
-use crate::messages::FromWorker;
-use crate::native_worker::{DedicatedWorker, NativeWorkerExt};
-use crate::traits::Worker;
-use crate::{Callback, Shared};
 
 fn create_worker(path: &str) -> DedicatedWorker {
     let js_shim_url = Url::new_with_base(
@@ -61,7 +63,7 @@ where
 
 impl<W, CODEC> Default for WorkerSpawner<W, CODEC>
 where
-    W: Worker,
+    W: Worker + 'static,
     CODEC: Codec,
 {
     fn default() -> Self {
@@ -71,11 +73,11 @@ where
 
 impl<W, CODEC> WorkerSpawner<W, CODEC>
 where
-    W: Worker,
+    W: Worker + 'static,
     CODEC: Codec,
 {
     /// Creates a [WorkerSpawner].
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             _marker: PhantomData,
             callback: None,
@@ -103,8 +105,11 @@ where
         self
     }
 
-    /// Spawns a Worker.
-    pub fn spawn(&self, path: &str) -> WorkerBridge<W> {
+    fn spawn_inner(&self, worker: DedicatedWorker) -> WorkerBridge<W>
+    where
+        W::Input: Serialize + for<'de> Deserialize<'de>,
+        W::Output: Serialize + for<'de> Deserialize<'de>,
+    {
         let pending_queue = Rc::new(RefCell::new(Some(Vec::new())));
         let handler_id = HandlerId::new();
         let mut callbacks = HashMap::new();
@@ -115,39 +120,35 @@ where
 
         let callbacks: Shared<CallbackMap<W>> = Rc::new(RefCell::new(callbacks));
 
-        let worker = {
+        let handler = {
             let pending_queue = pending_queue.clone();
             let callbacks = callbacks.clone();
-            let worker = create_worker(path);
 
-            let handler = {
-                let worker = worker.clone();
+            let worker = worker.clone();
 
-                move |msg: FromWorker<W>| match msg {
-                    FromWorker::WorkerLoaded => {
-                        if let Some(pending_queue) = pending_queue.borrow_mut().take() {
-                            for to_worker in pending_queue.into_iter() {
-                                worker.post_packed_message::<_, CODEC>(to_worker);
-                            }
-                        }
-                    }
-                    FromWorker::ProcessOutput(id, output) => {
-                        let mut callbacks = callbacks.borrow_mut();
-
-                        if let Some(m) = callbacks.get(&id) {
-                            if let Some(m) = Weak::upgrade(m) {
-                                m(output);
-                            } else {
-                                callbacks.remove(&id);
-                            }
+            move |msg: FromWorker<W>| match msg {
+                FromWorker::WorkerLoaded => {
+                    if let Some(pending_queue) = pending_queue.borrow_mut().take() {
+                        for to_worker in pending_queue.into_iter() {
+                            worker.post_packed_message::<_, CODEC>(to_worker);
                         }
                     }
                 }
-            };
+                FromWorker::ProcessOutput(id, output) => {
+                    let mut callbacks = callbacks.borrow_mut();
 
-            worker.set_on_packed_message::<_, CODEC, _>(handler);
-            worker
+                    if let Some(m) = callbacks.get(&id) {
+                        if let Some(m) = Weak::upgrade(m) {
+                            m(output);
+                        } else {
+                            callbacks.remove(&id);
+                        }
+                    }
+                }
+            }
         };
+
+        worker.set_on_packed_message::<_, CODEC, _>(handler);
 
         WorkerBridge::<W>::new::<CODEC>(
             handler_id,
@@ -156,5 +157,27 @@ where
             callbacks,
             self.callback.clone(),
         )
+    }
+
+    /// Spawns a Worker.
+    pub fn spawn(&self, path: &str) -> WorkerBridge<W>
+    where
+        W::Input: Serialize + for<'de> Deserialize<'de>,
+        W::Output: Serialize + for<'de> Deserialize<'de>,
+    {
+        let worker = create_worker(path);
+
+        self.spawn_inner(worker)
+    }
+
+    /// Spawns a Worker with a loader shim script.
+    pub fn spawn_with_loader(&self, loader_path: &str) -> WorkerBridge<W>
+    where
+        W::Input: Serialize + for<'de> Deserialize<'de>,
+        W::Output: Serialize + for<'de> Deserialize<'de>,
+    {
+        let worker = DedicatedWorker::new(loader_path).expect("failed to spawn worker");
+
+        self.spawn_inner(worker)
     }
 }

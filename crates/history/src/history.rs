@@ -71,7 +71,7 @@ pub trait History: Clone + PartialEq {
         Q: Serialize;
 
     /// Same as `.push_with_state()` but affix the queries to the end of the route.
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
@@ -83,7 +83,7 @@ pub trait History: Clone + PartialEq {
         T: 'static;
 
     /// Same as `.replace_with_state()` but affix the queries to the end of the route.
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
