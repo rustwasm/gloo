@@ -28,7 +28,7 @@ use web_sys::{AddEventListenerOptions, Event, EventTarget};
 /// EventListenerPhase::Bubble
 /// # ;
 /// ```
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventListenerPhase {
     #[default]
     #[allow(missing_docs)]
@@ -91,7 +91,7 @@ impl EventListenerPhase {
 ///     passive: false,
 /// };
 /// ```
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EventListenerOptions {
     /// The phase that the event listener should be run in.
     pub phase: EventListenerPhase,
