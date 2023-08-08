@@ -1,19 +1,16 @@
-use std::borrow::Cow;
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use gloo_utils::window;
-#[cfg(feature = "query")]
-use serde::Serialize;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::Url;
 
 use crate::browser::BrowserHistory;
-#[cfg(feature = "query")]
-use crate::error::HistoryResult;
 use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
 use crate::utils::{assert_absolute_path, assert_no_query};
+#[cfg(feature = "query")]
+use crate::{error::HistoryResult, query::ToQuery};
 
 /// A [`History`] that is implemented with [`web_sys::History`] and stores path in `#`(fragment).
 ///
@@ -95,11 +92,15 @@ impl History for HashHistory {
     }
 
     #[cfg(feature = "query")]
-    fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
+    fn push_with_query<'a, Q>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        query: Q,
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
     {
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         let route = route.into();
 
         assert_absolute_path(&route);
@@ -116,11 +117,11 @@ impl History for HashHistory {
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
     {
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         let route = route.into();
 
         assert_absolute_path(&route);
@@ -139,9 +140,9 @@ impl History for HashHistory {
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static,
     {
         let route = route.into();
@@ -151,7 +152,7 @@ impl History for HashHistory {
 
         let url = Self::get_url();
 
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         url.set_hash(&format!("{route}?{query}"));
 
         self.inner.push_with_state(url.href(), state);
@@ -165,9 +166,9 @@ impl History for HashHistory {
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static,
     {
         let route = route.into();
@@ -177,7 +178,7 @@ impl History for HashHistory {
 
         let url = Self::get_url();
 
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         url.set_hash(&format!("{route}?{query}"));
 
         self.inner.replace_with_state(url.href(), state);

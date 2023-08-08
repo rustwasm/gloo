@@ -12,6 +12,8 @@ mod history;
 mod listener;
 mod location;
 mod memory;
+#[cfg(feature = "query")]
+pub mod query;
 mod state;
 mod utils;
 

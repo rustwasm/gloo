@@ -6,17 +6,14 @@ use std::collections::VecDeque;
 use std::fmt;
 use std::rc::Rc;
 
-#[cfg(feature = "query")]
-use serde::Serialize;
-
-#[cfg(feature = "query")]
-use crate::error::HistoryResult;
 use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
 use crate::utils::{
     assert_absolute_path, assert_no_fragment, assert_no_query, get_id, WeakCallback,
 };
+#[cfg(feature = "query")]
+use crate::{error::HistoryResult, query::ToQuery};
 
 /// A History Stack.
 #[derive(Debug)]
@@ -210,11 +207,15 @@ impl History for MemoryHistory {
     }
 
     #[cfg(feature = "query")]
-    fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
+    fn push_with_query<'a, Q>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        query: Q,
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
     {
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         let route = route.into();
 
         assert_absolute_path(&route);
@@ -240,11 +241,11 @@ impl History for MemoryHistory {
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
     {
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         let route = route.into();
 
         assert_absolute_path(&route);
@@ -272,12 +273,12 @@ impl History for MemoryHistory {
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static,
     {
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         let route = route.into();
 
         assert_absolute_path(&route);
@@ -305,12 +306,12 @@ impl History for MemoryHistory {
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static,
     {
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         let route = route.into();
 
         assert_absolute_path(&route);
