@@ -42,6 +42,7 @@
 ### Next Version
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
+- Add traits `PartialEq` and `Eq` to `EventListenerOptions`, and `EventListenerPhase` (#363)
 
 ### Version "0.1.1"
 
