@@ -1,6 +1,6 @@
 ## `console`
 
-### Next Version
+### Version 0.3.0 
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 - Introduces the `FromQuery` and `ToQuery` traits to allow for customizing
@@ -33,7 +33,7 @@
 
 ## `dialogs`
 
-### Next Version
+### Version "0.2.0"
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
@@ -41,7 +41,7 @@
 
 ## `events`
 
-### Next Version
+### Version "0.2.0"
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 - Add traits `PartialEq` and `Eq` to `EventListenerOptions`, and `EventListenerPhase` (#363)
@@ -81,7 +81,7 @@
 
 ## `file`
 
-### Next Version
+### Version "0.3.0"
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
@@ -107,7 +107,7 @@
 
 ## `history`
 
-### Next Version
+### Version 0.2.0
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
@@ -144,7 +144,7 @@
 
 ## `net`
 
-### Next Version
+### Version "0.4.0"
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
@@ -209,7 +209,7 @@
 
 ## `render`
 
-### Next Version
+### Version "0.2.0"
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
@@ -217,7 +217,7 @@
 
 ## `storage`
 
-### Next Version
+### Version "0.3.0"
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
@@ -236,7 +236,7 @@
 
 ## `timers`
 
-### Next Version
+### Version "0.3.0"
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
@@ -306,7 +306,7 @@
 
 ## `utils`
 
-### Next Version
+### Version "0.2.0"
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 
@@ -346,7 +346,7 @@
 
 ## `worker`
 
-### Next Version
+### Version 0.4.0
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 - Add Worker Loader (#349)
