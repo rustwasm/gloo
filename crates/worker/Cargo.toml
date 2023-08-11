@@ -19,7 +19,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 bincode = "1"
-gloo-utils = { path = "../utils", version = "0.1" }
+gloo-utils = { path = "../utils", version = "0.2" }
 gloo-worker-macros = { path = "../worker-macros", version = "0.1" }
 js-sys = "0.3"
 pinned = "0.1.0"
