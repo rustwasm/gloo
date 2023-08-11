@@ -23,7 +23,7 @@ gloo-console = { version = "0.2", path = "crates/console", optional = true }
 gloo-utils = { version = "0.2", path = "crates/utils", optional = true }
 gloo-history = { version = "0.1", path = "crates/history", optional = true }
 gloo-worker = { version = "0.3", path = "crates/worker", optional = true }
-gloo-net = { version = "0.3", path = "crates/net", optional = true }
+gloo-net = { version = "0.4", path = "crates/net", optional = true }
 
 [features]
 default = [
