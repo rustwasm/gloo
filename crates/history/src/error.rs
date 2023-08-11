@@ -14,4 +14,4 @@ pub enum HistoryError {
 }
 
 /// The Result type for History.
-pub type HistoryResult<T> = std::result::Result<T, HistoryError>;
+pub type HistoryResult<T, E = HistoryError> = std::result::Result<T, E>;
