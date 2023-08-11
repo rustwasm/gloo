@@ -246,12 +246,6 @@ impl TryFrom<web_sys::WebSocket> for WebSocket {
     }
 }
 
-impl AsRef<web_sys::WebSocket> for WebSocket {
-    fn as_ref(&self) -> &web_sys::WebSocket {
-        &self.ws
-    }
-}
-
 #[derive(Clone)]
 enum StreamMessage {
     ErrorEvent,
