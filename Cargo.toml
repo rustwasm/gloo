@@ -13,7 +13,7 @@ categories = ["api-bindings", "wasm"]
 rust-version = "1.64"
 
 [dependencies]
-gloo-timers = { version = "0.2", path = "crates/timers", optional = true }
+gloo-timers = { version = "0.3", path = "crates/timers", optional = true }
 gloo-events = { version = "0.1", path = "crates/events", optional = true }
 gloo-file = { version = "0.2", path = "crates/file", optional = true }
 gloo-dialogs = { version = "0.1", path = "crates/dialogs", optional = true }
