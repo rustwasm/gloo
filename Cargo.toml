@@ -16,7 +16,7 @@ rust-version = "1.64"
 gloo-timers = { version = "0.3", path = "crates/timers", optional = true }
 gloo-events = { version = "0.2", path = "crates/events", optional = true }
 gloo-file = { version = "0.3", path = "crates/file", optional = true }
-gloo-dialogs = { version = "0.1", path = "crates/dialogs", optional = true }
+gloo-dialogs = { version = "0.2", path = "crates/dialogs", optional = true }
 gloo-storage = { version = "0.2", path = "crates/storage", optional = true }
 gloo-render = { version = "0.1", path = "crates/render", optional = true }
 gloo-console = { version = "0.2", path = "crates/console", optional = true }
