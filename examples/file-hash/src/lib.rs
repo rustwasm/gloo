@@ -1,4 +1,3 @@
-use codec::TransferrableCodec;
 use futures::TryStreamExt;
 use gloo_worker::{HandlerId, Worker, WorkerScope};
 use js_sys::Uint8Array;
@@ -12,8 +11,8 @@ pub mod codec;
 
 #[derive(Serialize, Deserialize)]
 pub struct HashInput {
-    #[serde(skip)]
-    pub file: Option<web_sys::File>,
+    #[serde(with = "serde_wasm_bindgen::preserve")]
+    pub file: web_sys::File,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -36,36 +35,32 @@ impl Worker for HashWorker {
 
     fn update(&mut self, _scope: &WorkerScope<Self>, _msg: Self::Message) {}
 
-    fn received(&mut self, scope: &WorkerScope<Self>, mut msg: Self::Input, id: HandlerId) {
-        TransferrableCodec::post_decode_input(&mut msg);
+    fn received(&mut self, scope: &WorkerScope<Self>, msg: Self::Input, id: HandlerId) {
+        let scope = scope.clone();
 
-        if let Some(m) = msg.file {
-            let scope = scope.clone();
+        spawn_local(async move {
+            // This is a demonstration of codec and how to pass transferrable types to worker.
+            //
+            // If you are trying to calculate hashes in browsers for your application,
+            // please consider using subtle crypto.
+            //
+            // This example does not use subtle crypto
+            // because calculating hashes with subtle crypto doesn't need to be sent to a worker.
+            let mut hasher = Sha256::new();
 
-            spawn_local(async move {
-                // This is a demonstration of codec and how to pass transferrable types to worker.
-                //
-                // If you are trying to calculate hashes in browsers for your application,
-                // please consider using subtle crypto.
-                //
-                // This example does not use subtle crypto
-                // because calculating hashes with subtle crypto doesn't need to be sent to a worker.
-                let mut hasher = Sha256::new();
+            // We assume that this file is big and cannot be loaded into the memory in one chunk.
+            // So we process this as a stream.
+            let mut s = ReadableStream::from_raw(msg.file.stream().unchecked_into()).into_stream();
 
-                // We assume that this file is big and cannot be loaded into the memory in one chunk.
-                // So we process this as a stream.
-                let mut s = ReadableStream::from_raw(m.stream().unchecked_into()).into_stream();
+            while let Some(chunk) = s.try_next().await.unwrap() {
+                hasher.update(chunk.unchecked_into::<Uint8Array>().to_vec());
+            }
 
-                while let Some(chunk) = s.try_next().await.unwrap() {
-                    hasher.update(chunk.unchecked_into::<Uint8Array>().to_vec());
-                }
+            let hash = hasher.finalize();
 
-                let hash = hasher.finalize();
+            let hash_hex = hex::encode(hash);
 
-                let hash_hex = hex::encode(hash);
-
-                scope.respond(id, HashOutput { hash: hash_hex });
-            });
-        }
+            scope.respond(id, HashOutput { hash: hash_hex });
+        });
     }
 }

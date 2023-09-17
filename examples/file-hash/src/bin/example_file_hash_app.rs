@@ -38,8 +38,7 @@ fn App() -> Html {
                 if let Some(f) = el.files().and_then(|m| m.item(0)) {
                     calculating.set(true);
                     result.set(None);
-                    let input = HashInput { file: Some(f) };
-                    TransferrableCodec::pre_encode_input(&input);
+                    let input = HashInput { file: f };
                     worker.send(input);
                 }
             },
