@@ -238,6 +238,14 @@ impl WebSocket {
     }
 }
 
+impl TryFrom<web_sys::WebSocket> for WebSocket {
+    type Error = JsError;
+
+    fn try_from(ws: web_sys::WebSocket) -> Result<Self, Self::Error> {
+        Self::setup(Ok(ws))
+    }
+}
+
 #[derive(Clone)]
 enum StreamMessage {
     ErrorEvent,

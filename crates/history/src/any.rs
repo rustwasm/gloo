@@ -1,16 +1,13 @@
 use std::borrow::Cow;
 
-#[cfg(feature = "query")]
-use serde::Serialize;
-
 use crate::browser::BrowserHistory;
-#[cfg(feature = "query")]
-use crate::error::HistoryResult;
 use crate::hash::HashHistory;
 use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
 use crate::memory::MemoryHistory;
+#[cfg(feature = "query")]
+use crate::{error::HistoryResult, query::ToQuery};
 
 /// A [`History`] that provides a universal API to the underlying history type.
 #[derive(Clone, PartialEq, Debug)]
@@ -79,9 +76,13 @@ impl History for AnyHistory {
     }
 
     #[cfg(feature = "query")]
-    fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
+    fn push_with_query<'a, Q>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        query: Q,
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
     {
         match self {
             Self::Browser(m) => m.push_with_query(route, query),
@@ -94,9 +95,9 @@ impl History for AnyHistory {
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
     {
         match self {
             Self::Browser(m) => m.replace_with_query(route, query),
@@ -105,15 +106,15 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static,
     {
         match self {
@@ -123,15 +124,15 @@ impl History for AnyHistory {
         }
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static,
     {
         match self {

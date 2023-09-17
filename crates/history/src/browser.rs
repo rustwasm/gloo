@@ -1,23 +1,17 @@
-use std::any::Any;
-use std::borrow::Cow;
-use std::cell::RefCell;
-use std::fmt;
-use std::rc::Rc;
+use std::{any::Any, borrow::Cow, cell::RefCell, fmt, rc::Rc};
 
 use gloo_events::EventListener;
 use gloo_utils::window;
-#[cfg(feature = "query")]
-use serde::Serialize;
 use wasm_bindgen::{JsValue, UnwrapThrowExt};
 use web_sys::Url;
 
-#[cfg(feature = "query")]
-use crate::error::HistoryResult;
 use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
 use crate::state::{HistoryState, StateMap};
 use crate::utils::WeakCallback;
+#[cfg(feature = "query")]
+use crate::{error::HistoryResult, query::ToQuery};
 
 /// A [`History`] that is implemented with [`web_sys::History`] that provides native browser
 /// history and state access.
@@ -109,12 +103,16 @@ impl History for BrowserHistory {
     }
 
     #[cfg(feature = "query")]
-    fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
+    fn push_with_query<'a, Q>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        query: Q,
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
     {
         let route = route.into();
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
 
         let url = Self::combine_url(&route, &query);
 
@@ -131,12 +129,12 @@ impl History for BrowserHistory {
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
     {
         let route = route.into();
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
 
         let url = Self::combine_url(&route, &query);
 
@@ -148,15 +146,15 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static,
     {
         let (id, history_state) = Self::create_history_state();
@@ -165,7 +163,7 @@ impl History for BrowserHistory {
         states.insert(id, Rc::new(state) as Rc<dyn Any>);
 
         let route = route.into();
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
 
         let url = Self::combine_url(&route, &query);
 
@@ -178,15 +176,15 @@ impl History for BrowserHistory {
         Ok(())
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static,
     {
         let (id, history_state) = Self::create_history_state();
@@ -195,7 +193,7 @@ impl History for BrowserHistory {
         states.insert(id, Rc::new(state) as Rc<dyn Any>);
 
         let route = route.into();
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
 
         let url = Self::combine_url(&route, &query);
 
@@ -250,47 +248,34 @@ impl Default for BrowserHistory {
     fn default() -> Self {
         // We create browser history only once.
         thread_local! {
-            static BROWSER_HISTORY: RefCell<Option<BrowserHistory>> = RefCell::default();
-            static LISTENER: RefCell<Option<EventListener>> = RefCell::default();
+            static BROWSER_HISTORY: (BrowserHistory, EventListener) = {
+                let window = window();
+
+                let inner = window
+                    .history()
+                    .expect_throw("Failed to create browser history. Are you using a browser?");
+                let callbacks = Rc::default();
+
+                let history = BrowserHistory {
+                    inner,
+                    callbacks,
+                    states: Rc::default(),
+                };
+
+                let listener = {
+                    let history = history.clone();
+
+                    // Listens to popstate.
+                    EventListener::new(&window, "popstate", move |_| {
+                        history.notify_callbacks();
+                    })
+                };
+
+                (history, listener)
+            };
         }
 
-        BROWSER_HISTORY.with(|m| {
-            let mut m = m.borrow_mut();
-
-            match *m {
-                Some(ref m) => m.clone(),
-                None => {
-                    let window = window();
-
-                    let inner = window
-                        .history()
-                        .expect_throw("Failed to create browser history. Are you using a browser?");
-                    let callbacks = Rc::default();
-
-                    let history = Self {
-                        inner,
-                        callbacks,
-                        states: Rc::default(),
-                    };
-
-                    {
-                        let history = history.clone();
-
-                        // Listens to popstate.
-                        LISTENER.with(move |m| {
-                            let mut listener = m.borrow_mut();
-
-                            *listener = Some(EventListener::new(&window, "popstate", move |_| {
-                                history.notify_callbacks();
-                            }));
-                        });
-                    }
-
-                    *m = Some(history.clone());
-                    history
-                }
-            }
-        })
+        BROWSER_HISTORY.with(|(history, _)| history.clone())
     }
 }
 

@@ -1,12 +1,15 @@
 use std::fmt;
 use std::marker::PhantomData;
 
+use serde::de::Deserialize;
+use serde::ser::Serialize;
+
+use super::lifecycle::WorkerLifecycleEvent;
+use super::messages::{FromWorker, ToWorker};
+use super::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
+use super::scope::WorkerScope;
+use super::traits::Worker;
 use crate::codec::{Bincode, Codec};
-use crate::lifecycle::WorkerLifecycleEvent;
-use crate::messages::{FromWorker, ToWorker};
-use crate::native_worker::{DedicatedWorker, NativeWorkerExt, WorkerSelf};
-use crate::scope::WorkerScope;
-use crate::traits::Worker;
 
 /// A Worker Registrar.
 pub struct WorkerRegistrar<W, CODEC = Bincode>
@@ -25,7 +28,7 @@ impl<W: Worker> fmt::Debug for WorkerRegistrar<W> {
 
 impl<W, CODEC> WorkerRegistrar<W, CODEC>
 where
-    W: Worker,
+    W: Worker + 'static,
     CODEC: Codec,
 {
     pub(crate) fn new() -> Self {
@@ -46,6 +49,8 @@ where
     pub fn register(&self)
     where
         CODEC: Codec,
+        W::Input: Serialize + for<'de> Deserialize<'de>,
+        W::Output: Serialize + for<'de> Deserialize<'de>,
     {
         let scope = WorkerScope::<W>::new::<CODEC>();
         let upd = WorkerLifecycleEvent::Create(scope.clone());

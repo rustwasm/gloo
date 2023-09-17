@@ -7,13 +7,17 @@ on:
 
 jobs:
   native_tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        rust-version: [1.64, stable, nightly]
     name: Native Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust-version }}
 
       - uses: actions/cache@v3
         with:
@@ -30,13 +34,17 @@ jobs:
         run: cargo test --workspace --exclude gloo-net
 
   browser_tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        rust-version: [1.64, stable, nightly]
     name: Browser Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust-version }}
           target: wasm32-unknown-unknown
 
       - name: Install wasm-pack
@@ -65,18 +73,25 @@ jobs:
             if [[ "$x" == "net" ]]; then
               continue
             fi
+            if [[ "$x" == "worker-macros" ]]; then
+              continue
+            fi
             wasm-pack test --headless --firefox --chrome crates/$x --all-features
             wasm-pack test --headless --firefox --chrome crates/$x --no-default-features
           done
 
   node_tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        rust-version: [1.64, stable, nightly]
     name: Node Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust-version }}
           target: wasm32-unknown-unknown
 
       - name: Install wasm-pack
@@ -107,11 +122,17 @@ jobs:
   test-worker:
     name: Test gloo-worker
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # example: [ markdown, prime ]
+        example: [ markdown ]
+        rust-version: [1.64, stable, nightly]
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust-version }}
           target: wasm32-unknown-unknown
 
       - name: Install wasm-pack
@@ -135,19 +156,23 @@ jobs:
 
       - name: Build and Run Test Server
         run: |
-          cargo build -p example-markdown --bin example_markdown_test_server
-          nohup target/debug/example_markdown_test_server examples/markdown/dist &
+          cargo build -p example-${{ matrix.example }} --bin example_${{ matrix.example }}_test_server
+          nohup target/debug/example_${{ matrix.example }}_test_server examples/${{ matrix.example }}/dist &
 
       - name: Build Test Worker
         run: |
-          trunk build examples/markdown/index.html
+          trunk build examples/${{ matrix.example }}/index.html
 
       - name: Run tests for gloo worker
         run: |
-          wasm-pack test --headless --firefox --chrome  examples/markdown
+          wasm-pack test --headless --chrome --firefox  examples/${{ matrix.example }}
 
 
   test-net:
+    strategy:
+      fail-fast: false
+      matrix:
+        rust-version: [1.64, stable, nightly]
     name: Test gloo-net
     runs-on: ubuntu-latest
     services:
@@ -192,7 +217,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust-version }}
           target: wasm32-unknown-unknown
 
       - name: Run native tests

@@ -4,8 +4,7 @@ use wasm_bindgen::prelude::*;
 use gloo::utils::document;
 use gloo::worker::Spawnable;
 
-use js_sys::Promise;
-use wasm_bindgen_futures::{spawn_local, JsFuture};
+use wasm_bindgen_futures::spawn_local;
 
 static MARKDOWN_CONTENT: &str = r#"
 ## Hello
@@ -23,19 +22,11 @@ fn main() {
         .flatten()
         .expect_throw("failed to query root element");
 
-    let bridge = MarkdownWorker::spawner()
-        .callback(move |m| {
-            root.set_inner_html(&m);
-        })
-        .spawn("/example_markdown_worker.js");
-
-    bridge.send(MARKDOWN_CONTENT.to_owned());
+    let mut bridge =
+        MarkdownWorker::spawner().spawn_with_loader("/example_markdown_worker_loader.js");
 
     spawn_local(async move {
-        bridge.send(MARKDOWN_CONTENT.to_owned());
-
-        // We need to hold the bridge until the worker resolves.
-        let promise = Promise::new(&mut |_, _| {});
-        let _ = JsFuture::from(promise).await;
+        let content = bridge.run(MARKDOWN_CONTENT.to_owned()).await;
+        root.set_inner_html(&content);
     });
 }

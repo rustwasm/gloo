@@ -1,12 +1,9 @@
 use std::borrow::Cow;
 
-#[cfg(feature = "query")]
-use serde::Serialize;
-
-#[cfg(feature = "query")]
-use crate::error::HistoryResult;
 use crate::listener::HistoryListener;
 use crate::location::Location;
+#[cfg(feature = "query")]
+use crate::{error::HistoryResult, query::ToQuery};
 
 /// A trait to provide [`History`] access.
 ///
@@ -56,9 +53,13 @@ pub trait History: Clone + PartialEq {
 
     /// Same as `.push()` but affix the queries to the end of the route.
     #[cfg(feature = "query")]
-    fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
+    fn push_with_query<'a, Q>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        query: Q,
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize;
+        Q: ToQuery;
 
     /// Same as `.replace()` but affix the queries to the end of the route.
     #[cfg(feature = "query")]
@@ -66,32 +67,32 @@ pub trait History: Clone + PartialEq {
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize;
+        Q: ToQuery;
 
     /// Same as `.push_with_state()` but affix the queries to the end of the route.
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static;
 
     /// Same as `.replace_with_state()` but affix the queries to the end of the route.
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static;
 
     /// Creates a Listener that will be notified when current state changes.

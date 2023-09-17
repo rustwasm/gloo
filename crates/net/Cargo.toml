@@ -1,14 +1,18 @@
 [package]
 name = "gloo-net"
-version = "0.2.6"
-authors = ["Rust and WebAssembly Working Group", "Muhammad Hamza <muhammadhamza1311@gmail.com>"]
-edition = "2018"
+version = "0.4.0"
+authors = [
+    "Rust and WebAssembly Working Group",
+    "Muhammad Hamza <muhammadhamza1311@gmail.com>",
+]
+edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/rustwasm/gloo"
 description = "HTTP requests library for WASM Apps"
 readme = "README.md"
 keywords = ["requests", "http", "wasm", "websockets"]
 categories = ["wasm", "web-programming::http-client", "api-bindings"]
+rust-version = "1.64"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -18,7 +22,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 wasm-bindgen = "0.2"
 web-sys = "0.3"
 js-sys = "0.3"
-gloo-utils = { version = "0.1", path = "../utils", default-features = false }
+gloo-utils = { version = "0.2", path = "../utils", default-features = false }
 
 wasm-bindgen-futures = "0.4"
 futures-core = { version = "0.3", optional = true }

@@ -1,20 +1,16 @@
-use std::borrow::Cow;
-use std::cell::RefCell;
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use gloo_utils::window;
-#[cfg(feature = "query")]
-use serde::Serialize;
 use wasm_bindgen::UnwrapThrowExt;
 use web_sys::Url;
 
 use crate::browser::BrowserHistory;
-#[cfg(feature = "query")]
-use crate::error::HistoryResult;
 use crate::history::History;
 use crate::listener::HistoryListener;
 use crate::location::Location;
 use crate::utils::{assert_absolute_path, assert_no_query};
+#[cfg(feature = "query")]
+use crate::{error::HistoryResult, query::ToQuery};
 
 /// A [`History`] that is implemented with [`web_sys::History`] and stores path in `#`(fragment).
 ///
@@ -96,11 +92,15 @@ impl History for HashHistory {
     }
 
     #[cfg(feature = "query")]
-    fn push_with_query<'a, Q>(&self, route: impl Into<Cow<'a, str>>, query: Q) -> HistoryResult<()>
+    fn push_with_query<'a, Q>(
+        &self,
+        route: impl Into<Cow<'a, str>>,
+        query: Q,
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
     {
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         let route = route.into();
 
         assert_absolute_path(&route);
@@ -117,11 +117,11 @@ impl History for HashHistory {
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
     {
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         let route = route.into();
 
         assert_absolute_path(&route);
@@ -134,15 +134,15 @@ impl History for HashHistory {
         Ok(())
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn push_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static,
     {
         let route = route.into();
@@ -152,7 +152,7 @@ impl History for HashHistory {
 
         let url = Self::get_url();
 
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         url.set_hash(&format!("{route}?{query}"));
 
         self.inner.push_with_state(url.href(), state);
@@ -160,15 +160,15 @@ impl History for HashHistory {
         Ok(())
     }
 
-    #[cfg(all(feature = "query"))]
+    #[cfg(feature = "query")]
     fn replace_with_query_and_state<'a, Q, T>(
         &self,
         route: impl Into<Cow<'a, str>>,
         query: Q,
         state: T,
-    ) -> HistoryResult<()>
+    ) -> HistoryResult<(), Q::Error>
     where
-        Q: Serialize,
+        Q: ToQuery,
         T: 'static,
     {
         let route = route.into();
@@ -178,7 +178,7 @@ impl History for HashHistory {
 
         let url = Self::get_url();
 
-        let query = serde_urlencoded::to_string(query)?;
+        let query = query.to_query()?;
         url.set_hash(&format!("{route}?{query}"));
 
         self.inner.replace_with_state(url.href(), state);
@@ -238,36 +238,26 @@ impl HashHistory {
 impl Default for HashHistory {
     fn default() -> Self {
         thread_local! {
-            static HASH_HISTORY: RefCell<Option<HashHistory>> = RefCell::default();
+            static HASH_HISTORY: HashHistory = {
+                let browser_history = BrowserHistory::new();
+                let browser_location = browser_history.location();
+
+                let current_hash = browser_location.hash();
+
+                // Hash needs to start with #/.
+                if current_hash.is_empty() || !current_hash.starts_with("#/") {
+                    let url = HashHistory::get_url();
+                    url.set_hash("#/");
+
+                    browser_history.replace(url.href());
+                }
+
+                HashHistory {
+                    inner: browser_history,
+                }
+            };
         }
 
-        HASH_HISTORY.with(|m| {
-            let mut m = m.borrow_mut();
-
-            match *m {
-                Some(ref m) => m.clone(),
-                None => {
-                    let browser_history = BrowserHistory::new();
-                    let browser_location = browser_history.location();
-
-                    let current_hash = browser_location.hash();
-
-                    // Hash needs to start with #/.
-                    if current_hash.is_empty() || !current_hash.starts_with("#/") {
-                        let url = Self::get_url();
-                        url.set_hash("#/");
-
-                        browser_history.replace(url.href());
-                    }
-
-                    let history = Self {
-                        inner: browser_history,
-                    };
-
-                    *m = Some(history.clone());
-                    history
-                }
-            }
-        })
+        HASH_HISTORY.with(|s| s.clone())
     }
 }

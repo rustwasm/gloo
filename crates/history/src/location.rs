@@ -2,10 +2,7 @@ use std::any::Any;
 use std::rc::Rc;
 
 #[cfg(feature = "query")]
-use serde::de::DeserializeOwned;
-
-#[cfg(feature = "query")]
-use crate::error::HistoryResult;
+use crate::{error::HistoryResult, query::FromQuery};
 
 /// A history location.
 ///
@@ -44,12 +41,12 @@ impl Location {
 
     /// Returns the queries of current URL parsed as `T`.
     #[cfg(feature = "query")]
-    pub fn query<T>(&self) -> HistoryResult<T>
+    pub fn query<T>(&self) -> HistoryResult<T::Target, T::Error>
     where
-        T: DeserializeOwned,
+        T: FromQuery,
     {
-        let query = self.query_str();
-        serde_urlencoded::from_str(query.strip_prefix('?').unwrap_or("")).map_err(|e| e.into())
+        let query = self.query_str().strip_prefix('?').unwrap_or("");
+        T::from_query(query)
     }
 
     /// Returns the hash fragment of current URL.
