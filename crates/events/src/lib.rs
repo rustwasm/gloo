@@ -30,8 +30,8 @@ use web_sys::{AddEventListenerOptions, Event, EventTarget};
 /// ```
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventListenerPhase {
-    #[allow(missing_docs)]
     #[default]
+    #[allow(missing_docs)]
     Bubble,
 
     #[allow(missing_docs)]
