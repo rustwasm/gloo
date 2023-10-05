@@ -146,6 +146,11 @@
 
 ## `net`
 
+### Version "0.5.0"
+
+- Implement `futures_io::AsyncWrite` and `futures_io::AsyncRead` on `WebSocket`.
+  This feature is behind a new feature flag `io-util` that is disabled by default.
+
 ### Version "0.4.0"
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
