@@ -76,6 +76,7 @@ members = [
 
     "examples/markdown",
     "examples/clock",
+    "examples/file-hash",
     "examples/prime",
 ]
 

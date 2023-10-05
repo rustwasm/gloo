@@ -1,6 +1,6 @@
 ## `console`
 
-### Version 0.3.0 
+### Version 0.3.0
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
 - Introduces the `FromQuery` and `ToQuery` traits to allow for customizing
@@ -347,6 +347,10 @@
 - utils: Add body() and document_element() getters (#161)
 
 ## `worker`
+
+### Next
+
+- Add an example of processing transferrable types with worker (#371)
 
 ### Version 0.4.0
 

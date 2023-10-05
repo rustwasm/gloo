@@ -25,7 +25,7 @@ fn test_raw_encode_simple() {
 #[test]
 fn test_raw_decode_simple() {
     let query = "name=value&other=that";
-    let decoded = <Raw<String>>::from_query(&query).unwrap();
+    let decoded = <Raw<String>>::from_query(query).unwrap();
     assert_eq!(decoded, query);
 }
 
@@ -45,7 +45,7 @@ fn test_urlencoded_encode_simple() {
 #[test]
 fn test_urlencoded_decode_simple() {
     let encoded = "string=test&number=42&boolean=true";
-    let data = SimpleQuery::from_query(&encoded).unwrap();
+    let data = SimpleQuery::from_query(encoded).unwrap();
     assert_eq!(
         data,
         SimpleQuery {
