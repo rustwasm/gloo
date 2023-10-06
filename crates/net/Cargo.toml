@@ -27,6 +27,7 @@ gloo-utils = { version = "0.2", path = "../utils", default-features = false }
 wasm-bindgen-futures = "0.4"
 futures-core = { version = "0.3", optional = true }
 futures-sink = { version = "0.3", optional = true }
+futures-io = { version = "0.3", optional = true }
 
 thiserror = "1.0"
 
@@ -99,3 +100,5 @@ eventsource = [
     'web-sys/EventSource',
     'web-sys/MessageEvent',
 ]
+# As of now, only implements `AsyncRead` and `AsyncWrite` on `WebSocket`
+io-util = ["futures-io"]

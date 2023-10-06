@@ -57,6 +57,11 @@ pub struct WebSocket {
         Closure<dyn FnMut(web_sys::Event)>,
         Closure<dyn FnMut(web_sys::CloseEvent)>,
     ),
+    /// Leftover bytes when using `AsyncRead`.
+    ///
+    /// These bytes are drained and returned in subsequent calls to `poll_read`.
+    #[cfg(feature = "io-util")]
+    pub(super) read_pending_bytes: Option<Vec<u8>>, // Same size as `Vec<u8>` alone thanks to niche optimization
 }
 
 impl WebSocket {
@@ -196,6 +201,8 @@ impl WebSocket {
                 error_callback,
                 close_callback,
             ),
+            #[cfg(feature = "io-util")]
+            read_pending_bytes: None,
         })
     }
 
