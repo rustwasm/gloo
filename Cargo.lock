@@ -607,6 +607,7 @@ dependencies = [
  "futures",
  "futures-channel",
  "futures-core",
+ "futures-io",
  "futures-sink",
  "gloo-utils 0.2.0",
  "http",

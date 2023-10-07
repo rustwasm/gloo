@@ -73,7 +73,7 @@ where
     inner: Rc<WorkerBridgeInner<W>>,
     id: HandlerId,
     _worker: PhantomData<W>,
-    cb: Option<Rc<dyn Fn(W::Output)>>,
+    _cb: Option<Rc<dyn Fn(W::Output)>>,
 }
 
 impl<W> WorkerBridge<W>
@@ -106,7 +106,7 @@ where
             .into(),
             id,
             _worker: PhantomData,
-            cb: callback,
+            _cb: callback,
         };
         self_.init();
 
@@ -140,25 +140,11 @@ where
             inner: self.inner.clone(),
             id: handler_id,
             _worker: PhantomData,
-            cb,
+            _cb: cb,
         };
         self_.init();
 
         self_
-    }
-}
-
-impl<W> Clone for WorkerBridge<W>
-where
-    W: Worker,
-{
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-            id: self.id,
-            _worker: PhantomData,
-            cb: self.cb.clone(),
-        }
     }
 }
 
