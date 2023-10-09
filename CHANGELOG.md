@@ -353,8 +353,9 @@
 
 ## `worker`
 
-### Next
+### Version 0.4.1 
 
+- Remove Cloning on WorkerBridge (#388)
 - Add an example of processing transferrable types with worker (#371)
 
 ### Version 0.4.0
