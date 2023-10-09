@@ -237,7 +237,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "futures",
- "gloo-worker 0.4.0",
+ "gloo-worker 0.4.1",
  "hex",
  "js-sys",
  "serde",
@@ -451,7 +451,7 @@ dependencies = [
  "gloo-storage 0.3.0",
  "gloo-timers 0.3.0",
  "gloo-utils 0.2.0",
- "gloo-worker 0.4.0",
+ "gloo-worker 0.4.1",
 ]
 
 [[package]]
@@ -738,7 +738,7 @@ dependencies = [
 
 [[package]]
 name = "gloo-worker"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "bincode",
  "futures",
