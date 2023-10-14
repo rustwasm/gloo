@@ -107,6 +107,11 @@
 
 ## `history`
 
+### Version 0.2.1
+
+- Fixed an issue where history state might collide with a stated assigned later
+  if the history is stored in the browsers history stack and the page is reloaded with navigation. (#391)
+
 ### Version 0.2.0
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
@@ -353,7 +358,7 @@
 
 ## `worker`
 
-### Version 0.4.1 
+### Version 0.4.1
 
 - Remove Cloning on WorkerBridge (#388)
 - Add an example of processing transferrable types with worker (#371)
