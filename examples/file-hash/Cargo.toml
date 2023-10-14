@@ -16,7 +16,7 @@ wasm-bindgen-futures = { version = "0.4" }
 wasm-streams = "0.3.0"
 wasm-bindgen = "0.2.86"
 futures = "0.3.28"
-sha2 = "0.10.6"
+sha2 = "0.10.8"
 console_error_panic_hook = "0.1.7"
 yew = { version = "0.20.0", features = ["csr"] }
 serde-wasm-bindgen = "0.6.0"
