@@ -110,7 +110,6 @@ fn ws_result_to_io_result(res: Result<(), WebSocketError>) -> io::Result<()> {
 mod tests {
     use super::*;
     use futures::{AsyncReadExt, AsyncWriteExt, StreamExt};
-    use wasm_bindgen_futures::spawn_local;
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
@@ -128,18 +127,14 @@ mod tests {
 
         let (mut reader, mut writer) = AsyncReadExt::split(ws);
 
-        spawn_local(async move {
-            writer.write_all(b"test 1").await.unwrap();
-            writer.write_all(b"test 2").await.unwrap();
-        });
+        writer.write_all(b"test 1").await.unwrap();
+        writer.write_all(b"test 2").await.unwrap();
 
-        spawn_local(async move {
-            let mut buf = [0u8; 6];
-            reader.read_exact(&mut buf).await.unwrap();
-            assert_eq!(&buf, b"test 1");
-            reader.read_exact(&mut buf).await.unwrap();
-            assert_eq!(&buf, b"test 2");
-        });
+        let mut buf = [0u8; 6];
+        reader.read_exact(&mut buf).await.unwrap();
+        assert_eq!(&buf, b"test 1");
+        reader.read_exact(&mut buf).await.unwrap();
+        assert_eq!(&buf, b"test 2");
     }
 
     #[wasm_bindgen_test]

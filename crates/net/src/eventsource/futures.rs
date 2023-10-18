@@ -236,13 +236,12 @@ impl PinnedDrop for EventSourceSubscription {
 mod tests {
     use super::*;
     use futures::StreamExt;
-    use wasm_bindgen_futures::spawn_local;
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
 
     #[wasm_bindgen_test]
-    fn eventsource_works() {
+    async fn eventsource_works() {
         let sse_echo_server_url =
             option_env!("SSE_ECHO_SERVER_URL").expect("Did you set SSE_ECHO_SERVER_URL?");
 
@@ -250,24 +249,20 @@ mod tests {
         let mut servers = es.subscribe("server").unwrap();
         let mut requests = es.subscribe("request").unwrap();
 
-        spawn_local(async move {
-            assert_eq!(servers.next().await.unwrap().unwrap().0, "server");
-            assert_eq!(requests.next().await.unwrap().unwrap().0, "request");
-        });
+        assert_eq!(servers.next().await.unwrap().unwrap().0, "server");
+        assert_eq!(requests.next().await.unwrap().unwrap().0, "request");
     }
 
     #[wasm_bindgen_test]
-    fn eventsource_connect_failure_works() {
+    async fn eventsource_connect_failure_works() {
         let mut es = EventSource::new("rubbish").unwrap();
         let mut servers = es.subscribe("server").unwrap();
 
-        spawn_local(async move {
-            // we should expect an immediate failure
+        // we should expect an immediate failure
 
-            assert_eq!(
-                servers.next().await,
-                Some(Err(EventSourceError::ConnectionError))
-            );
-        })
+        assert_eq!(
+            servers.next().await,
+            Some(Err(EventSourceError::ConnectionError))
+        );
     }
 }
