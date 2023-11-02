@@ -2,7 +2,7 @@ use gloo_utils::errors::JsError;
 use thiserror::Error as ThisError;
 
 /// All the errors returned by this crate.
-#[derive(Debug, ThisError)]
+#[derive(Debug, ThisError, Clone)]
 pub enum Error {
     /// Error returned by JavaScript.
     #[error("{0}")]
