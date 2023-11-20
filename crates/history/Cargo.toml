@@ -33,4 +33,5 @@ gloo-timers = { version = "0.3.0", features = ["futures"], path = "../timers" }
 
 [features]
 query = ["thiserror", "serde_urlencoded"]
+wasi = []
 default = ["query"]
