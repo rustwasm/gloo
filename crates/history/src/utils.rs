@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 use std::sync::atomic::{AtomicU32, Ordering};
 
+#[cfg(not(feature = "wasi"))]
 use wasm_bindgen::throw_str;
 
 #[cfg(any(not(target_arch = "wasm32"), feature = "wasi"))]
@@ -30,19 +31,28 @@ pub(crate) fn get_id() -> u32 {
 
 pub(crate) fn assert_absolute_path(path: &str) {
     if !path.starts_with('/') {
+        #[cfg(not(feature = "wasi"))]
         throw_str("You cannot use relative path with this history type.");
+        #[cfg(feature = "wasi")]
+        panic!("You cannot use relative path with this history type.");
     }
 }
 
 pub(crate) fn assert_no_query(path: &str) {
     if path.contains('?') {
+        #[cfg(not(feature = "wasi"))]
         throw_str("You cannot have query in path, try use a variant of this method with `_query`.");
+        #[cfg(feature = "wasi")]
+        panic!("You cannot have query in path, try use a variant of this method with `_query`.");
     }
 }
 
 pub(crate) fn assert_no_fragment(path: &str) {
     if path.contains('#') {
+        #[cfg(not(feature = "wasi"))]
         throw_str("You cannot use fragments (hash) in memory history.");
+        #[cfg(feature = "wasi")]
+        panic!("You cannot use fragments (hash) in memory history.");
     }
 }
 
