@@ -1,6 +1,6 @@
 [package]
 name = "gloo-net"
-version = "0.4.0"
+version = "0.5.0"
 authors = [
     "Rust and WebAssembly Working Group",
     "Muhammad Hamza <muhammadhamza1311@gmail.com>",
@@ -36,7 +36,7 @@ serde_json = { version = "1.0", optional = true }
 
 futures-channel = { version = "0.3", optional = true }
 pin-project = { version = "1.0", optional = true }
-http = "0.2.9"
+http = "1.0"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"
