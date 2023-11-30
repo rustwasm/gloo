@@ -135,7 +135,9 @@ jobs:
           target: wasm32-wasi
 
       - name: Install wasmtime
-        run: curl https://wasmtime.dev/install.sh -sSf | bash
+        run: |
+          curl https://wasmtime.dev/install.sh -sSf | bash
+          source ~/.bashrc
 
       - uses: actions/cache@v3
         with:
