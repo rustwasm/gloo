@@ -3,7 +3,7 @@ name: Tests
 on:
   pull_request:
   push:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   native_tests:
@@ -119,6 +119,40 @@ jobs:
             wasm-pack test --node crates/$x --no-default-features
           done
 
+  test-history-wasi:
+    name: Test gloo-history WASI
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        example: [history-wasi]
+        rust-version: [1.64, stable, nightly]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust-version }}
+          target: wasm32-wasi
+
+      - name: Install wasmtime
+        run: curl https://wasmtime.dev/install.sh -sSf | bash
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ runner.os }}-wasi-tests-${{ hashFiles('**/Cargo.toml') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-wasi-tests-
+            cargo-${{ runner.os }}-
+
+      - name: Build and run example history-wasi
+        run: |
+          cargo build -p example-${{ matrix.example }} --target wasm32-wasi
+          wasmtime target/wasm32-wasi/debug/example-${{ matrix.example }}.wasm
+
   test-worker:
     name: Test gloo-worker
     runs-on: ubuntu-latest
@@ -126,7 +160,7 @@ jobs:
       fail-fast: false
       matrix:
         # example: [ markdown, prime ]
-        example: [ markdown ]
+        example: [markdown]
         rust-version: [1.64, stable, nightly]
     steps:
       - uses: actions/checkout@v4
@@ -166,7 +200,6 @@ jobs:
       - name: Run tests for gloo worker
         run: |
           wasm-pack test --headless --chrome --firefox  examples/${{ matrix.example }}
-
 
   test-net:
     strategy:
@@ -208,9 +241,9 @@ jobs:
 
       - name: Run browser tests
         env:
-          HTTPBIN_URL: "http://localhost:8080"
-          WS_ECHO_SERVER_URL: "ws://localhost:8081"
-          SSE_ECHO_SERVER_URL: "http://localhost:8081/.sse"
+          HTTPBIN_URL: 'http://localhost:8080'
+          WS_ECHO_SERVER_URL: 'ws://localhost:8081'
+          SSE_ECHO_SERVER_URL: 'http://localhost:8081/.sse'
         run: |
           cd crates/net
           wasm-pack test --chrome --firefox --headless --all-features
@@ -222,7 +255,7 @@ jobs:
 
       - name: Run native tests
         env:
-          HTTPBIN_URL: "http://localhost:8080"
-          WS_ECHO_SERVER_URL: "ws://localhost:8081"
-          SSE_ECHO_SERVER_URL: "http://localhost:8081/.sse"
+          HTTPBIN_URL: 'http://localhost:8080'
+          WS_ECHO_SERVER_URL: 'ws://localhost:8081'
+          SSE_ECHO_SERVER_URL: 'http://localhost:8081/.sse'
         run: cargo test -p gloo-net --all-features
