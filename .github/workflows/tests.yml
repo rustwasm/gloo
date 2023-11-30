@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust-version: [1.67, stable, nightly]
+        rust-version: [1.64, stable, nightly]
     name: Native Tests
     runs-on: ubuntu-latest
     steps:
@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust-version: [1.67, stable, nightly]
+        rust-version: [1.64, stable, nightly]
     name: Browser Tests
     runs-on: ubuntu-latest
     steps:
@@ -84,7 +84,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust-version: [1.67, stable, nightly]
+        rust-version: [1.64, stable, nightly]
     name: Node Tests
     runs-on: ubuntu-latest
     steps:
@@ -127,7 +127,7 @@ jobs:
       matrix:
         # example: [ markdown, prime ]
         example: [ markdown ]
-        rust-version: [1.67, stable, nightly]
+        rust-version: [1.64, stable, nightly]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -172,7 +172,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rust-version: [1.67, stable, nightly]
+        rust-version: [1.64, stable, nightly]
     name: Test gloo-net
     runs-on: ubuntu-latest
     services:
