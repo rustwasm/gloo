@@ -137,7 +137,6 @@ jobs:
       - name: Install wasmtime
         run: |
           curl https://wasmtime.dev/install.sh -sSf | bash
-          source ~/.bashrc
 
       - uses: actions/cache@v3
         with:
