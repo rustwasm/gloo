@@ -1,3 +1,5 @@
+#![cfg(not(target_os = "wasi"))]
+
 use std::any::Any;
 use std::collections::HashMap;
 use std::rc::Rc;
