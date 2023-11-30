@@ -12,7 +12,7 @@ description = "HTTP requests library for WASM Apps"
 readme = "README.md"
 keywords = ["requests", "http", "wasm", "websockets"]
 categories = ["wasm", "web-programming::http-client", "api-bindings"]
-rust-version = "1.67"
+rust-version = "1.64"
 
 [package.metadata.docs.rs]
 all-features = true
