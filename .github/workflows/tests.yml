@@ -145,10 +145,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: cargo-${{ runner.os }}-wasi-tests-${{ hashFiles('**/Cargo.toml') }}
+          key: cargo-${{ runner.os }}-history-wasi-tests-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
-            cargo-${{ runner.os }}-wasi-tests-
-            cargo-${{ runner.os }}-
+            cargo-${{ runner.os }}-history-wasi-tests-
 
       - name: Build and run example history-wasi
         run: |
