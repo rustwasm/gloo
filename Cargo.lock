@@ -591,7 +591,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "gloo-utils 0.1.7",
- "http 0.2.11",
+ "http",
  "js-sys",
  "pin-project",
  "serde",
@@ -612,7 +612,6 @@ dependencies = [
  "futures-io",
  "futures-sink",
  "gloo-utils 0.2.0",
- "http 1.0.0",
  "js-sys",
  "once_cell",
  "pin-project",
@@ -778,7 +777,7 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "futures-util",
- "http 0.2.11",
+ "http",
  "indexmap 2.1.0",
  "slab",
  "tokio",
@@ -807,7 +806,7 @@ dependencies = [
  "base64",
  "bytes",
  "headers-core",
- "http 0.2.11",
+ "http",
  "httpdate",
  "mime",
  "sha1",
@@ -819,7 +818,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7f66481bfee273957b1f20485a4ff3362987f85b2c236580d81b4eb7a326429"
 dependencies = [
- "http 0.2.11",
+ "http",
 ]
 
 [[package]]
@@ -846,24 +845,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "http"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b32afd38673a8016f7c9ae69e5af41a58f81b1d31689040f2f1959594ce194ea"
-dependencies = [
- "bytes",
- "fnv",
- "itoa",
-]
-
-[[package]]
 name = "http-body"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5f38f16d184e36f2408a55281cd658ecbd3ca05cce6d6510a176eca393e26d1"
 dependencies = [
  "bytes",
- "http 0.2.11",
+ "http",
  "pin-project-lite",
 ]
 
@@ -890,7 +878,7 @@ dependencies = [
  "futures-core",
  "futures-util",
  "h2",
- "http 0.2.11",
+ "http",
  "http-body",
  "httparse",
  "httpdate",
@@ -1053,7 +1041,7 @@ dependencies = [
  "bytes",
  "encoding_rs",
  "futures-util",
- "http 0.2.11",
+ "http",
  "httparse",
  "log",
  "memchr",
@@ -1703,7 +1691,7 @@ dependencies = [
  "byteorder",
  "bytes",
  "data-encoding",
- "http 0.2.11",
+ "http",
  "httparse",
  "log",
  "rand",
@@ -1791,7 +1779,7 @@ dependencies = [
  "futures-channel",
  "futures-util",
  "headers",
- "http 0.2.11",
+ "http",
  "hyper",
  "log",
  "mime",

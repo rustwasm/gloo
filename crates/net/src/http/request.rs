@@ -1,6 +1,5 @@
-use crate::http::{Headers, QueryParams, Response};
+use crate::http::{Headers, Method, QueryParams, Response};
 use crate::{js_to_error, Error};
-use http::Method;
 use js_sys::{ArrayBuffer, Reflect, Uint8Array};
 use std::convert::{From, TryFrom, TryInto};
 use std::fmt;

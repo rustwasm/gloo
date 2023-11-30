@@ -14,13 +14,14 @@
 //! ```
 
 mod headers;
+mod method;
 mod query;
 mod request;
 mod response;
 
 pub use headers::Headers;
-#[doc(inline)]
-pub use http::Method;
+// This is http 1.0 version Method inlined in gloo-net so we don't need to depend on http crate
+pub use method::Method;
 pub use query::QueryParams;
 
 pub use request::{Request, RequestBuilder};
