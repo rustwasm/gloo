@@ -8,7 +8,7 @@
 //! # Examples
 //!
 //! ```
-//! use http::Method;
+//! use gloo_net::http::Method;
 //!
 //! assert_eq!(Method::GET, Method::from_bytes(b"GET").unwrap());
 //! assert!(Method::GET.is_idempotent());
@@ -36,7 +36,7 @@ use std::{fmt, str};
 /// # Examples
 ///
 /// ```
-/// use http::Method;
+/// use gloo_net::http::Method;
 ///
 /// assert_eq!(Method::GET, Method::from_bytes(b"GET").unwrap());
 /// assert!(Method::GET.is_idempotent());
