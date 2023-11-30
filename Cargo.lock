@@ -453,7 +453,7 @@ dependencies = [
  "gloo-dialogs 0.2.0",
  "gloo-events 0.2.0",
  "gloo-file 0.3.0",
- "gloo-history 0.2.0",
+ "gloo-history 0.2.1",
  "gloo-net 0.4.0",
  "gloo-render 0.2.0",
  "gloo-storage 0.3.0",
@@ -573,7 +573,7 @@ dependencies = [
 
 [[package]]
 name = "gloo-history"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "getrandom",
  "gloo-events 0.2.0",
@@ -2100,3 +2100,23 @@ dependencies = [
  "quote",
  "syn 1.0.109",
 ]
+
+[[patch.unused]]
+name = "hikari-components"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "hikari-proto"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "hikari-web"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "tairitsu-utils"
+version = "0.1.0"
+
+[[patch.unused]]
+name = "tairitsu-vm"
+version = "0.1.0"
