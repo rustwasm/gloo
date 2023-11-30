@@ -58,7 +58,6 @@ utils = ["gloo-utils"]
 history = ["gloo-history"]
 worker = ["gloo-worker"]
 net = ["gloo-net"]
-wasi = ["gloo-history/wasi"]
 
 [workspace]
 members = [

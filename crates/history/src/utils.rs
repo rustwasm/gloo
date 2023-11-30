@@ -2,17 +2,17 @@ use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 use std::sync::atomic::{AtomicU32, Ordering};
 
-#[cfg(not(feature = "wasi"))]
+#[cfg(not(target_os = "wasi"))]
 use wasm_bindgen::throw_str;
 
-#[cfg(any(not(target_arch = "wasm32"), feature = "wasi"))]
+#[cfg(any(not(target_arch = "wasm32"), target_os = "wasi"))]
 pub(crate) fn get_id() -> u32 {
     static ID_CTR: AtomicU32 = AtomicU32::new(0);
 
     ID_CTR.fetch_add(1, Ordering::SeqCst)
 }
 
-#[cfg(all(target_arch = "wasm32", not(feature = "wasi")))]
+#[cfg(all(target_arch = "wasm32", not(target_os = "wasi")))]
 pub(crate) fn get_id() -> u32 {
     static ID_CTR: AtomicU32 = AtomicU32::new(0);
     static INIT: std::sync::Once = std::sync::Once::new();
@@ -31,27 +31,27 @@ pub(crate) fn get_id() -> u32 {
 
 pub(crate) fn assert_absolute_path(path: &str) {
     if !path.starts_with('/') {
-        #[cfg(not(feature = "wasi"))]
+        #[cfg(not(target_os = "wasi"))]
         throw_str("You cannot use relative path with this history type.");
-        #[cfg(feature = "wasi")]
+        #[cfg(target_os = "wasi")]
         panic!("You cannot use relative path with this history type.");
     }
 }
 
 pub(crate) fn assert_no_query(path: &str) {
     if path.contains('?') {
-        #[cfg(not(feature = "wasi"))]
+        #[cfg(not(target_os = "wasi"))]
         throw_str("You cannot have query in path, try use a variant of this method with `_query`.");
-        #[cfg(feature = "wasi")]
+        #[cfg(target_os = "wasi")]
         panic!("You cannot have query in path, try use a variant of this method with `_query`.");
     }
 }
 
 pub(crate) fn assert_no_fragment(path: &str) {
     if path.contains('#') {
-        #[cfg(not(feature = "wasi"))]
+        #[cfg(not(target_os = "wasi"))]
         throw_str("You cannot use fragments (hash) in memory history.");
-        #[cfg(feature = "wasi")]
+        #[cfg(target_os = "wasi")]
         panic!("You cannot use fragments (hash) in memory history.");
     }
 }
