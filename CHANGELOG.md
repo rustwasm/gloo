@@ -1,7 +1,7 @@
 ## `console`
 
 ### Version 0.4.0
-- Removed http dependency from gloo-net, using a simpler amd lighter Method
+- Removed http dependency from gloo-net, using a simpler and lighter Method
 
 ### Version 0.3.0
 
