@@ -1,5 +1,8 @@
 ## `console`
 
+### Version 0.4.0
+- Removed http dependency from gloo-net, using a simpler amd lighter Method
+
 ### Version 0.3.0
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
