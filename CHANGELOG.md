@@ -1,8 +1,5 @@
 ## `console`
 
-### Version 0.4.0
-- Removed http dependency from gloo-net, using a simpler and lighter Method
-
 ### Version 0.3.0
 
 - Migrate to Edition 2021 and Apply MSRV in Cargo.toml (#360)
@@ -156,6 +153,7 @@
 
 ### Version "0.5.0"
 
+- Removed http dependency from gloo-net, using a simpler and lighter Method
 - Implement `futures_io::AsyncWrite` and `futures_io::AsyncRead` on `WebSocket`.
   This feature is behind a new feature flag `io-util` that is disabled by default.
 
