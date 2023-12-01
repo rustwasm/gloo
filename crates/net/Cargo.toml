@@ -1,6 +1,6 @@
 [package]
 name = "gloo-net"
-version = "0.5.0"
+version = "0.4.0"
 authors = [
     "Rust and WebAssembly Working Group",
     "Muhammad Hamza <muhammadhamza1311@gmail.com>",
