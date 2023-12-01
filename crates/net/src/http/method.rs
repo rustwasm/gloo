@@ -1,14 +1,17 @@
 use std::{fmt::Display, str::FromStr};
 
-/// HTTP methods that can be used in a request.
+/// HTTP methods that can be used in a fetch request.
 /// The methods as defined by the [fetch spec](https://fetch.spec.whatwg.org/#methods).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Method {
     /// The OPTIONS method represents a request for information about the communication options
     Options,
     /// The GET method means retrieve whatever information (in the form of an entity) is
+    /// identified by the Request-URI.
     Get,
     /// The POST method is used to request that the origin server accept the entity enclosed
+    /// in the request as a new subordinate of the resource identified by the Request-URI
+    /// in the Request-Line.
     Post,
     /// The PUT method requests that the enclosed entity be stored under the supplied Request-URI.
     Put,
@@ -17,6 +20,7 @@ pub enum Method {
     /// The HEAD method is identical to GET except that the server MUST NOT return a message-body in the response.
     Head,
     /// The PATCH method requests that a set of changes described in the
+    /// request entity be applied to the resource identified by the Request-URI.
     Patch,
 }
 
@@ -42,6 +46,7 @@ impl Method {
     pub const GET: Method = Method::Get;
     /// The POST method is used to request that the origin server accept the entity enclosed
     /// in the request as a new subordinate of the resource identified by the Request-URI
+    /// in the Request-Line.
     pub const POST: Method = Method::Post;
     /// The PUT method requests that the enclosed entity be stored under the supplied Request-URI.
     pub const PUT: Method = Method::Put;
@@ -85,6 +90,7 @@ impl FromStr for Method {
     }
 }
 
+/// An error that can be returned when converting `Method` from a string slice.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
     InvalidMethod,
