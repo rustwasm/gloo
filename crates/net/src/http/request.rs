@@ -223,27 +223,27 @@ pub struct Request(web_sys::Request);
 impl Request {
     /// Creates a new [`GET`][Method::GET] `Request` with url.
     pub fn get(url: &str) -> RequestBuilder {
-        RequestBuilder::new(url).method(Method::GET)
+        RequestBuilder::new(url).method(Method::Get)
     }
 
     /// Creates a new [`POST`][Method::POST] `Request` with url.
     pub fn post(url: &str) -> RequestBuilder {
-        RequestBuilder::new(url).method(Method::POST)
+        RequestBuilder::new(url).method(Method::Post)
     }
 
     /// Creates a new [`PUT`][Method::PUT] `Request` with url.
     pub fn put(url: &str) -> RequestBuilder {
-        RequestBuilder::new(url).method(Method::PUT)
+        RequestBuilder::new(url).method(Method::Put)
     }
 
     /// Creates a new [`DELETE`][Method::DELETE] `Request` with url.
     pub fn delete(url: &str) -> RequestBuilder {
-        RequestBuilder::new(url).method(Method::DELETE)
+        RequestBuilder::new(url).method(Method::Delete)
     }
 
     /// Creates a new [`PATCH`][Method::PATCH] `Request` with url.
     pub fn patch(url: &str) -> RequestBuilder {
-        RequestBuilder::new(url).method(Method::PATCH)
+        RequestBuilder::new(url).method(Method::Patch)
     }
 
     /// The URL of the request.
