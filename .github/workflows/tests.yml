@@ -134,7 +134,12 @@ jobs:
           target: wasm32-wasi
 
       - name: Install wasmtime
-        run: curl https://wasmtime.dev/install.sh -sSf | bash
+        run: |
+          wget https://github.com/bytecodealliance/wasmtime/releases/download/v15.0.1/wasmtime-v15.0.1-x86_64-linux.tar.xz
+          tar xf wasmtime-v15.0.1-x86_64-linux.tar.xz
+          mv wasmtime-v15.0.1-x86_64-linux/wasmtime ~/wasmtime
+          rm -rf wasmtime-v15.0.1-x86_64-linux.tar.xz wasmtime-v15.0.1-x86_64-linux
+          chmod +x ~/wasmtime
 
       - uses: actions/cache@v3
         with:
@@ -149,7 +154,7 @@ jobs:
       - name: Build and run example history-wasi
         run: |
           cargo build --manifest-path examples/history-wasi/Cargo.toml --target wasm32-wasi
-          ~/.wasmtime/bin/wasmtime examples/history-wasi/target/wasm32-wasi/debug/example-history-wasi.wasm
+          ~/wasmtime examples/history-wasi/target/wasm32-wasi/debug/example-history-wasi.wasm
 
   test-worker:
     name: Test gloo-worker
