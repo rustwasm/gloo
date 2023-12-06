@@ -146,15 +146,16 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            examples/history-wasi/target
-          key: cargo-${{ runner.os }}-history-wasi-tests-${{ hashFiles('**/Cargo.toml') }}
+            target
+          key: cargo-${{ runner.os }}-node-tests-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: |
-            cargo-${{ runner.os }}-history-wasi-tests-
+            cargo-${{ runner.os }}-node-tests-
+            cargo-${{ runner.os }}-
 
       - name: Build and run example history-wasi
         run: |
-          cargo build --manifest-path examples/history-wasi/Cargo.toml --target wasm32-wasi
-          ~/wasmtime examples/history-wasi/target/wasm32-wasi/debug/example-history-wasi.wasm
+          cargo build --package example-history-wasi --target wasm32-wasi
+          ~/wasmtime --trap-unknown-imports target/wasm32-wasi/debug/example-history-wasi.wasm
 
   test-worker:
     name: Test gloo-worker

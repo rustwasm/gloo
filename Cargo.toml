@@ -77,9 +77,9 @@ members = [
     "examples/markdown",
     "examples/clock",
     "examples/file-hash",
+    "examples/history-wasi",
     "examples/prime",
 ]
-exclude = ["examples/history-wasi"]
 
 # Passing arguments to the docsrs builder in order to properly document cfg's.
 # More information: https://docs.rs/about/builds#cross-compiling
