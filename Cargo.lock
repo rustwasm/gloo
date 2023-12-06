@@ -257,6 +257,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "example-history-wasi"
+version = "0.1.0"
+dependencies = [
+ "gloo 0.10.0",
+]
+
+[[package]]
 name = "example-markdown"
 version = "0.1.0"
 dependencies = [
@@ -453,7 +460,7 @@ dependencies = [
  "gloo-dialogs 0.2.0",
  "gloo-events 0.2.0",
  "gloo-file 0.3.0",
- "gloo-history 0.2.0",
+ "gloo-history 0.2.1",
  "gloo-net 0.4.0",
  "gloo-render 0.2.0",
  "gloo-storage 0.3.0",
@@ -573,7 +580,7 @@ dependencies = [
 
 [[package]]
 name = "gloo-history"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "getrandom",
  "gloo-events 0.2.0",
