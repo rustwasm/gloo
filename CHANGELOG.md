@@ -155,6 +155,8 @@
 
 - Implement `futures_io::AsyncWrite` and `futures_io::AsyncRead` on `WebSocket`.
   This feature is behind a new feature flag `io-util` that is disabled by default.
+- Add `TryFrom<web_sys::WebSocket>` (#365)
+- Add WASI support for gloo-history. (#405)
 
 ### Version "0.4.0"
 
