@@ -23,7 +23,8 @@ fn App() -> Html {
                         result.set(Some(o.hash));
                     })
                     .encoding::<TransferrableCodec>()
-                    .spawn_with_loader("/example_file_hash_worker_loader.js")
+                    .with_loader(true)
+                    .spawn("/example_file_hash_worker_loader.js")
             },
             (),
         )
