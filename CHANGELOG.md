@@ -360,10 +360,11 @@
 
 ## `worker`
 
-### Version 0.4.1
+### Version 0.5.0
 
 - Remove Cloning on WorkerBridge (#388)
 - Add an example of processing transferrable types with worker (#371)
+- Add method to terminate a worker (#420)
 
 ### Version 0.4.0
 
