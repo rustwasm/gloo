@@ -231,7 +231,7 @@ dependencies = [
  "chrono",
  "console_error_panic_hook",
  "futures-util",
- "gloo 0.10.0",
+ "gloo 0.11.0",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -260,7 +260,7 @@ dependencies = [
 name = "example-history-wasi"
 version = "0.1.0"
 dependencies = [
- "gloo 0.10.0",
+ "gloo 0.11.0",
 ]
 
 [[package]]
@@ -269,7 +269,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "futures",
- "gloo 0.10.0",
+ "gloo 0.11.0",
  "js-sys",
  "pulldown-cmark",
  "tokio",
@@ -285,7 +285,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "futures",
- "gloo 0.10.0",
+ "gloo 0.11.0",
  "primes",
  "serde",
  "tokio",
@@ -454,7 +454,7 @@ dependencies = [
 
 [[package]]
 name = "gloo"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "gloo-console 0.3.0",
  "gloo-dialogs 0.2.0",
@@ -773,7 +773,7 @@ dependencies = [
 name = "gloo-worker-macros"
 version = "0.1.0"
 dependencies = [
- "gloo 0.10.0",
+ "gloo 0.11.0",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
@@ -1230,9 +1230,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.66"
+version = "1.0.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18fb31db3f9bddb2ea821cde30a9f70117e3f119938b5ee630b7403aa6e2ead9"
+checksum = "39278fbbf5fb4f646ce651690877f89d1c5811a3d4acb27700c1cb3cdb78fd3b"
 dependencies = [
  "unicode-ident",
 ]
