@@ -1,8 +1,6 @@
 use std::borrow::Cow;
 
-#[cfg(not(target_os = "wasi"))]
 use crate::browser::BrowserHistory;
-#[cfg(not(target_os = "wasi"))]
 use crate::hash::HashHistory;
 use crate::history::History;
 use crate::listener::HistoryListener;
@@ -15,10 +13,8 @@ use crate::{error::HistoryResult, query::ToQuery};
 #[derive(Clone, PartialEq, Debug)]
 pub enum AnyHistory {
     /// A Browser History.
-    #[cfg(not(target_os = "wasi"))]
     Browser(BrowserHistory),
     /// A Hash History
-    #[cfg(not(target_os = "wasi"))]
     Hash(HashHistory),
     /// A Memory History
     Memory(MemoryHistory),
@@ -27,9 +23,8 @@ pub enum AnyHistory {
 impl History for AnyHistory {
     fn len(&self) -> usize {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.len(),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.len(),
             Self::Memory(m) => m.len(),
         }
@@ -37,9 +32,8 @@ impl History for AnyHistory {
 
     fn go(&self, delta: isize) {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.go(delta),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.go(delta),
             Self::Memory(m) => m.go(delta),
         }
@@ -47,9 +41,8 @@ impl History for AnyHistory {
 
     fn push<'a>(&self, route: impl Into<Cow<'a, str>>) {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.push(route),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.push(route),
             Self::Memory(m) => m.push(route),
         }
@@ -57,9 +50,8 @@ impl History for AnyHistory {
 
     fn replace<'a>(&self, route: impl Into<Cow<'a, str>>) {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.replace(route),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.replace(route),
             Self::Memory(m) => m.replace(route),
         }
@@ -70,9 +62,8 @@ impl History for AnyHistory {
         T: 'static,
     {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.push_with_state(route, state),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.push_with_state(route, state),
             Self::Memory(m) => m.push_with_state(route, state),
         }
@@ -83,9 +74,8 @@ impl History for AnyHistory {
         T: 'static,
     {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.replace_with_state(route, state),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.replace_with_state(route, state),
             Self::Memory(m) => m.replace_with_state(route, state),
         }
@@ -101,9 +91,8 @@ impl History for AnyHistory {
         Q: ToQuery,
     {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.push_with_query(route, query),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.push_with_query(route, query),
             Self::Memory(m) => m.push_with_query(route, query),
         }
@@ -118,9 +107,8 @@ impl History for AnyHistory {
         Q: ToQuery,
     {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.replace_with_query(route, query),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.replace_with_query(route, query),
             Self::Memory(m) => m.replace_with_query(route, query),
         }
@@ -138,9 +126,8 @@ impl History for AnyHistory {
         T: 'static,
     {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.push_with_query_and_state(route, query, state),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.push_with_query_and_state(route, query, state),
             Self::Memory(m) => m.push_with_query_and_state(route, query, state),
         }
@@ -158,9 +145,8 @@ impl History for AnyHistory {
         T: 'static,
     {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.replace_with_query_and_state(route, query, state),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.replace_with_query_and_state(route, query, state),
             Self::Memory(m) => m.replace_with_query_and_state(route, query, state),
         }
@@ -171,9 +157,8 @@ impl History for AnyHistory {
         CB: Fn() + 'static,
     {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.listen(callback),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.listen(callback),
             Self::Memory(m) => m.listen(callback),
         }
@@ -181,23 +166,20 @@ impl History for AnyHistory {
 
     fn location(&self) -> Location {
         match self {
-            #[cfg(not(target_os = "wasi"))]
             Self::Browser(m) => m.location(),
-            #[cfg(not(target_os = "wasi"))]
+
             Self::Hash(m) => m.location(),
             Self::Memory(m) => m.location(),
         }
     }
 }
 
-#[cfg(not(target_os = "wasi"))]
 impl From<BrowserHistory> for AnyHistory {
     fn from(m: BrowserHistory) -> AnyHistory {
         AnyHistory::Browser(m)
     }
 }
 
-#[cfg(not(target_os = "wasi"))]
 impl From<HashHistory> for AnyHistory {
     fn from(m: HashHistory) -> AnyHistory {
         AnyHistory::Hash(m)
