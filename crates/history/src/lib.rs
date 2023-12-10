@@ -14,7 +14,7 @@ mod location;
 mod memory;
 #[cfg(feature = "query")]
 pub mod query;
-mod state;
+pub(crate) mod state;
 mod utils;
 
 pub use any::AnyHistory;
