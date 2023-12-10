@@ -4,11 +4,9 @@
 #![deny(missing_docs, missing_debug_implementations)]
 
 mod any;
-#[cfg(not(target_os = "wasi"))]
 mod browser;
 #[cfg(feature = "query")]
 mod error;
-#[cfg(not(target_os = "wasi"))]
 mod hash;
 mod history;
 mod listener;
@@ -20,9 +18,7 @@ mod state;
 mod utils;
 
 pub use any::AnyHistory;
-#[cfg(not(target_os = "wasi"))]
 pub use browser::BrowserHistory;
-#[cfg(not(target_os = "wasi"))]
 pub use hash::HashHistory;
 pub use memory::MemoryHistory;
 
