@@ -107,6 +107,10 @@
 
 ## `history`
 
+### Version 0.2.2
+
+- Remove the flags what to expect WASI targets (#425)
+
 ### Version 0.2.1
 
 - Fixed an issue where history state might collide with a stated assigned later
