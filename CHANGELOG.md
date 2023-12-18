@@ -157,7 +157,7 @@
 
 ### Version "0.5.0"
 
-- Removed http dependency from gloo-net, using a simpler and lighter Method
+- Update http crate to 1.0
 - Implement `futures_io::AsyncWrite` and `futures_io::AsyncRead` on `WebSocket`.
   This feature is behind a new feature flag `io-util` that is disabled by default.
 - Add `TryFrom<web_sys::WebSocket>` (#365)
