@@ -14,13 +14,13 @@
 //! ```
 
 mod headers;
-mod method;
 mod query;
 mod request;
 mod response;
 
 pub use headers::Headers;
-pub use method::Method;
+#[doc(inline)]
+pub use http::Method;
 pub use query::QueryParams;
 
 pub use request::{Request, RequestBuilder};

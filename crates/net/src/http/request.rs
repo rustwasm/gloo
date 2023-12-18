@@ -1,5 +1,6 @@
-use crate::http::{Headers, Method, QueryParams, Response};
+use crate::http::{Headers, QueryParams, Response};
 use crate::{js_to_error, Error};
+use http::Method;
 use js_sys::{ArrayBuffer, Reflect, Uint8Array};
 use std::convert::{From, TryFrom, TryInto};
 use std::fmt;
@@ -223,27 +224,27 @@ pub struct Request(web_sys::Request);
 impl Request {
     /// Creates a new [`GET`][Method::GET] `Request` with url.
     pub fn get(url: &str) -> RequestBuilder {
-        RequestBuilder::new(url).method(Method::Get)
+        RequestBuilder::new(url).method(Method::GET)
     }
 
     /// Creates a new [`POST`][Method::POST] `Request` with url.
     pub fn post(url: &str) -> RequestBuilder {
-        RequestBuilder::new(url).method(Method::Post)
+        RequestBuilder::new(url).method(Method::POST)
     }
 
     /// Creates a new [`PUT`][Method::PUT] `Request` with url.
     pub fn put(url: &str) -> RequestBuilder {
-        RequestBuilder::new(url).method(Method::Put)
+        RequestBuilder::new(url).method(Method::PUT)
     }
 
     /// Creates a new [`DELETE`][Method::DELETE] `Request` with url.
     pub fn delete(url: &str) -> RequestBuilder {
-        RequestBuilder::new(url).method(Method::Delete)
+        RequestBuilder::new(url).method(Method::DELETE)
     }
 
     /// Creates a new [`PATCH`][Method::PATCH] `Request` with url.
     pub fn patch(url: &str) -> RequestBuilder {
-        RequestBuilder::new(url).method(Method::Patch)
+        RequestBuilder::new(url).method(Method::PATCH)
     }
 
     /// The URL of the request.
