@@ -24,6 +24,7 @@ impl History for AnyHistory {
     fn len(&self) -> usize {
         match self {
             Self::Browser(m) => m.len(),
+
             Self::Hash(m) => m.len(),
             Self::Memory(m) => m.len(),
         }
@@ -32,6 +33,7 @@ impl History for AnyHistory {
     fn go(&self, delta: isize) {
         match self {
             Self::Browser(m) => m.go(delta),
+
             Self::Hash(m) => m.go(delta),
             Self::Memory(m) => m.go(delta),
         }
@@ -40,6 +42,7 @@ impl History for AnyHistory {
     fn push<'a>(&self, route: impl Into<Cow<'a, str>>) {
         match self {
             Self::Browser(m) => m.push(route),
+
             Self::Hash(m) => m.push(route),
             Self::Memory(m) => m.push(route),
         }
@@ -48,6 +51,7 @@ impl History for AnyHistory {
     fn replace<'a>(&self, route: impl Into<Cow<'a, str>>) {
         match self {
             Self::Browser(m) => m.replace(route),
+
             Self::Hash(m) => m.replace(route),
             Self::Memory(m) => m.replace(route),
         }
@@ -59,6 +63,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.push_with_state(route, state),
+
             Self::Hash(m) => m.push_with_state(route, state),
             Self::Memory(m) => m.push_with_state(route, state),
         }
@@ -70,6 +75,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.replace_with_state(route, state),
+
             Self::Hash(m) => m.replace_with_state(route, state),
             Self::Memory(m) => m.replace_with_state(route, state),
         }
@@ -86,6 +92,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.push_with_query(route, query),
+
             Self::Hash(m) => m.push_with_query(route, query),
             Self::Memory(m) => m.push_with_query(route, query),
         }
@@ -101,6 +108,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.replace_with_query(route, query),
+
             Self::Hash(m) => m.replace_with_query(route, query),
             Self::Memory(m) => m.replace_with_query(route, query),
         }
@@ -119,6 +127,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.push_with_query_and_state(route, query, state),
+
             Self::Hash(m) => m.push_with_query_and_state(route, query, state),
             Self::Memory(m) => m.push_with_query_and_state(route, query, state),
         }
@@ -137,6 +146,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.replace_with_query_and_state(route, query, state),
+
             Self::Hash(m) => m.replace_with_query_and_state(route, query, state),
             Self::Memory(m) => m.replace_with_query_and_state(route, query, state),
         }
@@ -148,6 +158,7 @@ impl History for AnyHistory {
     {
         match self {
             Self::Browser(m) => m.listen(callback),
+
             Self::Hash(m) => m.listen(callback),
             Self::Memory(m) => m.listen(callback),
         }
@@ -156,6 +167,7 @@ impl History for AnyHistory {
     fn location(&self) -> Location {
         match self {
             Self::Browser(m) => m.location(),
+
             Self::Hash(m) => m.location(),
             Self::Memory(m) => m.location(),
         }
