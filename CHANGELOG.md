@@ -155,6 +155,10 @@
 
 ## `net`
 
+### Version "0.6.0"
+
+- Update http crate to 1.0
+
 ### Version "0.5.0"
 
 - Update http crate to 1.0
