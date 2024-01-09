@@ -157,11 +157,10 @@
 
 ### Version "0.6.0"
 
-- Update http crate to 1.0
+- Update http crate to 1.0 (#407)
 
 ### Version "0.5.0"
 
-- Update http crate to 1.0
 - Implement `futures_io::AsyncWrite` and `futures_io::AsyncRead` on `WebSocket`.
   This feature is behind a new feature flag `io-util` that is disabled by default.
 - Add `TryFrom<web_sys::WebSocket>` (#365)
