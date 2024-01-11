@@ -453,7 +453,7 @@ dependencies = [
  "gloo-dialogs 0.2.0",
  "gloo-events 0.2.0",
  "gloo-file 0.3.0",
- "gloo-history 0.2.1",
+ "gloo-history 0.2.2",
  "gloo-net 0.5.0",
  "gloo-render 0.2.0",
  "gloo-storage 0.3.0",
@@ -573,7 +573,7 @@ dependencies = [
 
 [[package]]
 name = "gloo-history"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "getrandom",
  "gloo-events 0.2.0",
@@ -619,7 +619,7 @@ dependencies = [
  "futures-io",
  "futures-sink",
  "gloo-utils 0.2.0",
- "http",
+ "http 1.0.0",
  "js-sys",
  "once_cell",
  "pin-project",
