@@ -150,7 +150,7 @@ pub mod futures {
     /// Returns the contents of `blob` as a text string.
     ///
     /// Equivalent to `async fn read_as_text(blob: &Blob) -> Result<String, FileReadError>` but
-    /// without borrowing the `Blob` fore the lifetime of the future.
+    /// without borrowing the `Blob` for the lifetime of the future.
     pub fn read_as_text(blob: &Blob) -> impl Future<Output = Result<String, FileReadError>> {
         let (sender, receiver) = futures_channel::oneshot::channel();
         let reader = super::callbacks::read_as_text(blob, |result| {
@@ -167,7 +167,7 @@ pub mod futures {
     /// Returns the contents of `blob` as a base64 encoded `data:` URL.
     ///
     /// Equivalent to `async fn read_as_data_url(blob: &Blob) -> Result<String, FileReadError>` but
-    /// without borrowing the `Blob` fore the lifetime of the future.
+    /// without borrowing the `Blob` for the lifetime of the future.
     pub fn read_as_data_url(blob: &Blob) -> impl Future<Output = Result<String, FileReadError>> {
         let (sender, receiver) = futures_channel::oneshot::channel();
         let reader = super::callbacks::read_as_data_url(blob, |result| {
