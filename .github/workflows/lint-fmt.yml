@@ -16,7 +16,7 @@ jobs:
           toolchain: stable
           components: rustfmt
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -41,7 +41,7 @@ jobs:
           components: clippy
           target: wasm32-unknown-unknown
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
