@@ -22,5 +22,5 @@ version = "0.3"
 features = ["console", "Document"]
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.4"
+wasm-bindgen-test = "0.3.41"
 gloo-timers = { version = "0.3.0", path = "../timers" }
