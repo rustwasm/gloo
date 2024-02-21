@@ -2,7 +2,7 @@ use std::{convert::From, fmt};
 
 use crate::{js_to_error, Error};
 use js_sys::{ArrayBuffer, Uint8Array};
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::{prelude::*, JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::ResponseInit;
 
@@ -84,12 +84,12 @@ impl Response {
     }
 
     /// Gets the body.
-    pub fn body(&self) -> Option<web_sys::ReadableStream> {
+    pub fn body(self) -> Option<web_sys::ReadableStream> {
         self.0.body()
     }
 
     /// Reads the response to completion, returning it as `FormData`.
-    pub async fn form_data(&self) -> Result<web_sys::FormData, Error> {
+    pub async fn form_data(self) -> Result<web_sys::FormData, Error> {
         let promise = self.0.form_data().map_err(js_to_error)?;
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         Ok(web_sys::FormData::from(val))
@@ -98,12 +98,12 @@ impl Response {
     /// Reads the response to completion, parsing it as JSON.
     #[cfg(feature = "json")]
     #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
-    pub async fn json<T: DeserializeOwned>(&self) -> Result<T, Error> {
+    pub async fn json<T: DeserializeOwned>(self) -> Result<T, Error> {
         serde_json::from_str::<T>(&self.text().await?).map_err(Error::from)
     }
 
     /// Reads the response as a String.
-    pub async fn text(&self) -> Result<String, Error> {
+    pub async fn text(self) -> Result<String, Error> {
         let promise = self.0.text().unwrap();
         let val = JsFuture::from(promise).await.map_err(js_to_error)?;
         let string = js_sys::JsString::from(val);
@@ -114,7 +114,7 @@ impl Response {
     ///
     /// This works by obtaining the response as an `ArrayBuffer`, creating a `Uint8Array` from it
     /// and then converting it to `Vec<u8>`
-    pub async fn binary(&self) -> Result<Vec<u8>, Error> {
+    pub async fn binary(self) -> Result<Vec<u8>, Error> {
         let promise = self.0.array_buffer().map_err(js_to_error)?;
         let array_buffer: ArrayBuffer = JsFuture::from(promise)
             .await
@@ -124,6 +124,12 @@ impl Response {
         let mut body = vec![0; typed_buff.length() as usize];
         typed_buff.copy_to(&mut body);
         Ok(body)
+    }
+
+    /// attempts to clone the request via the Response.clone api
+    pub fn try_clone(&self) -> Result<Self, Error> {
+        let clone = self.0.clone().map_err(js_to_error)?;
+        Ok(Self(clone))
     }
 }
 
@@ -156,6 +162,8 @@ impl fmt::Debug for Response {
 pub struct ResponseBuilder {
     headers: Headers,
     options: web_sys::ResponseInit,
+    status: Option<u16>,
+    status_text: Option<String>,
 }
 
 impl ResponseBuilder {
@@ -172,20 +180,37 @@ impl ResponseBuilder {
     }
 
     /// Sets a header.
-    pub fn header(self, key: &str, value: &str) -> Self {
+    pub fn header(mut self, key: &str, value: &str) -> Self {
         self.headers.set(key, value);
         self
+    }
+
+    /// Get a reference to the contained headers
+    pub fn get_headers(&self) -> &Headers {
+        &self.headers
+    }
+
+    /// Get the contained status code if it exists
+    pub fn get_status(&self) -> Option<u16> {
+        self.status.to_owned()
+    }
+
+    /// Get the contained status text if it exists
+    pub fn get_status_text(&self) -> Option<&str> {
+        self.status_text.as_deref()
     }
 
     /// Set the status code
     pub fn status(mut self, status: u16) -> Self {
         self.options.status(status);
+        self.status = Some(status);
         self
     }
 
     /// Set the status text
-    pub fn status_text(mut self, status_text: &str) -> Self {
-        self.options.status_text(status_text);
+    pub fn status_text(mut self, status_text: String) -> Self {
+        self.options.status_text(status_text.as_str());
+        self.status_text = Some(status_text);
         self
     }
 
@@ -199,7 +224,7 @@ impl ResponseBuilder {
     pub fn json<T: serde::Serialize + ?Sized>(self, value: &T) -> Result<Response, Error> {
         let json = serde_json::to_string(value)?;
         self.header("Content-Type", "application/json")
-            .body(Some(json.as_str()))
+            .body(json.as_str())
     }
 
     /// Set the response body and return the response
@@ -214,33 +239,39 @@ impl ResponseBuilder {
     }
 }
 
-impl IntoRawResponse for Option<&web_sys::Blob> {
+impl IntoRawResponse for &web_sys::Blob {
     fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
-        web_sys::Response::new_with_opt_blob_and_init(self, &init)
+        web_sys::Response::new_with_opt_blob_and_init(Some(self), &init)
     }
 }
 
-impl IntoRawResponse for Option<&js_sys::Object> {
+impl IntoRawResponse for &js_sys::Object {
     fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
-        web_sys::Response::new_with_opt_buffer_source_and_init(self, &init)
+        web_sys::Response::new_with_opt_buffer_source_and_init(Some(self), &init)
     }
 }
 
-impl IntoRawResponse for Option<&mut [u8]> {
+impl IntoRawResponse for &mut [u8] {
     fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
-        web_sys::Response::new_with_opt_u8_array_and_init(self, &init)
+        web_sys::Response::new_with_opt_u8_array_and_init(Some(self), &init)
     }
 }
 
-impl IntoRawResponse for Option<&web_sys::FormData> {
+impl IntoRawResponse for &web_sys::FormData {
     fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
-        web_sys::Response::new_with_opt_form_data_and_init(self, &init)
+        web_sys::Response::new_with_opt_form_data_and_init(Some(self), &init)
     }
 }
 
-impl IntoRawResponse for Option<&web_sys::UrlSearchParams> {
+impl IntoRawResponse for &web_sys::UrlSearchParams {
     fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
-        web_sys::Response::new_with_opt_url_search_params_and_init(self, &init)
+        web_sys::Response::new_with_opt_url_search_params_and_init(Some(self), &init)
+    }
+}
+
+impl IntoRawResponse for &str {
+    fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
+        web_sys::Response::new_with_opt_str_and_init(Some(self), &init)
     }
 }
 
@@ -250,9 +281,9 @@ impl IntoRawResponse for Option<&str> {
     }
 }
 
-impl IntoRawResponse for Option<&web_sys::ReadableStream> {
+impl IntoRawResponse for &web_sys::ReadableStream {
     fn into_raw(self, init: ResponseInit) -> Result<web_sys::Response, JsValue> {
-        web_sys::Response::new_with_opt_readable_stream_and_init(self, &init)
+        web_sys::Response::new_with_opt_readable_stream_and_init(Some(self), &init)
     }
 }
 
@@ -268,6 +299,8 @@ impl Default for ResponseBuilder {
         Self {
             headers: Headers::new(),
             options: web_sys::ResponseInit::new(),
+            status: None,
+            status_text: None,
         }
     }
 }
@@ -277,5 +310,25 @@ impl fmt::Debug for ResponseBuilder {
         f.debug_struct("ResponseBuilder")
             .field("headers", &self.headers)
             .finish_non_exhaustive()
+    }
+}
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_name = "structuredClone", catch)]
+    fn structured_clone(v: &JsValue) -> Result<JsValue, JsValue>;
+}
+
+impl Clone for ResponseBuilder {
+    fn clone(&self) -> Self {
+        let options_clone: ResponseInit = structured_clone(&self.options)
+            .unwrap_throw()
+            .unchecked_into();
+        Self {
+            headers: self.headers.clone(),
+            options: options_clone,
+            status: self.status,
+            status_text: self.status_text.clone(),
+        }
     }
 }
