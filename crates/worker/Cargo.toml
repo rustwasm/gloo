@@ -39,6 +39,7 @@ features = [
     "Url",
     "Worker",
     "WorkerOptions",
+    "WorkerType",
 ]
 
 [features]
