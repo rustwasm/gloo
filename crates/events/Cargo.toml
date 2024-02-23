@@ -15,16 +15,16 @@ rust-version = "1.64"
 wasm-bindgen = "0.2"
 
 [dependencies.web-sys]
-version = "0.3.31"
+version = "0.3.68"
 features = ["Event", "EventTarget", "AddEventListenerOptions"]
 
 [dev-dependencies]
-js-sys = "0.3.31"
+js-sys = "0.3.68"
 futures = "0.3"
-wasm-bindgen-test = "0.3.4"
+wasm-bindgen-test = "0.3.41"
 
 [dev-dependencies.web-sys]
-version = "0.3.31"
+version = "0.3.68"
 features = [
     "HtmlElement",
     "Window",
