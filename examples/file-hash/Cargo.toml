@@ -10,15 +10,15 @@ publish = false
 [dependencies]
 # We use the gloo-worker directly to avoid dependency conflicts as Yew also uses gloo.
 gloo-worker = { path = "../../crates/worker" }
-serde = "1.0.163"
-web-sys = { version = "0.3.63", features = ["File", "Blob", "ReadableStream"] }
+serde = "1.0.197"
+web-sys = { version = "0.3.68", features = ["File", "Blob", "ReadableStream"] }
 wasm-bindgen-futures = { version = "0.4" }
-wasm-streams = "0.3.0"
-wasm-bindgen = "0.2.86"
-futures = "0.3.28"
+wasm-streams = "0.4.0"
+wasm-bindgen = "0.2.91"
+futures = "0.3.30"
 sha2 = "0.10.8"
 console_error_panic_hook = "0.1.7"
-yew = { version = "0.20.0", features = ["csr"] }
-serde-wasm-bindgen = "0.6.0"
-js-sys = "0.3.63"
+yew = { version = "0.21.0", features = ["csr"] }
+serde-wasm-bindgen = "0.6.5"
+js-sys = "0.3.68"
 hex = "0.4.3"
