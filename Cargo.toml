@@ -24,6 +24,7 @@ gloo-utils = { version = "0.2", path = "crates/utils", optional = true }
 gloo-history = { version = "0.2", path = "crates/history", optional = true }
 gloo-worker = { version = "0.5", path = "crates/worker", optional = true }
 gloo-net = { version = "0.5", path = "crates/net", optional = true }
+gloo-intl = { version = "0.1", path = "crates/intl", optional = true }
 
 [features]
 default = [
@@ -38,6 +39,7 @@ default = [
     "history",
     "worker",
     "net",
+    "intl",
 ]
 futures = [
     "timers",
@@ -58,6 +60,7 @@ utils = ["gloo-utils"]
 history = ["gloo-history"]
 worker = ["gloo-worker"]
 net = ["gloo-net"]
+intl = ["gloo-intl"]
 
 [workspace]
 members = [
@@ -73,6 +76,7 @@ members = [
     "crates/worker",
     "crates/worker-macros",
     "crates/net",
+    "crates/intl",
 
     "examples/markdown",
     "examples/clock",
