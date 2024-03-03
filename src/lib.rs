@@ -25,6 +25,9 @@ pub use gloo_file as file;
 #[cfg_attr(docsrs, doc(cfg(feature = "history")))]
 #[doc(inline)]
 pub use gloo_history as history;
+#[cfg_attr(docsrs, doc(cfg(feature = "intl")))]
+#[doc(inline)]
+pub use gloo_intl as intl;
 #[cfg(feature = "net")]
 #[cfg_attr(docsrs, doc(cfg(feature = "net")))]
 #[doc(inline)]
