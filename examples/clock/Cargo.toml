@@ -11,12 +11,12 @@ crate-type = ["cdylib"]
 
 [dependencies]
 gloo = { path = "../..", features = ["futures"] }
-wasm-bindgen = "0.2.54"
-wasm-bindgen-futures = "0.4.4"
+wasm-bindgen = "0.2.92"
+wasm-bindgen-futures = "0.4.42"
 futures-util = "0.3"
-chrono = { version = "0.4.10", features = ["wasmbind"] }
+chrono = { version = "0.4.37", features = ["wasmbind"] }
 console_error_panic_hook = "0.1.6"
 
 [dependencies.web-sys]
-version = "0.3.19"
+version = "0.3.69"
 features = ["console", "Window", "Document", "Element", "Node"]
