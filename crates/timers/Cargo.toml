@@ -16,7 +16,7 @@ features = ["futures"]
 
 [dependencies]
 wasm-bindgen = "0.2"
-js-sys = "0.3.31"
+js-sys = "0.3.69"
 futures-core = { version = "0.3", optional = true }
 futures-channel = { version = "0.3", optional = true }
 
@@ -26,6 +26,6 @@ futures = ["futures-core", "futures-channel"]
 
 
 [dev-dependencies]
-wasm-bindgen-futures = "0.4.4"
-wasm-bindgen-test = "0.3.4"
+wasm-bindgen-futures = "0.4.42"
+wasm-bindgen-test = "0.3.42"
 futures-util = "0.3"
