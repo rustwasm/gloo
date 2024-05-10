@@ -7,16 +7,16 @@ rust-version = "1.64"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-futures = "0.3.25"
+futures = "0.3.30"
 gloo = { path = "../..", features = ["futures"] }
 primes = "0.3.0"
-wasm-bindgen-futures = "0.4.33"
+wasm-bindgen-futures = "0.4.42"
 console_error_panic_hook = "0.1.7"
-serde = { version = "1.0.147", features = ["derive"] }
+serde = { version = "1.0.201", features = ["derive"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["full"] }
 warp = "0.3"
 
 [dev-dependencies]
-wasm-bindgen-test = "0.3.36"
+wasm-bindgen-test = "0.3.42"
