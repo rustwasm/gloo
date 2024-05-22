@@ -1,11 +1,11 @@
 use crate::http::{Headers, QueryParams, Response};
 use crate::{js_to_error, Error};
 use http::Method;
-use js_sys::{ArrayBuffer, Reflect, Uint8Array};
+use js_sys::{ArrayBuffer, Uint8Array};
 use std::convert::{From, TryFrom, TryInto};
 use std::fmt;
 use std::str::FromStr;
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::{prelude::wasm_bindgen, JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
     AbortSignal, FormData, ObserverCallback, ReadableStream, ReferrerPolicy, RequestCache,
@@ -15,6 +15,17 @@ use web_sys::{
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 use serde::de::DeserializeOwned;
+
+#[wasm_bindgen]
+extern "C" {
+    // Create a separate binding for `fetch` as a global, rather than using the
+    // existing Window/WorkerGlobalScope bindings defined by web_sys, for
+    // greater efficiency.
+    //
+    // https://github.com/rustwasm/wasm-bindgen/discussions/3863
+    #[wasm_bindgen(js_name = "fetch")]
+    fn fetch_with_request(request: &web_sys::Request) -> js_sys::Promise;
+}
 
 /// A wrapper round `web_sys::Request`: an http request to be used with the `fetch` API.
 pub struct RequestBuilder {
@@ -320,23 +331,7 @@ impl Request {
     /// Executes the request.
     pub async fn send(self) -> Result<Response, Error> {
         let request = self.0;
-        let global = js_sys::global();
-        let maybe_window =
-            Reflect::get(&global, &JsValue::from_str("Window")).map_err(js_to_error)?;
-        let promise = if !maybe_window.is_undefined() {
-            let window = global.dyn_into::<web_sys::Window>().unwrap();
-            window.fetch_with_request(&request)
-        } else {
-            let maybe_worker = Reflect::get(&global, &JsValue::from_str("WorkerGlobalScope"))
-                .map_err(js_to_error)?;
-            if !maybe_worker.is_undefined() {
-                let worker = global.dyn_into::<web_sys::WorkerGlobalScope>().unwrap();
-                worker.fetch_with_request(&request)
-            } else {
-                panic!("Unsupported JavaScript global context");
-            }
-        };
-
+        let promise = fetch_with_request(&request);
         let response = JsFuture::from(promise).await.map_err(js_to_error)?;
         response
             .dyn_into::<web_sys::Response>()
