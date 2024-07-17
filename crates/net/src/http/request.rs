@@ -5,6 +5,7 @@ use js_sys::{ArrayBuffer, Reflect, Uint8Array};
 use std::convert::{From, TryFrom, TryInto};
 use std::fmt;
 use std::str::FromStr;
+use wasm_bindgen::convert::{FromWasmAbi, ReturnWasmAbi};
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
@@ -333,7 +334,16 @@ impl Request {
                 let worker = global.dyn_into::<web_sys::WorkerGlobalScope>().unwrap();
                 worker.fetch_with_request(&request)
             } else {
-                panic!("Unsupported JavaScript global context");
+                let maybe_fetch =
+                    js_sys::Reflect::get(&global, &JsValue::from_str("fetch")).unwrap();
+                if maybe_fetch.is_undefined() {
+                    panic!("no global fetch()")
+                }
+                let fetch = maybe_fetch.dyn_into::<js_sys::Function>().unwrap();
+                let promise = fetch
+                    .call1(&global, &unsafe { JsValue::from_abi(request.return_abi()) })
+                    .map_err(js_to_error)?;
+                promise.dyn_into::<js_sys::Promise>().unwrap()
             }
         };
 
