@@ -78,7 +78,6 @@ http = [
     'web-sys/Response',
     'web-sys/ResponseInit',
     'web-sys/ResponseType',
-    'web-sys/Window',
     'web-sys/RequestCache',
     'web-sys/RequestCredentials',
     'web-sys/ObserverCallback',
@@ -88,7 +87,6 @@ http = [
     'web-sys/ReadableStream',
     'web-sys/Blob',
     'web-sys/FormData',
-    'web-sys/WorkerGlobalScope',
 ]
 # Enables the EventSource API
 eventsource = [
