@@ -337,13 +337,15 @@ impl Request {
                 let maybe_fetch =
                     js_sys::Reflect::get(&global, &JsValue::from_str("fetch")).unwrap();
                 if maybe_fetch.is_undefined() {
-                    panic!("no global fetch()")
+                    panic!("no supported fetch api")
                 }
-                let fetch = maybe_fetch.dyn_into::<js_sys::Function>().unwrap();
-                let promise = fetch
+                maybe_fetch
+                    .dyn_into::<js_sys::Function>()
+                    .unwrap()
                     .call1(&global, &unsafe { JsValue::from_abi(request.return_abi()) })
-                    .map_err(js_to_error)?;
-                promise.dyn_into::<js_sys::Promise>().unwrap()
+                    .map_err(js_to_error)?
+                    .dyn_into::<js_sys::Promise>()
+                    .unwrap()
             }
         };
 
