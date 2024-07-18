@@ -23,7 +23,7 @@ pub trait Worker: Sized {
 
     /// New bridge created.
     ///
-    /// When a new bridge is created by [`WorkerSpawner::spawn`](crate::spawner::WorkerSpawner)
+    /// When a new bridge is created by [`WorkerSpawner::spawn`](crate::WorkerSpawner)
     /// or [`WorkerBridge::fork`](crate::WorkerBridge::fork),
     /// the worker will be notified the [`HandlerId`] of the created bridge via this method.
     fn connected(&mut self, scope: &WorkerScope<Self>, id: HandlerId) {
