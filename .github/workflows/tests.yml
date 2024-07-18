@@ -269,4 +269,4 @@ jobs:
           HTTPBIN_URL: 'http://localhost:8080'
           WS_ECHO_SERVER_URL: 'ws://localhost:8081'
           SSE_ECHO_SERVER_URL: 'http://localhost:8081/.sse'
-        run: wasm-pack test --node crates/gloo-net --all-features
+        run: wasm-pack test --node crates/net --all-features
