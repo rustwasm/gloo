@@ -1,8 +1,6 @@
 use gloo_net::http::QueryParams;
 use wasm_bindgen_test::*;
 
-wasm_bindgen_test_configure!(run_in_browser);
-
 #[wasm_bindgen_test]
 fn query_params_iter() {
     let params = QueryParams::new();
