@@ -263,3 +263,10 @@ jobs:
           WS_ECHO_SERVER_URL: 'ws://localhost:8081'
           SSE_ECHO_SERVER_URL: 'http://localhost:8081/.sse'
         run: cargo test -p gloo-net --all-features
+      
+      - name: Run node tests
+        env:
+          HTTPBIN_URL: 'http://localhost:8080'
+          WS_ECHO_SERVER_URL: 'ws://localhost:8081'
+          SSE_ECHO_SERVER_URL: 'http://localhost:8081/.sse'
+        run: wasm-pack test --node crates/gloo-net --all-features
