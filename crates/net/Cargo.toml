@@ -102,3 +102,5 @@ eventsource = [
 ]
 # As of now, only implements `AsyncRead` and `AsyncWrite` on `WebSocket`
 io-util = ["futures-io"]
+# For test runner only. Enables browser tests.
+browser-test = []

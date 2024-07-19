@@ -250,7 +250,7 @@ jobs:
           SSE_ECHO_SERVER_URL: 'http://localhost:8081/.sse'
         run: |
           cd crates/net
-          wasm-pack test --chrome --firefox --headless --all-features
+          wasm-pack test --chrome --firefox --headless --features=default,io-util,browser-test
 
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -262,11 +262,11 @@ jobs:
           HTTPBIN_URL: 'http://localhost:8080'
           WS_ECHO_SERVER_URL: 'ws://localhost:8081'
           SSE_ECHO_SERVER_URL: 'http://localhost:8081/.sse'
-        run: cargo test -p gloo-net --all-features
+        run: cargo test -p gloo-net --features=default,io-util
       
       - name: Run node tests
         env:
           HTTPBIN_URL: 'http://localhost:8080'
           WS_ECHO_SERVER_URL: 'ws://localhost:8081'
           SSE_ECHO_SERVER_URL: 'http://localhost:8081/.sse'
-        run: wasm-pack test --node crates/net --all-features
+        run: wasm-pack test --node crates/net --features=default,io-util
