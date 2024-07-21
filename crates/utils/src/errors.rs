@@ -52,7 +52,13 @@ impl TryFrom<JsValue> for JsError {
         match value.dyn_into::<js_sys::Error>() {
             Ok(error) => Ok(JsError::from(error)),
             Err(js_value) => {
-                let js_to_string = String::from(js_sys::JsString::from(js_value.clone()));
+                let js_to_string = js_value
+                    .clone()
+                    .dyn_into::<js_sys::JsString>()
+                    .map(String::from)
+                    .unwrap_or_else(|_| {
+                        String::from("js_value passed has no string representation")
+                    });
                 Err(NotJsError {
                     js_value,
                     js_to_string,
