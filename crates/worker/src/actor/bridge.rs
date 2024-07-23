@@ -8,23 +8,102 @@ use std::rc::Weak;
 use serde::{Deserialize, Serialize};
 
 use super::handler_id::HandlerId;
+use super::messages::FromWorker;
 use super::messages::ToWorker;
+use super::native_worker::DedicatedWorker;
 use super::native_worker::NativeWorkerExt;
 use super::traits::Worker;
-use super::{Callback, Shared};
+use super::Callback;
 use crate::codec::Codec;
 
 pub(crate) type ToWorkerQueue<W> = Vec<ToWorker<W>>;
 pub(crate) type CallbackMap<W> = HashMap<HandlerId, Weak<dyn Fn(<W as Worker>::Output)>>;
+type PostMsg<W> = Box<dyn Fn(&DedicatedWorker, ToWorker<W>)>;
 
-struct WorkerBridgeInner<W>
+pub(crate) struct WorkerBridgeInner<W>
 where
     W: Worker,
 {
     // When worker is loaded, queue becomes None.
-    pending_queue: Shared<Option<ToWorkerQueue<W>>>,
-    callbacks: Shared<CallbackMap<W>>,
-    post_msg: Rc<dyn Fn(ToWorker<W>)>,
+    pending_queue: RefCell<Option<ToWorkerQueue<W>>>,
+    callbacks: RefCell<CallbackMap<W>>,
+    native_worker: RefCell<Option<DedicatedWorker>>,
+    post_msg: PostMsg<W>,
+}
+
+impl<W> WorkerBridgeInner<W>
+where
+    W: Worker + 'static,
+{
+    pub(crate) fn new<CODEC>(native_worker: DedicatedWorker, callbacks: CallbackMap<W>) -> Rc<Self>
+    where
+        CODEC: Codec,
+        W::Input: Serialize + for<'de> Deserialize<'de>,
+        W::Output: Serialize + for<'de> Deserialize<'de>,
+    {
+        let worker = native_worker.clone();
+
+        let pending_queue = RefCell::new(Some(Vec::new()));
+        let callbacks = RefCell::new(callbacks);
+        let native_worker = RefCell::new(Some(native_worker));
+        let post_msg = move |worker: &DedicatedWorker, msg: ToWorker<W>| {
+            worker.post_packed_message::<_, CODEC>(msg)
+        };
+
+        let self_ = Self {
+            pending_queue,
+            callbacks,
+            native_worker,
+            post_msg: Box::new(post_msg),
+        };
+        let self_ = Rc::new(self_);
+
+        let handler = {
+            let bridge_inner = Rc::downgrade(&self_);
+            // If all bridges are dropped then `self_` is dropped and `upgrade` returns `None`.
+            move |msg: FromWorker<W>| {
+                if let Some(bridge_inner) = Weak::upgrade(&bridge_inner) {
+                    match msg {
+                        FromWorker::WorkerLoaded => {
+                            // Set pending queue to `None`. Unless `WorkerLoaded` is
+                            // sent twice, this will always be `Some`.
+                            if let Some(pending_queue) = bridge_inner.take_queue() {
+                                // Will be `None` if the worker has been terminated.
+                                if let Some(worker) =
+                                    bridge_inner.native_worker.borrow_mut().as_ref()
+                                {
+                                    // Send all pending messages.
+                                    for to_worker in pending_queue.into_iter() {
+                                        (bridge_inner.post_msg)(worker, to_worker);
+                                    }
+                                }
+                            }
+                        }
+                        FromWorker::ProcessOutput(id, output) => {
+                            let mut callbacks = bridge_inner.callbacks.borrow_mut();
+
+                            if let Some(m) = callbacks.get(&id) {
+                                if let Some(m) = Weak::upgrade(m) {
+                                    m(output);
+                                } else {
+                                    // The bridge has been dropped.
+                                    callbacks.remove(&id);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        worker.set_on_packed_message::<_, CODEC, _>(handler);
+
+        self_
+    }
+
+    fn take_queue(&self) -> Option<ToWorkerQueue<W>> {
+        self.pending_queue.borrow_mut().take()
+    }
 }
 
 impl<W> fmt::Debug for WorkerBridgeInner<W>
@@ -49,9 +128,23 @@ where
                 m.push(msg);
             }
             None => {
-                (self.post_msg)(msg);
+                if let Some(worker) = self.native_worker.borrow().as_ref() {
+                    (self.post_msg)(worker, msg);
+                }
             }
         }
+    }
+
+    /// Terminate the worker, no more messages can be sent after this.
+    fn terminate(&self) {
+        if let Some(worker) = self.native_worker.borrow_mut().take() {
+            worker.terminate();
+        }
+    }
+
+    /// Returns true if the worker is terminated.
+    fn is_terminated(&self) -> bool {
+        self.native_worker.borrow().is_none()
     }
 }
 
@@ -66,6 +159,15 @@ where
 }
 
 /// A connection manager for components interaction with workers.
+///
+/// Dropping this object will send a disconnect message to the worker and drop
+/// the callback if set, but will have no effect on forked bridges. Note that
+/// the worker will still receive and process any messages sent over the bridge
+/// up to that point, but the reply will not trigger a callback. If all forked
+/// bridges for a worker are dropped, the worker will be sent a destroy message.
+///
+/// To terminate the worker and stop execution immediately, use
+/// [`terminate`](#method.terminate).
 pub struct WorkerBridge<W>
 where
     W: Worker,
@@ -84,26 +186,16 @@ where
         self.inner.send_message(ToWorker::Connected(self.id));
     }
 
-    pub(crate) fn new<CODEC>(
+    pub(crate) fn new(
         id: HandlerId,
-        native_worker: web_sys::Worker,
-        pending_queue: Rc<RefCell<Option<ToWorkerQueue<W>>>>,
-        callbacks: Rc<RefCell<CallbackMap<W>>>,
+        inner: Rc<WorkerBridgeInner<W>>,
         callback: Option<Callback<W::Output>>,
     ) -> Self
     where
-        CODEC: Codec,
         W::Input: Serialize + for<'de> Deserialize<'de>,
     {
-        let post_msg = move |msg: ToWorker<W>| native_worker.post_packed_message::<_, CODEC>(msg);
-
         let self_ = Self {
-            inner: WorkerBridgeInner {
-                pending_queue,
-                callbacks,
-                post_msg: Rc::new(post_msg),
-            }
-            .into(),
+            inner,
             id,
             _worker: PhantomData,
             _cb: callback,
@@ -145,6 +237,23 @@ where
         self_.init();
 
         self_
+    }
+
+    /// Immediately terminates the worker and stops any execution in progress,
+    /// for this and all forked bridges. All messages will be dropped without
+    /// the worker receiving them. No disconnect or destroy message is sent. Any
+    /// messages sent after this point are dropped (from this bridge or any
+    /// forks).
+    ///
+    /// For more details see
+    /// [`web_sys::Worker::terminate`](https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.Worker.html#method.terminate).
+    pub fn terminate(&self) {
+        self.inner.terminate()
+    }
+
+    /// Returns true if the worker is terminated.
+    pub fn is_terminated(&self) -> bool {
+        self.inner.is_terminated()
     }
 }
 
