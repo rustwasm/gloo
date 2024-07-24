@@ -22,8 +22,9 @@ fn main() {
         .flatten()
         .expect_throw("failed to query root element");
 
-    let mut bridge =
-        MarkdownWorker::spawner().spawn_with_loader("/example_markdown_worker_loader.js");
+    let mut bridge = MarkdownWorker::spawner()
+        .with_loader(true)
+        .spawn("/example_markdown_worker_loader.js");
 
     spawn_local(async move {
         let content = bridge.run(MARKDOWN_CONTENT.to_owned()).await;

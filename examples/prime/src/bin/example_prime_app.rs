@@ -25,7 +25,8 @@ fn main() {
     let started = Rc::new(Cell::new(false));
 
     let (bridge_sink, mut bridge_stream) = Prime::spawner()
-        .spawn_with_loader("/example_prime_worker_loader.js")
+        .with_loader(true)
+        .spawn("/example_prime_worker_loader.js")
         .split();
 
     {
