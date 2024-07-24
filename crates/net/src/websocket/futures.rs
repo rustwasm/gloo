@@ -206,6 +206,11 @@ impl WebSocket {
         })
     }
 
+    /// Provides a reference to the JS `WebSocket` instance wrapped by this struct.
+    pub fn inner(&self) -> &web_sys::WebSocket {
+        &self.ws
+    }
+
     /// Closes the websocket.
     ///
     /// See the [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket/close#parameters)
