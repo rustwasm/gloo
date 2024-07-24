@@ -10,6 +10,13 @@ pub struct Headers {
     raw: web_sys::Headers,
 }
 
+impl Clone for Headers {
+    fn clone(&self) -> Self {
+        let next = web_sys::Headers::new_with_headers(&self.raw).unwrap();
+        Self::from_raw(next)
+    }
+}
+
 impl Default for Headers {
     fn default() -> Self {
         Self::new()
@@ -37,14 +44,14 @@ impl Headers {
 
     /// This method appends a new value onto an existing header, or adds the header if it does not
     /// already exist.
-    pub fn append(&self, name: &str, value: &str) {
+    pub fn append(&mut self, name: &str, value: &str) {
         // XXX Can this throw? WEBIDL says yes, my experiments with forbidden headers and MDN say
         // no.
         self.raw.append(name, value).unwrap_throw()
     }
 
     /// Deletes a header if it is present.
-    pub fn delete(&self, name: &str) {
+    pub fn delete(&mut self, name: &str) {
         self.raw.delete(name).unwrap_throw()
     }
 
@@ -59,7 +66,7 @@ impl Headers {
     }
 
     /// Overwrites a header with the given name.
-    pub fn set(&self, name: &str, value: &str) {
+    pub fn set(&mut self, name: &str, value: &str) {
         self.raw.set(name, value).unwrap_throw()
     }
 

@@ -1,4 +1,4 @@
-use gloo_net::http::Request;
+use gloo_net::http::{Headers, Request};
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen_test::*;
@@ -27,8 +27,8 @@ async fn fetch_json() {
 
     let url = format!("{}/get", *HTTPBIN_URL);
     let resp = Request::get(&url).send().await.unwrap();
-    let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(resp.status(), 200);
+    let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(json.url, url);
 }
 
@@ -54,8 +54,8 @@ async fn gzip_response() {
         .send()
         .await
         .unwrap();
-    let json: HttpBin = resp.json().await.unwrap();
     assert_eq!(resp.status(), 200);
+    let json: HttpBin = resp.json().await.unwrap();
     assert!(json.gzipped);
 }
 
@@ -96,8 +96,8 @@ async fn post_json() {
         .send()
         .await
         .unwrap();
-    let resp: HttpBin = req.json().await.unwrap();
     assert_eq!(req.status(), 200);
+    let resp: HttpBin = req.json().await.unwrap();
     assert_eq!(resp.json.data, "data");
     assert_eq!(resp.json.num, 42);
 }
@@ -113,8 +113,8 @@ async fn fetch_binary() {
         .send()
         .await
         .unwrap();
-    let json = resp.binary().await.unwrap();
     assert_eq!(resp.status(), 200);
+    let json = resp.binary().await.unwrap();
     let json: HttpBin = serde_json::from_slice(&json).unwrap();
     assert_eq!(json.data, ""); // default is empty string
 }
@@ -137,4 +137,13 @@ async fn query_preserve_duplicate_params() {
         .await
         .unwrap();
     assert_eq!(resp.url(), format!("{}/get?q=1&q=2", *HTTPBIN_URL));
+}
+
+#[wasm_bindgen_test]
+fn clone_headers() {
+    let mut headers = Headers::new();
+    headers.append("Content-Type", "application/json");
+    let other = headers.clone();
+    headers.append("Content-Type", "text/html");
+    assert_ne!(headers.get("Content-Type"), other.get("Content-Type"))
 }
